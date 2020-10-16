@@ -1,1 +1,1 @@
-workspace(name = "sky2cpp")
+workspace(name = "cpp2sky")

@@ -1,4 +1,4 @@
-#include "sky2cpp/tracer.h"
+#include "cpp2sky/tracer.h"
 
 int main(void) {
   auto tracer_factory = generateTracerFactory();
