@@ -4,7 +4,7 @@ cc_binary(
   name = "tracer_example",
   srcs = ["sample.cc"],
   deps = [
-    "//sky2cpp:tracer_interface",
+    "//cpp2sky:tracer_interface",
     "//source:tracer_lib",
   ],
   visibility = ["//visibility:public"],
