@@ -30,3 +30,17 @@
 *.exe
 *.out
 *.app
+
+# user's bazel configuration files
+user.bazelrc
+
+# bazel artifacts
+/bazel-bin
+/bazel-out
+/bazel-sky2cpp
+/bazel-testlogs
+
+# editor settings
+.vscode/
+
+compile_commands.json
