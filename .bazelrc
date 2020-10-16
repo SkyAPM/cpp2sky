@@ -1,0 +1,3 @@
+build --cxxopt=-std=c++17
+
+try-import %workspace%/user.bazelrc
