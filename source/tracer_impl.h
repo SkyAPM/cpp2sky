@@ -1,4 +1,5 @@
-#include "cpp2sky/tracer.h"
+#include "sky2cpp/tracer.h"
+#include "language-agent/Tracing.pb.h"
 
 class TracerImpl : public Tracer {
  public:
