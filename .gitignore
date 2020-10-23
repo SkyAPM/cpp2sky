@@ -37,10 +37,11 @@ user.bazelrc
 # bazel artifacts
 /bazel-bin
 /bazel-out
-/bazel-sky2cpp
+/bazel-cpp2sky
 /bazel-testlogs
 
 # editor settings
 .vscode/
 
+.clangd/
 compile_commands.json

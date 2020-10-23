@@ -1,7 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
-  name = "tracer_interface",
-  hdrs = ["tracer.h"],
+  name = "config_interface",
+  hdrs = ["config.h"],
   visibility = ["//visibility:public"],
 )
