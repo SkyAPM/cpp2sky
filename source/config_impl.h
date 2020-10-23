@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "sky2cpp/config.h"
+#include "cpp2sky/config.h"
 
 namespace cpp2sky {
 
