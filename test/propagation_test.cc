@@ -30,6 +30,10 @@ static constexpr std::string_view sample =
 static constexpr std::string_view less_field =
     "1-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=";
 
+static constexpr std::string_view more_field =
+    "1-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
+    "ZXhhbXBsZS5jb206ODA4MA==-hogehoge";
+
 static constexpr std::string_view invalid_sample =
     "3-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
@@ -50,6 +54,10 @@ TEST(TestSpanContext, Basic) {
 TEST(TestSpanContext, MalformedSpanContext) {
   {
     auto data = std::string(less_field.data());
+    EXPECT_THROW(SpanContext{data}, TracerException);
+  }
+  {
+    auto data = std::string(more_field.data());
     EXPECT_THROW(SpanContext{data}, TracerException);
   }
   {

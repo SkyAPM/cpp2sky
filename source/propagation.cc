@@ -35,6 +35,10 @@ SpanContext::SpanContext(std::string& header_value) {
   std::string value;
 
   for (auto i = 0; i < header_value.size(); ++i) {
+    if (current_field_idx >= EXPECTED_FIELD_COUNT) {
+      throw TracerException(
+          "Invalid span context format. It must have 8 fields.");
+    }
     if (header_value[i] == '-') {
       fields[current_field_idx] = value;
       value.clear();
