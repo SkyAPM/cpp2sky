@@ -14,51 +14,55 @@
 
 #include "source/propagation.h"
 
+#include <array>
 #include <cassert>
 #include <iostream>
+#include <stdexcept>
 #include <string_view>
 
 #include "source/utils/base64.h"
+#include "source/utils/exception.h"
 
 namespace cpp2sky {
 
+namespace {
+static constexpr size_t EXPECTED_FIELD_COUNT = 8;
+}
+
 SpanContext::SpanContext(std::string& header_value) {
-  const size_t expected_field_count = 8;
+  std::array<std::string, EXPECTED_FIELD_COUNT> fields;
   size_t current_field_idx = 0;
-  size_t idx = 0;
   std::string value;
 
-  while (expected_field_count != current_field_idx) {
-    if (header_value[idx] == '-' || idx == header_value.size()) {
-      if (current_field_idx == 0) {
-        must_send_ = value == "1" ? true : false;
-      } else if (current_field_idx == 1) {
-        trace_id_ = Base64::decodeWithoutPadding(std::string_view(value));
-      } else if (current_field_idx == 2) {
-        trace_segment_id_ =
-            Base64::decodeWithoutPadding(std::string_view(value));
-      } else if (current_field_idx == 3) {
-        span_id_ = std::stoi(value);
-      } else if (current_field_idx == 4) {
-        service_ = Base64::decodeWithoutPadding(std::string_view(value));
-      } else if (current_field_idx == 5) {
-        service_instance_ =
-            Base64::decodeWithoutPadding(std::string_view(value));
-      } else if (current_field_idx == 6) {
-        endpoint_ = Base64::decodeWithoutPadding(std::string_view(value));
-      } else if (current_field_idx == 7) {
-        target_address_ = Base64::decodeWithoutPadding(std::string_view(value));
-      } else {
-        assert(false);
-      }
+  for (auto i = 0; i < header_value.size(); ++i) {
+    if (header_value[i] == '-') {
+      fields[current_field_idx] = value;
       value.clear();
       ++current_field_idx;
-      ++idx;
       continue;
     }
-    value += header_value[idx];
-    ++idx;
+    value += header_value[i];
   }
+  fields[current_field_idx] = value;
+
+  if (current_field_idx != EXPECTED_FIELD_COUNT - 1) {
+    throw TracerException(
+        "Invalid span context format. It must have 8 fields.");
+  }
+
+  if (fields[0] != "0" && fields[0] != "1") {
+    throw TracerException(
+        "Invalid span context format. sample field must be 0 or 1.");
+  }
+
+  must_send_ = fields[0] == "1" ? true : false;
+  trace_id_ = Base64::decodeWithoutPadding(std::string_view(fields[1]));
+  trace_segment_id_ = Base64::decodeWithoutPadding(std::string_view(fields[2]));
+  span_id_ = std::stoi(fields[3]);
+  service_ = Base64::decodeWithoutPadding(std::string_view(fields[4]));
+  service_instance_ = Base64::decodeWithoutPadding(std::string_view(fields[5]));
+  endpoint_ = Base64::decodeWithoutPadding(std::string_view(fields[6]));
+  target_address_ = Base64::decodeWithoutPadding(std::string_view(fields[7]));
 }
 
 }  // namespace cpp2sky

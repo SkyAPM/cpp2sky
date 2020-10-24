@@ -19,10 +19,19 @@
 
 #include <string_view>
 
+#include "source/utils/exception.h"
+
 namespace cpp2sky {
 
 static constexpr std::string_view sample =
     "1-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
+    "ZXhhbXBsZS5jb206ODA4MA==";
+
+static constexpr std::string_view less_field =
+    "1-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=";
+
+static constexpr std::string_view invalid_sample =
+    "3-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
 
 TEST(TestSpanContext, Basic) {
@@ -36,6 +45,17 @@ TEST(TestSpanContext, Basic) {
   EXPECT_EQ(sc.serviceInstance(), "instance");
   EXPECT_EQ(sc.endpoint(), "/api/v1/health");
   EXPECT_EQ(sc.targetAddress(), "example.com:8080");
+}
+
+TEST(TestSpanContext, MalformedSpanContext) {
+  {
+    auto data = std::string(less_field.data());
+    EXPECT_THROW(SpanContext{data}, TracerException);
+  }
+  {
+    auto data = std::string(invalid_sample.data());
+    EXPECT_THROW(SpanContext{data}, TracerException);
+  }
 }
 
 }  // namespace cpp2sky
