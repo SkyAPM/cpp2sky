@@ -43,4 +43,5 @@ user.bazelrc
 # editor settings
 .vscode/
 
+.clangd/
 compile_commands.json
