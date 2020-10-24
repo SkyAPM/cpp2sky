@@ -17,9 +17,14 @@
 namespace cpp2sky {
 
 class ConfigImpl : public Config {
-public:
-  ConfigImpl(std::string service_name, std::string instance_name, std::string token,
-  Protocol protocol = Protocol::GRPC) : service_name_(service_name), instance_name_(instance_name), token_(token), protocol_(protocol) {}
+ public:
+  ConfigImpl(std::string service_name, std::string instance_name,
+             std::string token, Protocol protocol = Protocol::GRPC)
+      : service_name_(service_name),
+        instance_name_(instance_name),
+        token_(token),
+        protocol_(protocol) {}
+  ~ConfigImpl() = default;
 
   // Config
   const std::string& serviceName() const override { return service_name_; }
@@ -27,11 +32,11 @@ public:
   const std::string& token() const override { return token_; }
   Protocol protocol() const override { return protocol_; }
 
-private:
+ private:
   std::string service_name_;
   std::string instance_name_;
   std::string token_;
   Protocol protocol_;
 };
 
-}
+}  // namespace cpp2sky

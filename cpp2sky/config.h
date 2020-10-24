@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string>
+
 namespace cpp2sky {
 
-enum Protocol {
-  REST,
-  GRPC
-};
+enum Protocol { REST, GRPC };
 
 class Config {
-public:
-  virtual ~Config = default;
+ public:
+  virtual ~Config() = default;
 
   /**
    * global service name.
@@ -45,4 +44,4 @@ public:
   virtual const std::string& token() const = 0;
 };
 
-}
+}  // namespace cpp2sky
