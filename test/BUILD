@@ -1,4 +1,14 @@
-load("@rules_cc//cc:defs.bzl", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_test", "cc_library")
+
+cc_library(
+  name = "mocks",
+  srcs = [
+    "mocks.h",
+  ],
+  deps = [
+    "@com_google_googletest//:gtest_main",
+  ]
+)
 
 cc_test(
   name = "propagation_test",
@@ -8,6 +18,21 @@ cc_test(
   deps = [
     "@com_google_googletest//:gtest_main",
     "//source:propagation_lib",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+cc_test(
+  name = "segment_context_test",
+  srcs = [
+    "segment_context_test.cc",
+  ],
+  deps = [
+    "@com_google_googletest//:gtest_main",
+    "@com_google_protobuf//:protobuf",
+    "//source:propagation_lib",
+    "//source:segment_context_lib",
+    ":mocks",
   ],
   visibility = ["//visibility:public"],
 )

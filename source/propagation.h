@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace cpp2sky {
 
 class SpanContext {
  public:
-  SpanContext(std::string& header_value);
+  SpanContext(std::string_view header_value);
 
   bool mustSend() const { return must_send_; }
   const std::string& traceId() const { return trace_id_; }
@@ -43,6 +46,6 @@ class SpanContext {
   std::string target_address_;
 };
 
-using SpanContextPtr = std::unique_ptr<SpanContext>;
+using SpanContextPtr = std::shared_ptr<SpanContext>;
 
 }  // namespace cpp2sky

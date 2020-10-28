@@ -14,14 +14,16 @@
 
 #pragma once
 
-#include <exception>
-#include <string>
-
 namespace cpp2sky {
 
-class TracerException : public std::runtime_error {
+class RandomGenerator {
  public:
-  TracerException(const std::string& message) : std::runtime_error(message) {}
+  virtual ~RandomGenerator() = default;
+
+  /**
+   * Get uuid
+   */
+  virtual std::string uuid() = 0;
 };
 
 }  // namespace cpp2sky

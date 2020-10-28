@@ -22,6 +22,8 @@
 #include <string>
 #include <string_view>
 
+#include "cpp2sky/random_generator.h"
+
 namespace cpp2sky {
 
 namespace {
@@ -30,15 +32,15 @@ static constexpr std::string_view CHARS =
     "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
 }  // namespace
 
-class RandomGenerator {
+class RandomGeneratorImpl : public RandomGenerator {
  public:
-  static std::string uuid();
+  std::string uuid();
 
  private:
-  static void randomBuffer(char* ch, size_t len);
+  void randomBuffer(char* ch, size_t len);
 };
 
-std::string RandomGenerator::uuid() {
+std::string RandomGeneratorImpl::uuid() {
   static thread_local char buffered[2048];
   static thread_local size_t buffered_idx = sizeof(buffered);
 
@@ -105,7 +107,7 @@ std::string RandomGenerator::uuid() {
   return std::string(uuid, UUID_LENGTH);
 }
 
-void RandomGenerator::randomBuffer(char* ch, size_t len) {
+void RandomGeneratorImpl::randomBuffer(char* ch, size_t len) {
   std::random_device engine;
   std::uniform_int_distribution<std::size_t> dist(0, CHARS.size() - 1);
   for (auto i = 0; i < len; ++i) {

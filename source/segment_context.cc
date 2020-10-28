@@ -18,13 +18,12 @@
 #include <memory>
 
 #include "language-agent/Tracing.pb.h"
-#include "source/utils/random_generator.h"
 
 namespace cpp2sky {
 
-CurrentSegmentSpan::CurrentSegmentSpan(SegmentContext* segment_context,
-                                       int32_t span_id)
-    : span_id_(span_id), parent_segment_context_(segment_context) {}
+CurrentSegmentSpan::CurrentSegmentSpan(int32_t span_id,
+                                       SegmentContext* parent_segment_context)
+    : span_id_(span_id), parent_segment_context_(parent_segment_context) {}
 
 SpanObject CurrentSegmentSpan::createSpanObject() {
   SpanObject obj;
@@ -44,12 +43,15 @@ SpanObject CurrentSegmentSpan::createSpanObject() {
   auto* entry = obj.mutable_refs()->Add();
   entry->set_traceid(parent_segment_context_->traceId());
   entry->set_parenttracesegmentid(parent_segment_context_->traceSegmentId());
-  entry->set_parentspanid(
-      parent_segment_context_->parentSpanContext().spanId());
   entry->set_parentservice(parent_segment_context_->service());
   entry->set_parentserviceinstance(parent_segment_context_->serviceInstance());
-  entry->set_parentendpoint(
-      parent_segment_context_->parentSpanContext().endpoint());
+
+  if (parent_segment_context_->parentSpanContext() != nullptr) {
+    entry->set_parentspanid(
+        parent_segment_context_->parentSpanContext()->spanId());
+    entry->set_parentendpoint(
+        parent_segment_context_->parentSpanContext()->endpoint());
+  }
 
   for (auto& tag : tags_) {
     auto* entry = obj.mutable_tags()->Add();
@@ -59,7 +61,7 @@ SpanObject CurrentSegmentSpan::createSpanObject() {
 
   for (auto& log : logs_) {
     auto* entry = obj.mutable_logs()->Add();
-    entry = &log;
+    *entry = log;
   }
 
   return obj;
@@ -75,23 +77,24 @@ void CurrentSegmentSpan::addLog(int64_t time, std::string& key,
   logs_.emplace_back(l);
 }
 
-SegmentContext::SegmentContext(Config& config)
-    : trace_id_(RandomGenerator::uuid()),
-      trace_segment_id_(RandomGenerator::uuid()),
+SegmentContext::SegmentContext(Config& config, RandomGenerator& random)
+    : trace_id_(random.uuid()),
+      trace_segment_id_(random.uuid()),
       service_(config.serviceName()),
       service_instance_(config.instanceName()) {}
 
 SegmentContext::SegmentContext(Config& config,
-                               SpanContextPtr parent_span_context)
+                               SpanContextPtr parent_span_context,
+                               RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       trace_id_(parent_span_context_->traceId()),
-      trace_segment_id_(RandomGenerator::uuid()),
+      trace_segment_id_(random.uuid()),
       service_(config.serviceName()),
       service_instance_(config.instanceName()) {}
 
 CurrentSegmentSpanPtr SegmentContext::createCurrentSegmentSpan(
     CurrentSegmentSpanPtr parent_span) {
-  auto current_span = std::make_shared<CurrentSegmentSpan>(this, spans_.size());
+  auto current_span = std::make_shared<CurrentSegmentSpan>(spans_.size(), this);
   if (parent_span != nullptr) {
     current_span->setParentSpanId(parent_span->spanId());
     current_span->setSpanType(SpanType::Exit);

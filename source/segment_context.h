@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#pragma once
+
 #include <list>
 #include <memory>
 #include <unordered_map>
 
+#include "cpp2sky/random_generator.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/config_impl.h"
 #include "source/propagation.h"
@@ -23,11 +26,10 @@
 namespace cpp2sky {
 
 class SegmentContext;
-using SegmentContextPtr = std::shared_ptr<SegmentContext>;
 
 class CurrentSegmentSpan {
  public:
-  CurrentSegmentSpan(SegmentContext* segment_context, int32_t span_id);
+  CurrentSegmentSpan(int32_t span_id, SegmentContext* parent_segment_context);
 
   SpanObject createSpanObject();
 
@@ -39,13 +41,22 @@ class CurrentSegmentSpan {
   void setOperationName(std::string& operation_name) {
     operation_name_ = operation_name;
   }
+  void setOperationName(std::string&& operation_name) {
+    operation_name_ = std::move(operation_name);
+  }
   void setPeer(std::string& remote_address) { peer_ = remote_address; }
+  void setPeer(std::string&& remote_address) {
+    peer_ = std::move(remote_address);
+  }
   void setSpanType(SpanType type) { type_ = type; }
   void setSpanLayer(SpanLayer layer) { layer_ = layer; }
   void errorOccured() { is_error_ = true; }
   void skipAnalysis() { skip_analysis_ = true; }
   void addTag(std::string& key, std::string& value) {
     tags_.emplace(key, value);
+  }
+  void addTag(std::string&& key, std::string&& value) {
+    tags_.emplace(std::move(key), std::move(value));
   }
   void addLog(int64_t time, std::string& key, std::string& value);
 
@@ -60,7 +71,7 @@ class CurrentSegmentSpan {
   std::string peer_;
   SpanType type_;
   SpanLayer layer_;
-  // ComponentId is predefined by SkyWalking OAP. The range of id is 9000~10000
+  // ComponentId is predefined by SkyWalking OAP. The range of id is 9000~9999
   // on C++ language SDK. Based on
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
   int32_t component_id_ = 9000;
@@ -69,7 +80,7 @@ class CurrentSegmentSpan {
   std::vector<Log> logs_;
   bool skip_analysis_ = false;
 
-  SegmentContextPtr parent_segment_context_;
+  SegmentContext* parent_segment_context_;
 };
 
 using CurrentSegmentSpanPtr = std::shared_ptr<CurrentSegmentSpan>;
@@ -77,17 +88,16 @@ using CurrentSegmentSpanPtr = std::shared_ptr<CurrentSegmentSpan>;
 class SegmentContext {
  public:
   // This constructor is called when there is no parent SpanContext.
-  SegmentContext(Config& config);
-  SegmentContext(Config& config, SpanContextPtr parent_span_context);
+  SegmentContext(Config& config, RandomGenerator& random);
+  SegmentContext(Config& config, SpanContextPtr parent_span_context,
+                 RandomGenerator& random);
 
   const std::string& traceId() const { return trace_id_; }
   const std::string& traceSegmentId() const { return trace_segment_id_; }
   const std::string& service() const { return service_; }
   const std::string& serviceInstance() const { return service_instance_; }
   const std::list<CurrentSegmentSpanPtr>& spans() const { return spans_; }
-  const SpanContext& parentSpanContext() const {
-    return *parent_span_context_.get();
-  }
+  SpanContextPtr parentSpanContext() const { return parent_span_context_; }
 
   CurrentSegmentSpanPtr createCurrentSegmentSpan(
       CurrentSegmentSpanPtr parent_span);

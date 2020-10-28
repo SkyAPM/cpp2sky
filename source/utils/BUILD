@@ -7,5 +7,8 @@ cc_library(
     "exception.h",
     "random_generator.h",
   ],
+  deps = [
+    "//cpp2sky:random_interface",
+  ],
   visibility = ["//visibility:public"],
 )

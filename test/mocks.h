@@ -14,14 +14,23 @@
 
 #pragma once
 
-#include <exception>
-#include <string>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include "cpp2sky/random_generator.h"
+
+using testing::Return;
 
 namespace cpp2sky {
 
-class TracerException : public std::runtime_error {
+class MockRandomGenerator : public RandomGenerator {
  public:
-  TracerException(const std::string& message) : std::runtime_error(message) {}
+  MockRandomGenerator();
+  MOCK_METHOD(std::string, uuid, ());
 };
+
+MockRandomGenerator::MockRandomGenerator() {
+  ON_CALL(*this, uuid).WillByDefault(Return("uuid"));
+}
 
 }  // namespace cpp2sky

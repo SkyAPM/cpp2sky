@@ -5,3 +5,9 @@ cc_library(
   hdrs = ["config.h"],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "random_interface",
+  hdrs = ["random_generator.h"],
+  visibility = ["//visibility:public"],
+)

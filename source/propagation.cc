@@ -29,7 +29,7 @@ namespace {
 static constexpr size_t EXPECTED_FIELD_COUNT = 8;
 }
 
-SpanContext::SpanContext(std::string& header_value) {
+SpanContext::SpanContext(std::string_view header_value) {
   std::array<std::string, EXPECTED_FIELD_COUNT> fields;
   size_t current_field_idx = 0;
   std::string value;
