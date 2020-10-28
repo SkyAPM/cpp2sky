@@ -4,6 +4,8 @@ def cpp2sky_dependencies():
   rules_proto()
   skywalking_data_collect_protocol()
   com_github_grpc_grpc()
+  com_google_googletest()
+  com_google_protobuf()
 
 def skywalking_data_collect_protocol():
   http_archive(
@@ -31,4 +33,20 @@ def rules_proto():
         "https://mirror.bazel.build/github.com/bazelbuild/rules_proto/archive/97d8af4dc474595af3900dd85cb3a29ad28cc313.tar.gz",
         "https://github.com/bazelbuild/rules_proto/archive/97d8af4dc474595af3900dd85cb3a29ad28cc313.tar.gz",
     ],
+  )
+
+def com_google_googletest():
+  http_archive(
+    name = "com_google_googletest",
+    sha256 = "9dc9157a9a1551ec7a7e43daea9a694a0bb5fb8bec81235d8a1e6ef64c716dcb",
+    strip_prefix = "googletest-release-1.10.0",
+    urls = ["https://github.com/google/googletest/archive/release-1.10.0.tar.gz"],
+  )
+
+def com_google_protobuf():
+  http_archive(
+    name = "com_google_protobuf",
+    sha256 = "f8a547dfe143a9f61fadafba47fa6573713a33cb80909307c1502e26e1102298",
+    strip_prefix = "protobuf-3.13.0",
+    urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protobuf-cpp-3.13.0.tar.gz"],
   )

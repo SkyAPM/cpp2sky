@@ -13,36 +13,17 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
 
 namespace cpp2sky {
 
-enum Protocol { REST, GRPC };
-
-class Config {
+class RandomGenerator {
  public:
-  virtual ~Config() = default;
+  virtual ~RandomGenerator() = default;
 
   /**
-   * global service name.
+   * Get uuid
    */
-  virtual const std::string& serviceName() const = 0;
-
-  /**
-   * Instance name belongs to service.
-   */
-  virtual const std::string& instanceName() const = 0;
-
-  /**
-   * Protocol to communicate between app and OAP.
-   * It supports only GRPC. (REST is in the future)
-   */
-  virtual Protocol protocol() const = 0;
-
-  /**
-   * OAP token.
-   */
-  virtual const std::string& token() const = 0;
+  virtual std::string uuid() = 0;
 };
 
 }  // namespace cpp2sky

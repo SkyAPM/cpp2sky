@@ -13,36 +13,15 @@
 // limitations under the License.
 
 #pragma once
+
+#include <exception>
 #include <string>
 
 namespace cpp2sky {
 
-enum Protocol { REST, GRPC };
-
-class Config {
+class TracerException : public std::runtime_error {
  public:
-  virtual ~Config() = default;
-
-  /**
-   * global service name.
-   */
-  virtual const std::string& serviceName() const = 0;
-
-  /**
-   * Instance name belongs to service.
-   */
-  virtual const std::string& instanceName() const = 0;
-
-  /**
-   * Protocol to communicate between app and OAP.
-   * It supports only GRPC. (REST is in the future)
-   */
-  virtual Protocol protocol() const = 0;
-
-  /**
-   * OAP token.
-   */
-  virtual const std::string& token() const = 0;
+  TracerException(const std::string& message) : std::runtime_error(message) {}
 };
 
 }  // namespace cpp2sky

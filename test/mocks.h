@@ -13,36 +13,24 @@
 // limitations under the License.
 
 #pragma once
-#include <string>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include "cpp2sky/random_generator.h"
+
+using testing::Return;
 
 namespace cpp2sky {
 
-enum Protocol { REST, GRPC };
-
-class Config {
+class MockRandomGenerator : public RandomGenerator {
  public:
-  virtual ~Config() = default;
-
-  /**
-   * global service name.
-   */
-  virtual const std::string& serviceName() const = 0;
-
-  /**
-   * Instance name belongs to service.
-   */
-  virtual const std::string& instanceName() const = 0;
-
-  /**
-   * Protocol to communicate between app and OAP.
-   * It supports only GRPC. (REST is in the future)
-   */
-  virtual Protocol protocol() const = 0;
-
-  /**
-   * OAP token.
-   */
-  virtual const std::string& token() const = 0;
+  MockRandomGenerator();
+  MOCK_METHOD(std::string, uuid, ());
 };
+
+MockRandomGenerator::MockRandomGenerator() {
+  ON_CALL(*this, uuid).WillByDefault(Return("uuid"));
+}
 
 }  // namespace cpp2sky
