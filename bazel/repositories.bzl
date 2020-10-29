@@ -1,4 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 def cpp2sky_dependencies():
   rules_proto()
@@ -17,11 +18,14 @@ def skywalking_data_collect_protocol():
   )
 
 def com_github_grpc_grpc():
-  http_archive(
+  # TODO(shikugawa): The latest version of gRPC has a problem which related with
+  # build issue on Mach-O executable. This problem is caused by thread local
+  # storage implementation. It was resolved on https://github.com/grpc/grpc/pull/24247.
+  # But it was not injected into v1.33.
+  git_repository(
     name = "com_github_grpc_grpc",
-    sha256 = "3ccc4e5ae8c1ce844456e39cc11f1c991a7da74396faabe83d779836ef449bce",
-    urls = ["https://github.com/grpc/grpc/archive/v1.27.0.tar.gz"],
-    strip_prefix = "grpc-1.27.0",
+    remote = "https://github.com/grpc/grpc",
+    commit = "486989f250f8e6e0f3ce1036313229645d1c05c3",
   )
 
 def rules_proto():

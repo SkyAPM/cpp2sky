@@ -35,3 +35,17 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "grpc_async_client_lib",
+  hdrs = [
+    "grpc_async_client.h",
+  ],
+  srcs = ["grpc_async_client.cc"],
+  deps = [
+    "//cpp2sky:async_client_interface",
+    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
+    "@com_github_grpc_grpc//:grpc++",
+  ],
+  visibility = ["//visibility:public"],
+)

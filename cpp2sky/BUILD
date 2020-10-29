@@ -11,3 +11,22 @@ cc_library(
   hdrs = ["random_generator.h"],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "async_client_interface",
+  hdrs = ["async_client.h"],
+  deps = [
+    "@com_google_protobuf//:protobuf",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
+  name = "async_stream_interface",
+  hdrs = ["async_stream.h"],
+  deps = [
+    "@com_github_grpc_grpc//:grpc++",
+    "@com_google_protobuf//:protobuf",
+  ],
+  visibility = ["//visibility:public"],
+)

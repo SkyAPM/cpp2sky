@@ -32,6 +32,7 @@ cc_test(
     "@com_google_protobuf//:protobuf",
     "//source:propagation_lib",
     "//source:segment_context_lib",
+    "//source/utils:util_lib",
     ":mocks",
   ],
   visibility = ["//visibility:public"],
