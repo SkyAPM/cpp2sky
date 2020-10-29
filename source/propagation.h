@@ -48,4 +48,23 @@ class SpanContext {
 
 using SpanContextPtr = std::shared_ptr<SpanContext>;
 
+enum TracingMode {
+  Default,
+  // It represents all spans generated in this context should skip
+  // analysis.
+  Skip
+};
+
+class SpanContextExtension {
+ public:
+  SpanContextExtension(std::string_view header_value);
+
+  TracingMode tracingMode() const { return tracing_mode_; }
+
+ private:
+  TracingMode tracing_mode_ = TracingMode::Default;
+};
+
+using SpanContextExtensionPtr = std::shared_ptr<SpanContextExtension>;
+
 }  // namespace cpp2sky

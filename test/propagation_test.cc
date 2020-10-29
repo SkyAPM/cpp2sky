@@ -38,6 +38,8 @@ static constexpr std::string_view invalid_sample =
     "3-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
 
+static constexpr std::string_view nodata = "";
+
 TEST(TestSpanContext, Basic) {
   auto data = std::string(sample.data());
   SpanContext sc(data);
@@ -62,6 +64,10 @@ TEST(TestSpanContext, MalformedSpanContext) {
   }
   {
     auto data = std::string(invalid_sample.data());
+    EXPECT_THROW(SpanContext{data}, TracerException);
+  }
+  {
+    auto data = std::string(nodata.data());
     EXPECT_THROW(SpanContext{data}, TracerException);
   }
 }

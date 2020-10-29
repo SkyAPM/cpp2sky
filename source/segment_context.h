@@ -51,7 +51,6 @@ class CurrentSegmentSpan {
   void setSpanType(SpanType type) { type_ = type; }
   void setSpanLayer(SpanLayer layer) { layer_ = layer; }
   void errorOccured() { is_error_ = true; }
-  void skipAnalysis() { skip_analysis_ = true; }
   void addTag(std::string& key, std::string& value) {
     tags_.emplace(key, value);
   }
@@ -78,7 +77,6 @@ class CurrentSegmentSpan {
   bool is_error_ = false;
   std::unordered_map<std::string, std::string> tags_;
   std::vector<Log> logs_;
-  bool skip_analysis_ = false;
 
   SegmentContext* parent_segment_context_;
 };
@@ -90,6 +88,7 @@ class SegmentContext {
   // This constructor is called when there is no parent SpanContext.
   SegmentContext(Config& config, RandomGenerator& random);
   SegmentContext(Config& config, SpanContextPtr parent_span_context,
+                 SpanContextExtensionPtr parent_ext_span_context,
                  RandomGenerator& random);
 
   const std::string& traceId() const { return trace_id_; }
@@ -98,6 +97,9 @@ class SegmentContext {
   const std::string& serviceInstance() const { return service_instance_; }
   const std::list<CurrentSegmentSpanPtr>& spans() const { return spans_; }
   SpanContextPtr parentSpanContext() const { return parent_span_context_; }
+  SpanContextExtensionPtr parentExtSpanContext() const {
+    return parent_ext_span_context_;
+  }
 
   CurrentSegmentSpanPtr createCurrentSegmentSpan(
       CurrentSegmentSpanPtr parent_span);
@@ -106,6 +108,7 @@ class SegmentContext {
 
  private:
   SpanContextPtr parent_span_context_;
+  SpanContextExtensionPtr parent_ext_span_context_;
   std::list<CurrentSegmentSpanPtr> spans_;
 
   // Based on

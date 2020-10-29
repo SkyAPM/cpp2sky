@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "language-agent/Tracing.pb.h"
+#include "propagation.h"
 
 namespace cpp2sky {
 
@@ -37,7 +38,6 @@ SpanObject CurrentSegmentSpan::createSpanObject() {
   obj.set_spanlayer(layer_);
   obj.set_componentid(component_id_);
   obj.set_iserror(is_error_);
-  obj.set_skipanalysis(skip_analysis_);
   obj.set_peer(peer_);
 
   auto* entry = obj.mutable_refs()->Add();
@@ -64,6 +64,13 @@ SpanObject CurrentSegmentSpan::createSpanObject() {
     *entry = log;
   }
 
+  if (parent_segment_context_->parentExtSpanContext() != nullptr) {
+    if (parent_segment_context_->parentExtSpanContext()->tracingMode() ==
+        TracingMode::Skip) {
+      obj.set_skipanalysis(true);
+    }
+  }
+
   return obj;
 }
 
@@ -85,8 +92,10 @@ SegmentContext::SegmentContext(Config& config, RandomGenerator& random)
 
 SegmentContext::SegmentContext(Config& config,
                                SpanContextPtr parent_span_context,
+                               SpanContextExtensionPtr parent_ext_span_context,
                                RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
+      parent_ext_span_context_(std::move(parent_ext_span_context)),
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
       service_(config.serviceName()),
