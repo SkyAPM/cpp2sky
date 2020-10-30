@@ -19,11 +19,13 @@
 namespace cpp2sky {
 
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
-    grpc::CompletionQueue& cq, std::shared_ptr<grpc::Channel> channel)
-    : cq_(cq), stub_(channel) {}
+    grpc::CompletionQueue& cq, std::shared_ptr<grpc::Channel> channel,
+    AsyncStreamFactoryPtr factory)
+    : cq_(cq), stub_(channel), factory_(std::move(factory)) {}
 
 void GrpcAsyncSegmentReporterClient::onSendMessage(const Message& message) {
-  auto stream = std::make_shared<GrpcAsyncSegmentReporterStream>(this);
+  auto stream = factory_->create();
+  streams_.emplace_back(stream);
   stream->setData(message);
   stream->startStream();
 }
@@ -50,6 +52,14 @@ void GrpcAsyncSegmentReporterStream::startStream() {
     request_writer_->Write(data_, this);
   }
   request_writer_->WritesDone(this);
+}
+
+GrpcAsyncSegmentReporterStreamFactory::GrpcAsyncSegmentReporterStreamFactory(
+    GrpcAsyncSegmentReporterClient* client)
+    : client_(client) {}
+
+AsyncStreamPtr GrpcAsyncSegmentReporterStreamFactory::create() {
+  return std::make_unique<GrpcAsyncSegmentReporterStream>(client_);
 }
 
 }  // namespace cpp2sky

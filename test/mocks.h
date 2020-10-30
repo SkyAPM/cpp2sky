@@ -17,8 +17,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "cpp2sky/internal/async_client.h"
 #include "cpp2sky/internal/random_generator.h"
 
+using testing::NiceMock;
 using testing::Return;
 
 namespace cpp2sky {
@@ -26,11 +28,41 @@ namespace cpp2sky {
 class MockRandomGenerator : public RandomGenerator {
  public:
   MockRandomGenerator();
+
   MOCK_METHOD(std::string, uuid, ());
 };
 
 MockRandomGenerator::MockRandomGenerator() {
   ON_CALL(*this, uuid).WillByDefault(Return("uuid"));
+}
+
+class MockAsyncStream : public AsyncStream {
+ public:
+  MockAsyncStream();
+
+  MOCK_METHOD(uint16_t, status, (), (const));
+  MOCK_METHOD(void, startStream, ());
+  MOCK_METHOD(void, setData, (const Message&));
+  MOCK_METHOD(const Message&, reply, (), (const));
+};
+
+MockAsyncStream::MockAsyncStream() {
+  ON_CALL(*this, status).WillByDefault(Return(200));
+}
+
+class MockAsyncStreamFactory : public AsyncStreamFactory {
+ public:
+  MockAsyncStreamFactory(AsyncStreamPtr stream);
+
+  MOCK_METHOD(AsyncStreamPtr, create, ());
+
+ private:
+  AsyncStreamPtr stream_;
+};
+
+MockAsyncStreamFactory::MockAsyncStreamFactory(AsyncStreamPtr stream)
+    : stream_(stream) {
+  ON_CALL(*this, create).WillByDefault(Return(stream_));
 }
 
 }  // namespace cpp2sky

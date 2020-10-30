@@ -29,6 +29,11 @@ class AsyncClient {
    * Send the specified protobuf message
    */
   virtual void onSendMessage(const Message& message) = 0;
+
+  /**
+   * The number of streams originated from this async client.
+   */
+  virtual size_t numOfStreams() const = 0;
 };
 
 using AsyncClientPtr = std::unique_ptr<AsyncClient>;
@@ -60,5 +65,17 @@ class AsyncStream {
 };
 
 using AsyncStreamPtr = std::shared_ptr<AsyncStream>;
+
+class AsyncStreamFactory {
+ public:
+  virtual ~AsyncStreamFactory() = default;
+
+  /**
+   * Create async stream entity
+   */
+  virtual AsyncStreamPtr create() = 0;
+};
+
+using AsyncStreamFactoryPtr = std::unique_ptr<AsyncStreamFactory>;
 
 }  // namespace cpp2sky

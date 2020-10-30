@@ -16,6 +16,7 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include <cstddef>
 #include <list>
 #include <memory>
 
@@ -33,15 +34,18 @@ class GrpcAsyncSegmentReporterStream;
 class GrpcAsyncSegmentReporterClient : public AsyncClient {
  public:
   GrpcAsyncSegmentReporterClient(grpc::CompletionQueue& cq,
-                                 std::shared_ptr<grpc::Channel> channel);
+                                 std::shared_ptr<grpc::Channel> channel,
+                                 AsyncStreamFactoryPtr factory);
 
   void onSendMessage(const Message& message) override;
+  size_t numOfStreams() const override { return streams_.size(); }
 
  private:
   grpc::CompletionQueue& cq_;
   TraceSegmentReportService::Stub stub_;
   std::list<AsyncStreamPtr> streams_;
   grpc::ClientContext ctx_;
+  AsyncStreamFactoryPtr factory_;
 
   friend class GrpcAsyncSegmentReporterStream;
 };
@@ -66,8 +70,17 @@ class GrpcAsyncSegmentReporterStream : public AsyncStream {
   grpc::Status status_;
   Commands commands_;
   std::unique_ptr<grpc::ClientAsyncWriter<SegmentObject>> request_writer_;
+};
 
-  friend GrpcAsyncSegmentReporterClient;
+class GrpcAsyncSegmentReporterStreamFactory : public AsyncStreamFactory {
+ public:
+  explicit GrpcAsyncSegmentReporterStreamFactory(
+      GrpcAsyncSegmentReporterClient* client);
+
+  AsyncStreamPtr create() override;
+
+ private:
+  GrpcAsyncSegmentReporterClient* client_;
 };
 
 }  // namespace cpp2sky
