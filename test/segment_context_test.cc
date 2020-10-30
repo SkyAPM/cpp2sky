@@ -42,6 +42,7 @@ class SegmentContextTest : public testing::Test {
     config_ =
         std::make_unique<ConfigImpl>(service_name_, instance_name_, token_);
     span_ctx_ = std::make_shared<SpanContext>(sample_ctx);
+    span_ext_ctx_ = std::make_shared<SpanContextExtension>("1");
   }
 
  protected:
@@ -51,6 +52,7 @@ class SegmentContextTest : public testing::Test {
   std::string token_ = "dummy";
   std::unique_ptr<Config> config_;
   SpanContextPtr span_ctx_;
+  SpanContextExtensionPtr span_ext_ctx_;
 };
 
 TEST_F(SegmentContextTest, BasicTest) {
@@ -121,7 +123,7 @@ TEST_F(SegmentContextTest, BasicTest) {
 }
 
 TEST_F(SegmentContextTest, ChildSegmentContext) {
-  SegmentContext sc(*config_.get(), span_ctx_, random_);
+  SegmentContext sc(*config_.get(), span_ctx_, span_ext_ctx_, random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
@@ -150,7 +152,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "peer": "localhost:9000",
     "spanType": "Entry",
     "spanLayer": "Http",
-    "componentId": "9000"
+    "componentId": "9000",
+    "skipAnalysis": "true"
   }
   )EOF";
   SpanObject expected_obj;
@@ -188,6 +191,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "spanType": "Exit",
     "spanLayer": "Http",
     "componentId": "9000",
+    "skipAnalysis": "true",
     "tags": {
       "key": "category",
       "value": "database"
