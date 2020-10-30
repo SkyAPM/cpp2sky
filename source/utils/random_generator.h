@@ -22,7 +22,7 @@
 #include <string>
 #include <string_view>
 
-#include "cpp2sky/random_generator.h"
+#include "cpp2sky/internal/random_generator.h"
 
 namespace cpp2sky {
 

@@ -46,6 +46,7 @@ cc_library(
     "//cpp2sky:async_client_interface",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
     "@com_github_grpc_grpc//:grpc++",
+    "//source/utils:util_lib",
   ],
   visibility = ["//visibility:public"],
 )

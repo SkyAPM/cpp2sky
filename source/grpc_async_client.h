@@ -16,21 +16,58 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include <list>
 #include <memory>
 
-#include "cpp2sky/async_client.h"
+#include "common/Common.pb.h"
+#include "cpp2sky/internal/async_client.h"
+#include "external/skywalking_data_collect_protocol/language-agent/Tracing.pb.h"
 #include "language-agent/Tracing.grpc.pb.h"
+#include "language-agent/Tracing.pb.h"
+#include "source/utils/status.h"
 
 namespace cpp2sky {
+
+class GrpcAsyncSegmentReporterStream;
 
 class GrpcAsyncSegmentReporterClient : public AsyncClient {
  public:
   GrpcAsyncSegmentReporterClient(grpc::CompletionQueue& cq,
                                  std::shared_ptr<grpc::Channel> channel);
 
+  void onSendMessage(const Message& message) override;
+
  private:
   grpc::CompletionQueue& cq_;
   TraceSegmentReportService::Stub stub_;
+  std::list<AsyncStreamPtr> streams_;
+  grpc::ClientContext ctx_;
+
+  friend class GrpcAsyncSegmentReporterStream;
+};
+
+class GrpcAsyncSegmentReporterStream : public AsyncStream {
+ public:
+  GrpcAsyncSegmentReporterStream(GrpcAsyncSegmentReporterClient* parent)
+      : parent_(parent) {}
+
+  uint16_t status() const override {
+    return grpcStatusToGenericHttpStatus(status_.error_code());
+  }
+
+  void startStream() override;
+  void setData(const Message& message) override;
+  const Message& reply() const override;
+
+ private:
+  bool data_set_{false};
+  SegmentObject data_;
+  GrpcAsyncSegmentReporterClient* parent_;
+  grpc::Status status_;
+  Commands commands_;
+  std::unique_ptr<grpc::ClientAsyncWriter<SegmentObject>> request_writer_;
+
+  friend GrpcAsyncSegmentReporterClient;
 };
 
 }  // namespace cpp2sky

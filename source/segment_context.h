@@ -18,7 +18,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "cpp2sky/random_generator.h"
+#include "cpp2sky/internal/random_generator.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/config_impl.h"
 #include "source/propagation.h"

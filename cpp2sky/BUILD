@@ -8,22 +8,13 @@ cc_library(
 
 cc_library(
   name = "random_interface",
-  hdrs = ["random_generator.h"],
+  hdrs = ["internal/random_generator.h"],
   visibility = ["//visibility:public"],
 )
 
 cc_library(
   name = "async_client_interface",
-  hdrs = ["async_client.h"],
-  deps = [
-    "@com_google_protobuf//:protobuf",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
-  name = "async_stream_interface",
-  hdrs = ["async_stream.h"],
+  hdrs = ["internal/async_client.h"],
   deps = [
     "@com_github_grpc_grpc//:grpc++",
     "@com_google_protobuf//:protobuf",

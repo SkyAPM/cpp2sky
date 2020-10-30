@@ -17,7 +17,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "cpp2sky/random_generator.h"
+#include "cpp2sky/internal/random_generator.h"
 
 using testing::Return;
 
