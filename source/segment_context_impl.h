@@ -82,7 +82,7 @@ class SegmentContextImpl : public SegmentContext {
  public:
   // This constructor is called when there is no parent SpanContext.
   SegmentContextImpl(Config& config, RandomGenerator& random);
-  SegmentContextImpl(Config& config, SpanContextPtr parent_span_context,
+  SegmentContextImpl(Config& config, SpanContextPtr parent_span_context,                                  SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
   const std::string& traceId() const override { return trace_id_; }
@@ -99,6 +99,7 @@ class SegmentContextImpl : public SegmentContext {
   SpanContextPtr parentSpanContext() const override {
     return parent_span_context_;
   }
+  SpanContextExtensionPtr parentSpanContextExtension() const override { return parent_ext_span_context_; }
 
   CurrentSegmentSpanPtr createCurrentSegmentSpan(
       CurrentSegmentSpanPtr parent_span) override;
@@ -107,6 +108,8 @@ class SegmentContextImpl : public SegmentContext {
 
  private:
   SpanContextPtr parent_span_context_;
+  SpanContextExtensionPtr parent_ext_span_context_;
+
   std::list<CurrentSegmentSpanPtr> spans_;
 
   // Based on
@@ -118,14 +121,16 @@ class SegmentContextImpl : public SegmentContext {
 };
 
 SegmentContextPtr createSegmentContext(Config& config,
-                                       SpanContextPtr span_ctx = nullptr) {
+                                       SpanContextPtr span_ctx = nullptr, SpanContextExtensionPtr span_ctx_ext = nullptr) {
   auto random_generator = RandomGeneratorImpl();
-  if (!span_ctx) {
-    return std::make_unique<SegmentContextImpl>(config, span_ctx,
-                                                random_generator);
+  if (!span_ctx && !span_ctx_ext) {
+    return std::make_unique<SegmentContextImpl>(config, random_generator);
   }
-  return std::make_unique<SegmentContextImpl>(config, span_ctx,
+  if (span_ctx && span_ctx_ext) {
+    return std::make_unique<SegmentContextImpl>(config, span_ctx, span_ctx_ext,
                                               random_generator);
+  }
+  return nullptr;
 }
 
 }  // namespace cpp2sky

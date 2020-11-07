@@ -52,8 +52,22 @@ class SpanContextImpl : public SpanContext {
   std::string target_address_;
 };
 
+class SpanContextExtensionImpl : public SpanContextExtension {
+ public:
+  SpanContextExtensionImpl(std::string_view header_value);
+
+  TracingMode tracingMode() const override { return tracing_mode_; }
+
+ private:
+  TracingMode tracing_mode_ = TracingMode::Default;
+};
+
 SpanContextPtr createSpanContext(std::string_view ctx) {
   return std::make_unique<SpanContextImpl>(ctx);
+}
+
+SpanContextExtensionPtr createSpanContextExtension(std::string_view ctx) {
+  return std::make_unique<SpanContextExtensionImpl>(ctx);
 }
 
 }  // namespace cpp2sky

@@ -149,6 +149,11 @@ class SegmentContext {
   virtual SpanContextPtr parentSpanContext() const = 0;
 
   /**
+   * Get span context extension which generated this segment context.
+   */
+  virtual SpanContextExtensionPtr parentSpanContextExtension() const = 0;
+
+  /**
    * Generate a segment spen related with this segment context.
    */
   virtual CurrentSegmentSpanPtr createCurrentSegmentSpan(
@@ -162,6 +167,6 @@ class SegmentContext {
 
 using SegmentContextPtr = std::unique_ptr<SegmentContext>;
 
-SegmentContextPtr createSegmentContext(Config& config, SpanContextPtr span_ctx);
+SegmentContextPtr createSegmentContext(Config& config, SpanContextPtr span_ctx, SpanContextExtensionPtr span_ctx_ext);
 
 }  // namespace cpp2sky
