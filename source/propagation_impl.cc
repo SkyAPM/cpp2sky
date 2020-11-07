@@ -29,7 +29,7 @@ static constexpr size_t EXPECTED_FIELD_COUNT = 8;
 // This value should be extensible from user config to deliver arbitary
 // information as SpanContext.
 static constexpr size_t EXPECTED_EXTENSION_FIELD_COUNT = 1;
-}
+}  // namespace
 
 SpanContextImpl::SpanContextImpl(std::string_view header_value) {
   std::array<std::string, EXPECTED_FIELD_COUNT> fields;
@@ -71,7 +71,8 @@ SpanContextImpl::SpanContextImpl(std::string_view header_value) {
   target_address_ = Base64::decodeWithoutPadding(std::string_view(fields[7]));
 }
 
-SpanContextExtensionImpl::SpanContextExtensionImpl(std::string_view header_value) {
+SpanContextExtensionImpl::SpanContextExtensionImpl(
+    std::string_view header_value) {
   std::array<std::string, EXPECTED_EXTENSION_FIELD_COUNT> fields;
   size_t current_field_idx = 0;
   std::string value;

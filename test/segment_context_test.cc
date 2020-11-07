@@ -37,8 +37,7 @@ static constexpr std::string_view sample_ctx =
 class SegmentContextTest : public testing::Test {
  public:
   SegmentContextTest() {
-    config_ =
-        std::make_unique<Config>(service_name_, instance_name_, token_);
+    config_ = std::make_unique<Config>(service_name_, instance_name_, token_);
     span_ctx_ = std::make_shared<SpanContextImpl>(sample_ctx);
     span_ext_ctx_ = std::make_shared<SpanContextExtensionImpl>("1");
   }
