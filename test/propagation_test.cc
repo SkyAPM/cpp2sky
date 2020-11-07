@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "source/propagation.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <string_view>
 
+#include "source/propagation_impl.h"
 #include "source/utils/exception.h"
 
 namespace cpp2sky {
@@ -38,11 +37,9 @@ static constexpr std::string_view invalid_sample =
     "3-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
 
-static constexpr std::string_view nodata = "";
-
 TEST(TestSpanContext, Basic) {
   auto data = std::string(sample.data());
-  SpanContext sc(data);
+  SpanContextImpl sc(data);
   EXPECT_TRUE(sc.mustSend());
   EXPECT_EQ(sc.traceId(), "1");
   EXPECT_EQ(sc.traceSegmentId(), "5");
@@ -56,19 +53,15 @@ TEST(TestSpanContext, Basic) {
 TEST(TestSpanContext, MalformedSpanContext) {
   {
     auto data = std::string(less_field.data());
-    EXPECT_THROW(SpanContext{data}, TracerException);
+    EXPECT_THROW(SpanContextImpl{data}, TracerException);
   }
   {
     auto data = std::string(more_field.data());
-    EXPECT_THROW(SpanContext{data}, TracerException);
+    EXPECT_THROW(SpanContextImpl{data}, TracerException);
   }
   {
     auto data = std::string(invalid_sample.data());
-    EXPECT_THROW(SpanContext{data}, TracerException);
-  }
-  {
-    auto data = std::string(nodata.data());
-    EXPECT_THROW(SpanContext{data}, TracerException);
+    EXPECT_THROW(SpanContextImpl{data}, TracerException);
   }
 }
 

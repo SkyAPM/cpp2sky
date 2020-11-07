@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #pragma once
+
 #include <string>
 
 namespace cpp2sky {
@@ -21,28 +22,24 @@ enum Protocol { REST, GRPC };
 
 class Config {
  public:
-  virtual ~Config() = default;
+  Config(std::string service_name, std::string instance_name, std::string token,
+         Protocol protocol = Protocol::GRPC)
+      : service_name_(service_name),
+        instance_name_(instance_name),
+        token_(token),
+        protocol_(protocol) {}
+  ~Config() = default;
 
-  /**
-   * global service name.
-   */
-  virtual const std::string& serviceName() const = 0;
+  const std::string& serviceName() const { return service_name_; }
+  const std::string& instanceName() const { return instance_name_; }
+  const std::string& token() const { return token_; }
+  Protocol protocol() const { return protocol_; }
 
-  /**
-   * Instance name belongs to service.
-   */
-  virtual const std::string& instanceName() const = 0;
-
-  /**
-   * Protocol to communicate between app and OAP.
-   * It supports only GRPC. (REST is in the future)
-   */
-  virtual Protocol protocol() const = 0;
-
-  /**
-   * OAP token.
-   */
-  virtual const std::string& token() const = 0;
+ private:
+  std::string service_name_;
+  std::string instance_name_;
+  std::string token_;
+  Protocol protocol_;
 };
 
 }  // namespace cpp2sky

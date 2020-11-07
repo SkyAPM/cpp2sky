@@ -18,20 +18,26 @@
 #include <string>
 #include <string_view>
 
+#include "cpp2sky/propagation.h"
+
 namespace cpp2sky {
 
-class SpanContext {
+class SpanContextImpl : public SpanContext {
  public:
-  SpanContext(std::string_view header_value);
+  SpanContextImpl(std::string_view header_value);
 
-  bool mustSend() const { return must_send_; }
-  const std::string& traceId() const { return trace_id_; }
-  const std::string& traceSegmentId() const { return trace_segment_id_; }
-  int32_t spanId() const { return span_id_; }
-  const std::string& service() const { return service_; }
-  const std::string& serviceInstance() const { return service_instance_; }
-  const std::string& endpoint() const { return endpoint_; }
-  const std::string& targetAddress() const { return target_address_; }
+  bool mustSend() const override { return must_send_; }
+  const std::string& traceId() const override { return trace_id_; }
+  const std::string& traceSegmentId() const override {
+    return trace_segment_id_;
+  }
+  int32_t spanId() const override { return span_id_; }
+  const std::string& service() const override { return service_; }
+  const std::string& serviceInstance() const override {
+    return service_instance_;
+  }
+  const std::string& endpoint() const override { return endpoint_; }
+  const std::string& targetAddress() const override { return target_address_; }
 
  private:
   // Based on
@@ -46,25 +52,8 @@ class SpanContext {
   std::string target_address_;
 };
 
-using SpanContextPtr = std::shared_ptr<SpanContext>;
-
-enum TracingMode {
-  Default,
-  // It represents all spans generated in this context should skip
-  // analysis.
-  Skip
-};
-
-class SpanContextExtension {
- public:
-  SpanContextExtension(std::string_view header_value);
-
-  TracingMode tracingMode() const { return tracing_mode_; }
-
- private:
-  TracingMode tracing_mode_ = TracingMode::Default;
-};
-
-using SpanContextExtensionPtr = std::shared_ptr<SpanContextExtension>;
+SpanContextPtr createSpanContext(std::string_view ctx) {
+  return std::make_unique<SpanContextImpl>(ctx);
+}
 
 }  // namespace cpp2sky

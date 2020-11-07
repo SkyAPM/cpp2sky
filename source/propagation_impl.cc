@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "source/propagation.h"
+#include "source/propagation_impl.h"
 
 #include <array>
-#include <cassert>
-#include <iostream>
-#include <stdexcept>
 #include <string_view>
 
 #include "source/utils/base64.h"
@@ -27,14 +24,9 @@ namespace cpp2sky {
 
 namespace {
 static constexpr size_t EXPECTED_FIELD_COUNT = 8;
+}
 
-// TODO(shikugawa): This value specifies the number of values on `sw8-x` header.
-// This value should be extensible from user config to deliver arbitary
-// information as SpanContext.
-static constexpr size_t EXPECTED_EXTENSION_FIELD_COUNT = 1;
-}  // namespace
-
-SpanContext::SpanContext(std::string_view header_value) {
+SpanContextImpl::SpanContextImpl(std::string_view header_value) {
   std::array<std::string, EXPECTED_FIELD_COUNT> fields;
   size_t current_field_idx = 0;
   std::string value;
@@ -72,41 +64,6 @@ SpanContext::SpanContext(std::string_view header_value) {
   service_instance_ = Base64::decodeWithoutPadding(std::string_view(fields[5]));
   endpoint_ = Base64::decodeWithoutPadding(std::string_view(fields[6]));
   target_address_ = Base64::decodeWithoutPadding(std::string_view(fields[7]));
-}
-
-SpanContextExtension::SpanContextExtension(std::string_view header_value) {
-  std::array<std::string, EXPECTED_EXTENSION_FIELD_COUNT> fields;
-  size_t current_field_idx = 0;
-  std::string value;
-
-  for (auto i = 0; i < header_value.size(); ++i) {
-    if (current_field_idx >= EXPECTED_EXTENSION_FIELD_COUNT) {
-      throw TracerException(
-          "Invalid span context format. It must have 1 fields.");
-    }
-    if (header_value[i] == '-') {
-      fields[current_field_idx] = value;
-      value.clear();
-      ++current_field_idx;
-      continue;
-    }
-    value += header_value[i];
-  }
-  fields[current_field_idx] = value;
-
-  if (current_field_idx != EXPECTED_EXTENSION_FIELD_COUNT - 1) {
-    throw TracerException(
-        "Invalid span context format. It must have 1 fields.");
-  }
-
-  if (fields[0] != "0" && fields[0] != "1") {
-    throw TracerException(
-        "Invalid span context format. tracing mode field must be 0 or 1.");
-  }
-
-  if (fields[0] == "1") {
-    tracing_mode_ = TracingMode::Skip;
-  }
 }
 
 }  // namespace cpp2sky

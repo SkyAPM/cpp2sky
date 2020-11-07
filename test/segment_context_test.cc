@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "source/segment_context.h"
-
 #include <gmock/gmock.h>
 #include <google/protobuf/util/json_util.h>
 #include <gtest/gtest.h>
@@ -23,8 +21,8 @@
 
 #include "external/skywalking_data_collect_protocol/language-agent/Tracing.pb.h"
 #include "mocks.h"
-#include "source/config_impl.h"
-#include "source/propagation.h"
+#include "source/propagation_impl.h"
+#include "source/segment_context_impl.h"
 
 using google::protobuf::util::JsonStringToMessage;
 using testing::NiceMock;
@@ -39,10 +37,8 @@ static constexpr std::string_view sample_ctx =
 class SegmentContextTest : public testing::Test {
  public:
   SegmentContextTest() {
-    config_ =
-        std::make_unique<ConfigImpl>(service_name_, instance_name_, token_);
-    span_ctx_ = std::make_shared<SpanContext>(sample_ctx);
-    span_ext_ctx_ = std::make_shared<SpanContextExtension>("1");
+    config_ = std::make_unique<Config>(service_name_, instance_name_, token_);
+    span_ctx_ = std::make_shared<SpanContextImpl>(sample_ctx);
   }
 
  protected:
@@ -52,11 +48,10 @@ class SegmentContextTest : public testing::Test {
   std::string token_ = "dummy";
   std::unique_ptr<Config> config_;
   SpanContextPtr span_ctx_;
-  SpanContextExtensionPtr span_ext_ctx_;
 };
 
 TEST_F(SegmentContextTest, BasicTest) {
-  SegmentContext sc(*config_.get(), random_);
+  SegmentContextImpl sc(*config_.get(), random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
@@ -123,7 +118,7 @@ TEST_F(SegmentContextTest, BasicTest) {
 }
 
 TEST_F(SegmentContextTest, ChildSegmentContext) {
-  SegmentContext sc(*config_.get(), span_ctx_, span_ext_ctx_, random_);
+  SegmentContextImpl sc(*config_.get(), span_ctx_, random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
@@ -152,8 +147,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "peer": "localhost:9000",
     "spanType": "Entry",
     "spanLayer": "Http",
-    "componentId": "9000",
-    "skipAnalysis": "true"
+    "componentId": "9000"
   }
   )EOF";
   SpanObject expected_obj;
@@ -191,7 +185,6 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "spanType": "Exit",
     "spanLayer": "Http",
     "componentId": "9000",
-    "skipAnalysis": "true",
     "tags": {
       "key": "category",
       "value": "database"

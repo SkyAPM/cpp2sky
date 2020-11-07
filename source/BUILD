@@ -1,36 +1,20 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
-  name = "config_lib",
-  hdrs = ["config_impl.h"],
-  deps = [
-    "//cpp2sky:config_interface",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
-  name = "propagation_lib",
+  name = "cpp2sky_lib",
   hdrs = [
-    "propagation.h",
+    "propagation_impl.h",
+    "segment_context_impl.h",
   ],
-  srcs = ["propagation.cc"],
-  deps = [
-    "//source/utils:util_lib",
+  srcs = [
+    "propagation_impl.cc",
+    "segment_context_impl.cc",
   ],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
-  name = "segment_context_lib",
-  hdrs = [
-    "segment_context.h",
-  ],
-  srcs = ["segment_context.cc"],
   deps = [
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
-    ":propagation_lib",
-    ":config_lib",
+    "//cpp2sky:config_interface",
+    "//cpp2sky:segment_context_interface",
+    "//cpp2sky:propagation_interface",
     "//source/utils:util_lib",
   ],
   visibility = ["//visibility:public"],
