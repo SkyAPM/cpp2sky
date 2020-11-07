@@ -12,21 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "source/segment_context.h"
-
-#include <cstddef>
-#include <memory>
+#include "source/segment_context_impl.h"
 
 #include "language-agent/Tracing.pb.h"
-#include "propagation.h"
+#include "source/utils/random_generator.h"
 
 namespace cpp2sky {
 
-CurrentSegmentSpan::CurrentSegmentSpan(int32_t span_id,
-                                       SegmentContext* parent_segment_context)
+CurrentSegmentSpanImpl::CurrentSegmentSpanImpl(
+    int32_t span_id, SegmentContext* parent_segment_context)
     : span_id_(span_id), parent_segment_context_(parent_segment_context) {}
 
-SpanObject CurrentSegmentSpan::createSpanObject() {
+SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   SpanObject obj;
 
   obj.set_spanid(span_id_);
@@ -64,18 +61,17 @@ SpanObject CurrentSegmentSpan::createSpanObject() {
     *entry = log;
   }
 
-  if (parent_segment_context_->parentExtSpanContext() != nullptr) {
-    if (parent_segment_context_->parentExtSpanContext()->tracingMode() ==
+  if (parent_segment_context_->parentSpanContextExtension() != nullptr) {
+    if (parent_segment_context_->parentSpanContextExtension()->tracingMode() ==
         TracingMode::Skip) {
       obj.set_skipanalysis(true);
     }
   }
-
   return obj;
 }
 
-void CurrentSegmentSpan::addLog(int64_t time, std::string& key,
-                                std::string& value) {
+void CurrentSegmentSpanImpl::addLog(int64_t time, std::string& key,
+                                    std::string& value) {
   Log l;
   l.set_time(time);
   auto* entry = l.add_data();
@@ -84,16 +80,15 @@ void CurrentSegmentSpan::addLog(int64_t time, std::string& key,
   logs_.emplace_back(l);
 }
 
-SegmentContext::SegmentContext(Config& config, RandomGenerator& random)
+SegmentContextImpl::SegmentContextImpl(Config& config, RandomGenerator& random)
     : trace_id_(random.uuid()),
       trace_segment_id_(random.uuid()),
       service_(config.serviceName()),
       service_instance_(config.instanceName()) {}
 
-SegmentContext::SegmentContext(Config& config,
-                               SpanContextPtr parent_span_context,
-                               SpanContextExtensionPtr parent_ext_span_context,
-                               RandomGenerator& random)
+SegmentContextImpl::SegmentContextImpl(
+    Config& config, SpanContextPtr parent_span_context,
+    SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       parent_ext_span_context_(std::move(parent_ext_span_context)),
       trace_id_(parent_span_context_->traceId()),
@@ -101,9 +96,10 @@ SegmentContext::SegmentContext(Config& config,
       service_(config.serviceName()),
       service_instance_(config.instanceName()) {}
 
-CurrentSegmentSpanPtr SegmentContext::createCurrentSegmentSpan(
+CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
     CurrentSegmentSpanPtr parent_span) {
-  auto current_span = std::make_shared<CurrentSegmentSpan>(spans_.size(), this);
+  auto current_span =
+      std::make_shared<CurrentSegmentSpanImpl>(spans_.size(), this);
   if (parent_span != nullptr) {
     current_span->setParentSpanId(parent_span->spanId());
     current_span->setSpanType(SpanType::Exit);
@@ -117,7 +113,7 @@ CurrentSegmentSpanPtr SegmentContext::createCurrentSegmentSpan(
   return current_span;
 }
 
-SegmentObject SegmentContext::createSegmentObject() {
+SegmentObject SegmentContextImpl::createSegmentObject() {
   SegmentObject obj;
   obj.set_traceid(trace_id_);
   obj.set_tracesegmentid(trace_segment_id_);

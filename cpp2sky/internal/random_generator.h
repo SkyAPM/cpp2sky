@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace cpp2sky {
 
 class RandomGenerator {

@@ -15,6 +15,7 @@
 #pragma once
 
 #include <exception>
+#include <stdexcept>
 #include <string>
 
 namespace cpp2sky {
