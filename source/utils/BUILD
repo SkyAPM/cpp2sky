@@ -6,6 +6,7 @@ cc_library(
     "base64.h",
     "exception.h",
     "random_generator.h",
+    "grpc_status.h",
   ],
   deps = [
     "//cpp2sky:random_interface",

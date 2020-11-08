@@ -7,6 +7,7 @@ cc_library(
   ],
   deps = [
     "@com_google_googletest//:gtest_main",
+    "//cpp2sky:async_client_interface",
   ]
 )
 
@@ -30,6 +31,19 @@ cc_test(
   deps = [
     "@com_google_googletest//:gtest_main",
     "@com_google_protobuf//:protobuf",
+    "//source:cpp2sky_lib",
+    ":mocks",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+cc_test(
+  name = "grpc_async_client_test",
+  srcs = [
+    "grpc_async_client_test.cc",
+  ],
+  deps = [
+    "@com_google_googletest//:gtest_main",
     "//source:cpp2sky_lib",
     ":mocks",
   ],
