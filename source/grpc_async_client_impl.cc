@@ -49,6 +49,8 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
 
 bool GrpcAsyncSegmentReporterStream::startStream() {
   request_writer_.reset();
+  GPR_ASSERT(client_ && client_->grpcStub() && client_->grpcClientContext() &&
+             client_->completionQueue());
   request_writer_ = client_->grpcStub()->Asynccollect(
       client_->grpcClientContext(), &commands_, client_->completionQueue(),
       toTag(&init_));

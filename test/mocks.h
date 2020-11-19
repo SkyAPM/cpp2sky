@@ -27,7 +27,7 @@ namespace cpp2sky {
 
 class MockRandomGenerator : public RandomGenerator {
  public:
-  MockRandomGenerator();
+  MockRandomGenerator() { ON_CALL(*this, uuid).WillByDefault(Return("uuid")); }
   MOCK_METHOD(std::string, uuid, ());
 };
 
@@ -37,6 +37,24 @@ class MockAsyncStream : public AsyncStream {
   MOCK_METHOD(bool, startStream, ());
   MOCK_METHOD(bool, sendMessage, (Message&));
   MOCK_METHOD(bool, writeDone, ());
+};
+
+template <class StubType>
+class MockAsyncClient : public AsyncClient<StubType> {
+ public:
+  MockAsyncClient() {
+    ON_CALL(*this, completionQueue()).WillByDefault(Return(&cq_));
+    ON_CALL(*this, grpcClientContext()).WillByDefault(Return(&ctx_));
+  }
+
+  MOCK_METHOD(bool, sendMessage, (Message&));
+  MOCK_METHOD(grpc::CompletionQueue*, completionQueue, ());
+  MOCK_METHOD(grpc::ClientContext*, grpcClientContext, ());
+  MOCK_METHOD(StubType*, grpcStub, ());
+
+ private:
+  grpc::CompletionQueue cq_;
+  grpc::ClientContext ctx_;
 };
 
 template <class StubType>

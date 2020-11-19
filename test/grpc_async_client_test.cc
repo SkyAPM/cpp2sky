@@ -27,27 +27,47 @@ using testing::_;
 
 class GrpcAsyncSegmentReporterClientTest : public testing::Test {
  public:
-  GrpcAsyncSegmentReporterClientTest()
-      : channel_(grpc::CreateChannel("localhost:50051",
-                                     grpc::InsecureChannelCredentials())) {}
+  GrpcAsyncSegmentReporterClientTest() {
+    EXPECT_CALL(factory_, create(_));
+    EXPECT_CALL(*stream_, startStream());
+    client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
+        &cq_, factory_, grpc::InsecureChannelCredentials(), address_);
+  }
 
  protected:
   grpc::CompletionQueue cq_;
-  std::shared_ptr<grpc::Channel> channel_;
+  std::string address_{"localhost:50051"};
   std::shared_ptr<MockAsyncStream> stream_{std::make_shared<MockAsyncStream>()};
+  MockAsyncStreamFactory<StubType> factory_{stream_};
+  std::unique_ptr<GrpcAsyncSegmentReporterClient> client_;
 };
 
 TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
-  // MockAsyncStreamFactory factory(stream_);
-  // GrpcAsyncSegmentReporterClient client(cq_, channel_, factory);
-  // SegmentObject fake_message;
+  SegmentObject fake_message;
+  EXPECT_CALL(*stream_, sendMessage(_)).WillOnce(Return(true));
+  EXPECT_CALL(*stream_, writeDone());
+  EXPECT_TRUE(client_->sendMessage(fake_message));
+}
 
-  // EXPECT_CALL(factory, create(_));
-  // EXPECT_CALL(*stream_, setData(_));
-  // EXPECT_CALL(*stream_, startStream());
-  // client.onSendMessage(fake_message);
+class GrpcAsyncSegmentReporterStreamTest : public testing::Test {
+ public:
+  GrpcAsyncSegmentReporterStreamTest() {
+    ON_CALL(client_, grpcStub()).WillByDefault(Return(stub_.get()));
+  }
 
-  // EXPECT_EQ(client.numOfStreams(), 1);
+ protected:
+  std::string address_{"localhost:50051"};
+  std::unique_ptr<StubType> stub_{TraceSegmentReportService::NewStub(
+      grpc::CreateChannel(address_, grpc::InsecureChannelCredentials()))};
+  MockAsyncClient<StubType> client_;
+  GrpcAsyncSegmentReporterStream stream_{&client_};
+};
+
+TEST_F(GrpcAsyncSegmentReporterStreamTest, SendMessageTest) {
+  EXPECT_CALL(client_, grpcStub).Times(2);
+  EXPECT_CALL(client_, completionQueue).Times(2);
+  EXPECT_CALL(client_, grpcClientContext).Times(2);
+  EXPECT_TRUE(stream_.startStream());
 }
 
 }  // namespace cpp2sky

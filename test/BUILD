@@ -5,9 +5,6 @@ cc_library(
   hdrs = [
     "mocks.h",
   ],
-  srcs = [
-    "mocks.cc",
-  ],
   deps = [
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "@com_google_googletest//:gtest_main",
