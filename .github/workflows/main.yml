@@ -4,11 +4,9 @@ name: cpp2sky test
 
 on:
   push:
-    branches:
-      - main
+    branches: **
   pull_request:
-    branches:
-      - **
+    branches: [ main ]
 
 jobs:
   build:
