@@ -31,27 +31,22 @@ class AsyncClient {
   /**
    * Send the specified protobuf message
    */
-  virtual void onSendMessage(const Message& message) = 0;
-
-  /**
-   * The number of streams originated from this async client.
-   */
-  virtual size_t numOfStreams() const = 0;
+  virtual bool sendMessage(Message& message) = 0;
 
   /**
    * Get queue to execute gRPC async stream dispatching.
    */
-  virtual grpc::CompletionQueue& grpcDispatchQueue() = 0;
+  virtual grpc::CompletionQueue* completionQueue() = 0;
 
   /**
    * Get context for gRPC client.
    */
-  virtual grpc::ClientContext& grpcClientContext() = 0;
+  virtual grpc::ClientContext* grpcClientContext() = 0;
 
   /**
    * Get stub.
    */
-  virtual Stub& grpcStub() = 0;
+  virtual Stub* grpcStub() = 0;
 };
 
 template <class T>
@@ -62,25 +57,20 @@ class AsyncStream {
   virtual ~AsyncStream() = default;
 
   /**
-   * Get response status code. grpc-status code will be translated to generic
-   * status code.
+   * Start stream. It will move the state of stream to Init.
    */
-  virtual uint16_t status() const = 0;
+  virtual bool startStream() = 0;
 
   /**
-   * Establish stream.
+   * Send message. It will move the state from Init to Write.
    */
-  virtual void startStream() = 0;
+  virtual bool sendMessage(Message& message) = 0;
 
   /**
-   * Set data per stream.
+   * Finish to write on this stream. It will move the state from Write to
+   * WriteDone.
    */
-  virtual void setData(const Message& message) = 0;
-
-  /**
-   * Get response message.
-   */
-  virtual const Message& reply() const = 0;
+  virtual bool writeDone() = 0;
 };
 
 using AsyncStreamPtr = std::shared_ptr<AsyncStream>;

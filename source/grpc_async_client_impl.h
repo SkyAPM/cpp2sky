@@ -16,7 +16,6 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include <list>
 #include <memory>
 
 #include "cpp2sky/internal/async_client.h"
@@ -29,43 +28,59 @@ using StubType = TraceSegmentReportService::Stub;
 
 class GrpcAsyncSegmentReporterClient final : public AsyncClient<StubType> {
  public:
-  GrpcAsyncSegmentReporterClient(grpc::CompletionQueue& cq,
-                                 std::shared_ptr<grpc::Channel> channel,
-                                 AsyncStreamFactory<StubType>& factory);
+  GrpcAsyncSegmentReporterClient(grpc::CompletionQueue* cq,
+                                 AsyncStreamFactory<StubType>& factory,
+                                 std::shared_ptr<grpc::ChannelCredentials> cred,
+                                 std::string address);
+  ~GrpcAsyncSegmentReporterClient();
 
   // AsyncClient
-  void onSendMessage(const Message& message) override;
-  size_t numOfStreams() const override { return streams_.size(); }
-  grpc::CompletionQueue& grpcDispatchQueue() override { return cq_; }
-  grpc::ClientContext& grpcClientContext() override { return ctx_; }
-  StubType& grpcStub() override { return stub_; }
+  bool sendMessage(Message& message) override;
+  grpc::CompletionQueue* completionQueue() override { return cq_; }
+  grpc::ClientContext* grpcClientContext() override { return &ctx_; }
+  StubType* grpcStub() override { return stub_.get(); }
 
  private:
-  grpc::CompletionQueue& cq_;
-  StubType stub_;
-  grpc::ClientContext ctx_;
-  std::list<AsyncStreamPtr> streams_;
   AsyncStreamFactory<StubType>& factory_;
+  std::unique_ptr<StubType> stub_;
+  grpc::CompletionQueue* cq_;
+  grpc::ClientContext ctx_;
+  std::shared_ptr<AsyncStream> stream_;
 };
+
+class GrpcAsyncSegmentReporterStream;
+
+struct TaggedStream {
+  enum class Operation : uint8_t {
+    Init = 0,
+    Write = 1,
+    WriteDone = 2,
+  };
+
+  Operation operation;
+  GrpcAsyncSegmentReporterStream* stream;
+};
+
+void* toTag(TaggedStream* stream);
+TaggedStream* deTag(void* stream);
 
 class GrpcAsyncSegmentReporterStream final : public AsyncStream {
  public:
-  GrpcAsyncSegmentReporterStream(AsyncClient<StubType>* parent)
-      : parent_(parent) {}
+  GrpcAsyncSegmentReporterStream(AsyncClient<StubType>* client);
 
   // AsyncStream
-  uint16_t status() const override;
-  void startStream() override;
-  void setData(const Message& message) override;
-  const Message& reply() const override;
+  bool startStream() override;
+  bool sendMessage(Message& message) override;
+  bool writeDone() override;
 
  private:
-  bool data_set_{false};
-  SegmentObject data_;
-  AsyncClient<StubType>* parent_;
-  grpc::Status status_;
+  AsyncClient<StubType>* client_;
   Commands commands_;
   std::unique_ptr<grpc::ClientAsyncWriter<SegmentObject>> request_writer_;
+
+  TaggedStream init_{TaggedStream::Operation::Init, this};
+  TaggedStream write_{TaggedStream::Operation::Write, this};
+  TaggedStream write_done_{TaggedStream::Operation::WriteDone, this};
 };
 
 class GrpcAsyncSegmentReporterStreamFactory final

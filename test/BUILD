@@ -2,12 +2,17 @@ load("@rules_cc//cc:defs.bzl", "cc_test", "cc_library")
 
 cc_library(
   name = "mocks",
-  srcs = [
+  hdrs = [
     "mocks.h",
   ],
+  srcs = [
+    "mocks.cc",
+  ],
   deps = [
+    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "@com_google_googletest//:gtest_main",
     "//cpp2sky:async_client_interface",
+    "//cpp2sky:random_interface",
   ]
 )
 

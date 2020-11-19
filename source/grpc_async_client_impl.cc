@@ -18,44 +18,56 @@
 
 namespace cpp2sky {
 
-GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
-    grpc::CompletionQueue& cq, std::shared_ptr<grpc::Channel> channel,
-    AsyncStreamFactory<StubType>& factory)
-    : cq_(cq), stub_(channel), factory_(factory) {}
+void* toTag(TaggedStream* stream) { return reinterpret_cast<void*>(stream); }
+TaggedStream* deTag(void* stream) { return static_cast<TaggedStream*>(stream); }
 
-void GrpcAsyncSegmentReporterClient::onSendMessage(const Message& message) {
-  auto stream = factory_.create(this);
-  streams_.emplace_back(stream);
-  stream->setData(message);
-  stream->startStream();
+GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
+    grpc::CompletionQueue* cq, AsyncStreamFactory<StubType>& factory,
+    std::shared_ptr<grpc::ChannelCredentials> cred, std::string address)
+    : cq_(cq),
+      factory_(factory),
+      stub_(TraceSegmentReportService::NewStub(
+          grpc::CreateChannel(address, cred))) {
+  stream_ = factory_.create(this);
+  stream_->startStream();
 }
 
-void GrpcAsyncSegmentReporterStream::setData(const Message& message) {
+GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
+  if (stream_ != nullptr) {
+    stream_->writeDone();
+  }
+}
+
+bool GrpcAsyncSegmentReporterClient::sendMessage(Message& message) {
+  GPR_ASSERT(stream_ != nullptr);
+  return stream_->sendMessage(message);
+}
+
+GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
+    AsyncClient<StubType>* client)
+    : client_(client) {}
+
+bool GrpcAsyncSegmentReporterStream::startStream() {
+  request_writer_.reset();
+  request_writer_ = client_->grpcStub()->Asynccollect(
+      client_->grpcClientContext(), &commands_, client_->completionQueue(),
+      toTag(&init_));
+  return true;
+}
+
+bool GrpcAsyncSegmentReporterStream::sendMessage(Message& message) {
+  if (!request_writer_) {
+    return false;
+  }
   SegmentObject obj;
   obj.CopyFrom(message);
-  data_ = obj;
-  data_set_ = true;
+  request_writer_->Write(obj, toTag(&write_));
+  return true;
 }
 
-const Message& GrpcAsyncSegmentReporterStream::reply() const {
-  return static_cast<const Message&>(commands_);
-}
-
-void GrpcAsyncSegmentReporterStream::startStream() {
-  request_writer_ = parent_->grpcStub().PrepareAsynccollect(
-      &parent_->grpcClientContext(), &commands_, &parent_->grpcDispatchQueue());
-  if (request_writer_ == nullptr) {
-    return;
-  }
-  request_writer_->StartCall(this);
-  if (data_set_) {
-    request_writer_->Write(data_, this);
-  }
-  request_writer_->WritesDone(this);
-}
-
-uint16_t GrpcAsyncSegmentReporterStream::status() const {
-  return grpcStatusToGenericHttpStatus(status_.error_code());
+bool GrpcAsyncSegmentReporterStream::writeDone() {
+  request_writer_->WritesDone(toTag(&write_done_));
+  return true;
 }
 
 AsyncStreamPtr GrpcAsyncSegmentReporterStreamFactory::create(
