@@ -24,8 +24,9 @@ TaggedStream* deTag(void* stream) { return static_cast<TaggedStream*>(stream); }
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     grpc::CompletionQueue* cq, AsyncStreamFactory<StubType>& factory,
     std::shared_ptr<grpc::ChannelCredentials> cred, std::string address)
-    : cq_(cq),
+    : address_(address),
       factory_(factory),
+      cq_(cq),
       stub_(TraceSegmentReportService::NewStub(
           grpc::CreateChannel(address, cred))) {
   stream_ = factory_.create(this);
@@ -53,7 +54,7 @@ bool GrpcAsyncSegmentReporterStream::startStream() {
              client_->completionQueue());
   request_writer_ = client_->grpcStub()->Asynccollect(
       client_->grpcClientContext(), &commands_, client_->completionQueue(),
-      toTag(&init_));
+      toTag(&connected_));
   return true;
 }
 
@@ -63,6 +64,7 @@ bool GrpcAsyncSegmentReporterStream::sendMessage(Message& message) {
   }
   SegmentObject obj;
   obj.CopyFrom(message);
+  state_ = Operation::Write;
   request_writer_->Write(obj, toTag(&write_));
   return true;
 }

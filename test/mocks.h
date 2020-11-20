@@ -37,6 +37,9 @@ class MockAsyncStream : public AsyncStream {
   MOCK_METHOD(bool, startStream, ());
   MOCK_METHOD(bool, sendMessage, (Message&));
   MOCK_METHOD(bool, writeDone, ());
+  MOCK_METHOD(Operation, currentState, ());
+  MOCK_METHOD(void, updateState, (Operation));
+  MOCK_METHOD(std::string, peerAddress, ());
 };
 
 template <class StubType>
@@ -51,6 +54,7 @@ class MockAsyncClient : public AsyncClient<StubType> {
   MOCK_METHOD(grpc::CompletionQueue*, completionQueue, ());
   MOCK_METHOD(grpc::ClientContext*, grpcClientContext, ());
   MOCK_METHOD(StubType*, grpcStub, ());
+  MOCK_METHOD(std::string, peerAddress, ());
 
  private:
   grpc::CompletionQueue cq_;

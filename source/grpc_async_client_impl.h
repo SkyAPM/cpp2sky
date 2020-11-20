@@ -17,6 +17,7 @@
 #include <grpcpp/grpcpp.h>
 
 #include <memory>
+#include <queue>
 
 #include "cpp2sky/internal/async_client.h"
 #include "language-agent/Tracing.grpc.pb.h"
@@ -39,8 +40,10 @@ class GrpcAsyncSegmentReporterClient final : public AsyncClient<StubType> {
   grpc::CompletionQueue* completionQueue() override { return cq_; }
   grpc::ClientContext* grpcClientContext() override { return &ctx_; }
   StubType* grpcStub() override { return stub_.get(); }
+  std::string peerAddress() override { return address_; }
 
  private:
+  std::string address_;
   AsyncStreamFactory<StubType>& factory_;
   std::unique_ptr<StubType> stub_;
   grpc::CompletionQueue* cq_;
@@ -51,12 +54,6 @@ class GrpcAsyncSegmentReporterClient final : public AsyncClient<StubType> {
 class GrpcAsyncSegmentReporterStream;
 
 struct TaggedStream {
-  enum class Operation : uint8_t {
-    Init = 0,
-    Write = 1,
-    WriteDone = 2,
-  };
-
   Operation operation;
   GrpcAsyncSegmentReporterStream* stream;
 };
@@ -72,15 +69,20 @@ class GrpcAsyncSegmentReporterStream final : public AsyncStream {
   bool startStream() override;
   bool sendMessage(Message& message) override;
   bool writeDone() override;
+  Operation currentState() override { return state_; }
+  void updateState(Operation op) override { state_ = op; }
+  std::string peerAddress() override { return client_->peerAddress(); }
 
  private:
   AsyncClient<StubType>* client_;
   Commands commands_;
   std::unique_ptr<grpc::ClientAsyncWriter<SegmentObject>> request_writer_;
+  std::queue<Message> pending_messages_;
+  Operation state_{Operation::Initialized};
 
-  TaggedStream init_{TaggedStream::Operation::Init, this};
-  TaggedStream write_{TaggedStream::Operation::Write, this};
-  TaggedStream write_done_{TaggedStream::Operation::WriteDone, this};
+  TaggedStream connected_{Operation::Connected, this};
+  TaggedStream write_{Operation::Write, this};
+  TaggedStream write_done_{Operation::WriteDone, this};
 };
 
 class GrpcAsyncSegmentReporterStreamFactory final

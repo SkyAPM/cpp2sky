@@ -47,6 +47,18 @@ class AsyncClient {
    * Get stub.
    */
   virtual Stub* grpcStub() = 0;
+
+  /**
+   * Peer address of current gRPC client..
+   */
+  virtual std::string peerAddress() = 0;
+};
+
+enum class Operation : uint8_t {
+  Initialized = 0,
+  Connected = 1,
+  Write = 2,
+  WriteDone = 3,
 };
 
 template <class T>
@@ -71,6 +83,21 @@ class AsyncStream {
    * WriteDone.
    */
   virtual bool writeDone() = 0;
+
+  /**
+   * Get current stream state.
+   */
+  virtual Operation currentState() = 0;
+
+  /**
+   * Update current stream state.
+   */
+  virtual void updateState(Operation op) = 0;
+
+  /**
+   * Peer address of current gRPC stream.
+   */
+  virtual std::string peerAddress() = 0;
 };
 
 using AsyncStreamPtr = std::shared_ptr<AsyncStream>;
