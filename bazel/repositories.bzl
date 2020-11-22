@@ -19,9 +19,9 @@ def skywalking_data_collect_protocol():
 def com_github_grpc_grpc():
   http_archive(
     name = "com_github_grpc_grpc",
-    sha256 = "3ccc4e5ae8c1ce844456e39cc11f1c991a7da74396faabe83d779836ef449bce",
-    urls = ["https://github.com/grpc/grpc/archive/v1.27.0.tar.gz"],
-    strip_prefix = "grpc-1.27.0",
+    sha256 = "06a87c5feb7efb979243c054dca2ea52695618c02fde54af8a85d71269f97102",
+    urls = ["https://github.com/grpc/grpc/archive/v1.33.0.tar.gz"],
+    strip_prefix = "grpc-1.33.0",
   )
 
 def rules_proto():

@@ -52,8 +52,9 @@ class AsyncClient {
 enum class Operation : uint8_t {
   Initialized = 0,
   Connected = 1,
-  WriteDone = 2,
-  Finished = 3,
+  Idle = 2,
+  WriteDone = 3,
+  Finished = 4,
 };
 
 template <class T>
