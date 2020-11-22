@@ -33,13 +33,10 @@ class MockRandomGenerator : public RandomGenerator {
 
 class MockAsyncStream : public AsyncStream {
  public:
-  MOCK_METHOD(uint16_t, status, (), (const));
   MOCK_METHOD(bool, startStream, ());
-  MOCK_METHOD(bool, sendMessage, (Message&));
-  MOCK_METHOD(bool, writeDone, ());
-  MOCK_METHOD(Operation, currentState, ());
-  MOCK_METHOD(void, updateState, (Operation));
+  MOCK_METHOD(void, sendMessage, (Message&));
   MOCK_METHOD(std::string, peerAddress, ());
+  MOCK_METHOD(bool, handleOperation, (Operation));
 };
 
 template <class StubType>
@@ -47,18 +44,15 @@ class MockAsyncClient : public AsyncClient<StubType> {
  public:
   MockAsyncClient() {
     ON_CALL(*this, completionQueue()).WillByDefault(Return(&cq_));
-    ON_CALL(*this, grpcClientContext()).WillByDefault(Return(&ctx_));
   }
 
-  MOCK_METHOD(bool, sendMessage, (Message&));
+  MOCK_METHOD(void, sendMessage, (Message&));
   MOCK_METHOD(grpc::CompletionQueue*, completionQueue, ());
-  MOCK_METHOD(grpc::ClientContext*, grpcClientContext, ());
   MOCK_METHOD(StubType*, grpcStub, ());
   MOCK_METHOD(std::string, peerAddress, ());
 
  private:
   grpc::CompletionQueue cq_;
-  grpc::ClientContext ctx_;
 };
 
 template <class StubType>

@@ -31,17 +31,12 @@ class AsyncClient {
   /**
    * Send the specified protobuf message
    */
-  virtual bool sendMessage(Message& message) = 0;
+  virtual void sendMessage(Message& message) = 0;
 
   /**
    * Get queue to execute gRPC async stream dispatching.
    */
   virtual grpc::CompletionQueue* completionQueue() = 0;
-
-  /**
-   * Get context for gRPC client.
-   */
-  virtual grpc::ClientContext* grpcClientContext() = 0;
 
   /**
    * Get stub.
@@ -57,8 +52,8 @@ class AsyncClient {
 enum class Operation : uint8_t {
   Initialized = 0,
   Connected = 1,
-  Write = 2,
-  WriteDone = 3,
+  WriteDone = 2,
+  Finished = 3,
 };
 
 template <class T>
@@ -76,28 +71,12 @@ class AsyncStream {
   /**
    * Send message. It will move the state from Init to Write.
    */
-  virtual bool sendMessage(Message& message) = 0;
+  virtual void sendMessage(Message& message) = 0;
 
   /**
-   * Finish to write on this stream. It will move the state from Write to
-   * WriteDone.
+   * Handle incoming event related to this stream.
    */
-  virtual bool writeDone() = 0;
-
-  /**
-   * Get current stream state.
-   */
-  virtual Operation currentState() = 0;
-
-  /**
-   * Update current stream state.
-   */
-  virtual void updateState(Operation op) = 0;
-
-  /**
-   * Peer address of current gRPC stream.
-   */
-  virtual std::string peerAddress() = 0;
+  virtual bool handleOperation(Operation incoming_op) = 0;
 };
 
 using AsyncStreamPtr = std::shared_ptr<AsyncStream>;

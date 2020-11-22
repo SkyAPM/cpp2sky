@@ -14,6 +14,7 @@
 
 #include "grpc_async_client_impl.h"
 
+#include "source/utils/exception.h"
 #include "utils/grpc_status.h"
 
 namespace cpp2sky {
@@ -33,45 +34,63 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
   stream_->startStream();
 }
 
-GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
-  if (stream_ != nullptr) {
-    stream_->writeDone();
-  }
-}
-
-bool GrpcAsyncSegmentReporterClient::sendMessage(Message& message) {
+void GrpcAsyncSegmentReporterClient::sendMessage(Message& message) {
   GPR_ASSERT(stream_ != nullptr);
-  return stream_->sendMessage(message);
+  stream_->sendMessage(message);
 }
 
 GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
     AsyncClient<StubType>* client)
     : client_(client) {}
 
+GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
+  ctx_.TryCancel();
+  request_writer_->Finish(&status_, toTag(&finish_));
+}
+
 bool GrpcAsyncSegmentReporterStream::startStream() {
   request_writer_.reset();
-  GPR_ASSERT(client_ && client_->grpcStub() && client_->grpcClientContext() &&
-             client_->completionQueue());
   request_writer_ = client_->grpcStub()->Asynccollect(
-      client_->grpcClientContext(), &commands_, client_->completionQueue(),
-      toTag(&connected_));
+      &ctx_, &commands_, client_->completionQueue(), toTag(&connected_));
   return true;
 }
 
-bool GrpcAsyncSegmentReporterStream::sendMessage(Message& message) {
-  if (!request_writer_) {
+void GrpcAsyncSegmentReporterStream::sendMessage(Message& message) {
+  pending_messages_.emplace(message);
+  clearPendingMessages();
+}
+
+bool GrpcAsyncSegmentReporterStream::clearPendingMessages() {
+  if (state_ != Operation::Connected) {
     return false;
   }
+  auto message = pending_messages_.back();
+  pending_messages_.pop();
   SegmentObject obj;
-  obj.CopyFrom(message);
-  state_ = Operation::Write;
-  request_writer_->Write(obj, toTag(&write_));
+  obj.CopyFrom(message.get());
+  request_writer_->Write(obj, toTag(&write_done_));
   return true;
 }
 
-bool GrpcAsyncSegmentReporterStream::writeDone() {
-  request_writer_->WritesDone(toTag(&write_done_));
-  return true;
+bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
+  state_ = incoming_op;
+  while (true) {
+    switch (state_) {
+      case Operation::Connected:
+        gpr_log(GPR_ERROR, "Established connection: %s",
+                client_->peerAddress().c_str());
+        return true;
+      case Operation::WriteDone:
+        state_ = Operation::Connected;
+        gpr_log(GPR_ERROR, "Write finished");
+        break;
+      case Operation::Finished:
+        gpr_log(GPR_ERROR, "Stream closed");
+        return false;
+      default:
+        throw TracerException("Unknown stream operation");
+    }
+  }
 }
 
 AsyncStreamPtr GrpcAsyncSegmentReporterStreamFactory::create(

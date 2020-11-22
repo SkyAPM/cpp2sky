@@ -44,9 +44,8 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
 
 TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
   SegmentObject fake_message;
-  EXPECT_CALL(*stream_, sendMessage(_)).WillOnce(Return(true));
-  EXPECT_CALL(*stream_, writeDone());
-  EXPECT_TRUE(client_->sendMessage(fake_message));
+  EXPECT_CALL(*stream_, sendMessage(_));
+  client_->sendMessage(fake_message);
 }
 
 class GrpcAsyncSegmentReporterStreamTest : public testing::Test {
@@ -64,10 +63,9 @@ class GrpcAsyncSegmentReporterStreamTest : public testing::Test {
 };
 
 TEST_F(GrpcAsyncSegmentReporterStreamTest, SendMessageTest) {
-  EXPECT_CALL(client_, grpcStub).Times(2);
-  EXPECT_CALL(client_, completionQueue).Times(2);
-  EXPECT_CALL(client_, grpcClientContext).Times(2);
-  EXPECT_TRUE(stream_.startStream());
+  EXPECT_CALL(client_, grpcStub);
+  EXPECT_CALL(client_, completionQueue);
+  stream_.startStream();
 }
 
 }  // namespace cpp2sky

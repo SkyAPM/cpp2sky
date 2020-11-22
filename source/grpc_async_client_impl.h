@@ -33,12 +33,10 @@ class GrpcAsyncSegmentReporterClient final : public AsyncClient<StubType> {
                                  AsyncStreamFactory<StubType>& factory,
                                  std::shared_ptr<grpc::ChannelCredentials> cred,
                                  std::string address);
-  ~GrpcAsyncSegmentReporterClient();
 
   // AsyncClient
-  bool sendMessage(Message& message) override;
+  void sendMessage(Message& message) override;
   grpc::CompletionQueue* completionQueue() override { return cq_; }
-  grpc::ClientContext* grpcClientContext() override { return &ctx_; }
   StubType* grpcStub() override { return stub_.get(); }
   std::string peerAddress() override { return address_; }
 
@@ -47,8 +45,7 @@ class GrpcAsyncSegmentReporterClient final : public AsyncClient<StubType> {
   AsyncStreamFactory<StubType>& factory_;
   std::unique_ptr<StubType> stub_;
   grpc::CompletionQueue* cq_;
-  grpc::ClientContext ctx_;
-  std::shared_ptr<AsyncStream> stream_;
+  AsyncStreamPtr stream_;
 };
 
 class GrpcAsyncSegmentReporterStream;
@@ -64,25 +61,27 @@ TaggedStream* deTag(void* stream);
 class GrpcAsyncSegmentReporterStream final : public AsyncStream {
  public:
   GrpcAsyncSegmentReporterStream(AsyncClient<StubType>* client);
+  ~GrpcAsyncSegmentReporterStream() override;
 
   // AsyncStream
   bool startStream() override;
-  bool sendMessage(Message& message) override;
-  bool writeDone() override;
-  Operation currentState() override { return state_; }
-  void updateState(Operation op) override { state_ = op; }
-  std::string peerAddress() override { return client_->peerAddress(); }
+  void sendMessage(Message& message) override;
+  bool handleOperation(Operation incoming_op) override;
 
  private:
+  bool clearPendingMessages();
+
   AsyncClient<StubType>* client_;
   Commands commands_;
+  grpc::Status status_;
+  grpc::ClientContext ctx_;
   std::unique_ptr<grpc::ClientAsyncWriter<SegmentObject>> request_writer_;
-  std::queue<Message> pending_messages_;
+  std::queue<std::reference_wrapper<Message>> pending_messages_;
   Operation state_{Operation::Initialized};
 
   TaggedStream connected_{Operation::Connected, this};
-  TaggedStream write_{Operation::Write, this};
   TaggedStream write_done_{Operation::WriteDone, this};
+  TaggedStream finish_{Operation::Finished, this};
 };
 
 class GrpcAsyncSegmentReporterStreamFactory final
