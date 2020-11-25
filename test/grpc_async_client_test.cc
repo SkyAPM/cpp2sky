@@ -38,7 +38,8 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
   grpc::CompletionQueue cq_;
   std::string address_{"localhost:50051"};
   std::shared_ptr<MockAsyncStream> stream_{std::make_shared<MockAsyncStream>()};
-  MockAsyncStreamFactory<StubType> factory_{stream_};
+  MockAsyncStreamFactory<TracerRequestType, TracerResponseType> factory_{
+      stream_};
   std::unique_ptr<GrpcAsyncSegmentReporterClient> client_;
 };
 
@@ -49,23 +50,12 @@ TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
 }
 
 class GrpcAsyncSegmentReporterStreamTest : public testing::Test {
- public:
-  GrpcAsyncSegmentReporterStreamTest() {
-    ON_CALL(client_, grpcStub()).WillByDefault(Return(stub_.get()));
-  }
-
  protected:
   std::string address_{"localhost:50051"};
-  std::unique_ptr<StubType> stub_{TraceSegmentReportService::NewStub(
-      grpc::CreateChannel(address_, grpc::InsecureChannelCredentials()))};
-  MockAsyncClient<StubType> client_;
+  TracerStubImpl stub_{
+      grpc::CreateChannel(address_, grpc::InsecureChannelCredentials())};
+  MockAsyncClient<TracerRequestType, TracerResponseType> client_;
   GrpcAsyncSegmentReporterStream stream_{&client_};
 };
-
-TEST_F(GrpcAsyncSegmentReporterStreamTest, SendMessageTest) {
-  EXPECT_CALL(client_, grpcStub);
-  EXPECT_CALL(client_, completionQueue);
-  stream_.startStream();
-}
 
 }  // namespace cpp2sky

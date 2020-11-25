@@ -23,7 +23,23 @@ using google::protobuf::Message;
 
 namespace cpp2sky {
 
-template <class Stub>
+template <class RequestType, class ResponseType>
+class TracerStub {
+ public:
+  virtual ~TracerStub() = default;
+
+  /**
+   * Initialize request writer.
+   */
+  virtual std::unique_ptr<grpc::ClientAsyncWriter<RequestType>> createWriter(
+      grpc::ClientContext* ctx, ResponseType* response,
+      grpc::CompletionQueue* cq, void* tag) = 0;
+};
+
+template <class RequestType, class ResponseType>
+using TracerStubPtr = std::unique_ptr<TracerStub<RequestType, ResponseType>>;
+
+template <class RequestType, class ResponseType>
 class AsyncClient {
  public:
   virtual ~AsyncClient() = default;
@@ -34,14 +50,10 @@ class AsyncClient {
   virtual void sendMessage(Message& message) = 0;
 
   /**
-   * Get queue to execute gRPC async stream dispatching.
+   * Get writer.
    */
-  virtual grpc::CompletionQueue* completionQueue() = 0;
-
-  /**
-   * Get stub.
-   */
-  virtual Stub* grpcStub() = 0;
+  virtual std::unique_ptr<grpc::ClientAsyncWriter<RequestType>> createWriter(
+      grpc::ClientContext* ctx, ResponseType* response, void* tag) = 0;
 
   /**
    * Peer address of current gRPC client..
@@ -57,8 +69,8 @@ enum class Operation : uint8_t {
   Finished = 4,
 };
 
-template <class T>
-using AsyncClientPtr = std::unique_ptr<AsyncClient<T>>;
+template <class RequsetType, class ResponseType>
+using AsyncClientPtr = std::unique_ptr<AsyncClient<RequsetType, ResponseType>>;
 
 class AsyncStream {
  public:
@@ -82,7 +94,7 @@ class AsyncStream {
 
 using AsyncStreamPtr = std::shared_ptr<AsyncStream>;
 
-template <class Stub>
+template <class RequestType, class ResponseType>
 class AsyncStreamFactory {
  public:
   virtual ~AsyncStreamFactory() = default;
@@ -90,10 +102,12 @@ class AsyncStreamFactory {
   /**
    * Create async stream entity
    */
-  virtual AsyncStreamPtr create(AsyncClient<Stub>* client) = 0;
+  virtual AsyncStreamPtr create(
+      AsyncClient<RequestType, ResponseType>* client) = 0;
 };
 
-template <class T>
-using AsyncStreamFactoryPtr = std::unique_ptr<AsyncStreamFactory<T>>;
+template <class RequestType, class ResponseType>
+using AsyncStreamFactoryPtr =
+    std::unique_ptr<AsyncStreamFactory<RequestType, ResponseType>>;
 
 }  // namespace cpp2sky

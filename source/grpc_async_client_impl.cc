@@ -14,8 +14,6 @@
 
 #include "grpc_async_client_impl.h"
 
-#include <chrono>
-
 #include "source/utils/exception.h"
 #include "utils/grpc_status.h"
 
@@ -24,14 +22,22 @@ namespace cpp2sky {
 void* toTag(TaggedStream* stream) { return reinterpret_cast<void*>(stream); }
 TaggedStream* deTag(void* stream) { return static_cast<TaggedStream*>(stream); }
 
+TracerStubImpl::TracerStubImpl(std::shared_ptr<grpc::Channel> channel)
+    : stub_(TraceSegmentReportService::NewStub(channel)) {}
+
+std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>>
+TracerStubImpl::createWriter(grpc::ClientContext* ctx,
+                             TracerResponseType* response,
+                             grpc::CompletionQueue* cq, void* tag) {
+  return stub_->Asynccollect(ctx, response, cq, tag);
+}
+
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
-    grpc::CompletionQueue* cq, AsyncStreamFactory<StubType>& factory,
+    grpc::CompletionQueue* cq,
+    AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
     std::shared_ptr<grpc::ChannelCredentials> cred, std::string address)
-    : address_(address),
-      factory_(factory),
-      cq_(cq),
-      stub_(TraceSegmentReportService::NewStub(
-          grpc::CreateChannel(address, cred))) {
+    : address_(address), factory_(factory), cq_(cq) {
+  stub_ = std::make_unique<TracerStubImpl>(grpc::CreateChannel(address, cred));
   stream_ = factory_.create(this);
   stream_->startStream();
 }
@@ -41,8 +47,15 @@ void GrpcAsyncSegmentReporterClient::sendMessage(Message& message) {
   stream_->sendMessage(message);
 }
 
+std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>>
+GrpcAsyncSegmentReporterClient::createWriter(grpc::ClientContext* ctx,
+                                             TracerResponseType* response,
+                                             void* tag) {
+  return stub_->createWriter(ctx, response, cq_, tag);
+}
+
 GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
-    AsyncClient<StubType>* client)
+    AsyncClient<TracerRequestType, TracerResponseType>* client)
     : client_(client) {}
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
@@ -58,8 +71,8 @@ bool GrpcAsyncSegmentReporterStream::startStream() {
   // pending RPCs and when connection has established, Connected tag will be
   // sent to CompletionQueue.
   ctx_.set_wait_for_ready(true);
-  request_writer_ = client_->grpcStub()->Asynccollect(
-      &ctx_, &commands_, client_->completionQueue(), toTag(&connected_));
+  request_writer_ =
+      client_->createWriter(&ctx_, &commands_, toTag(&connected_));
   return true;
 }
 
@@ -74,7 +87,7 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessages() {
   }
   auto message = pending_messages_.back();
   pending_messages_.pop();
-  SegmentObject obj;
+  TracerRequestType obj;
   obj.CopyFrom(message.get());
   request_writer_->Write(obj, toTag(&write_done_));
   return true;
@@ -113,7 +126,7 @@ bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
 }
 
 AsyncStreamPtr GrpcAsyncSegmentReporterStreamFactory::create(
-    AsyncClient<StubType>* client) {
+    AsyncClient<TracerRequestType, TracerResponseType>* client) {
   if (client == nullptr) {
     return nullptr;
   }
