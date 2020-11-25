@@ -49,13 +49,4 @@ TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
   client_->sendMessage(fake_message);
 }
 
-class GrpcAsyncSegmentReporterStreamTest : public testing::Test {
- protected:
-  std::string address_{"localhost:50051"};
-  TracerStubImpl stub_{
-      grpc::CreateChannel(address_, grpc::InsecureChannelCredentials())};
-  MockAsyncClient<TracerRequestType, TracerResponseType> client_;
-  GrpcAsyncSegmentReporterStream stream_{&client_};
-};
-
 }  // namespace cpp2sky
