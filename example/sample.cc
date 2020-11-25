@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <iostream>
 #include <string>
 
 #include "cpp2sky/propagation.h"
@@ -29,7 +30,16 @@ int main(void) {
   auto current_segment = createSegmentContext(config, span_ctx);
 
   auto tracer = createInsecureGrpcTracer("localhost:11800");
-
   auto m = current_segment->createSegmentObject();
+
+  // while (true) {
+  //   std::string s;
+  //   std::cin >> s;
+
+  //   if (s == "q") {
+  //     break;
+  //   } else {
   tracer->sendSegment(m);
+  // }
+  // }
 }

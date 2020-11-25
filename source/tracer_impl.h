@@ -18,7 +18,6 @@
 
 #include "cpp2sky/tracer.h"
 #include "source/grpc_async_client_impl.h"
-#include "spdlog/spdlog.h"
 
 namespace cpp2sky {
 

@@ -14,7 +14,7 @@
 
 #include "source/tracer_impl.h"
 
-#include <iostream>
+#include "source/utils/exception.h"
 
 namespace cpp2sky {
 
@@ -27,26 +27,25 @@ TracerImpl::TracerImpl(std::string address,
 
 TracerImpl::~TracerImpl() {
   delete client_;
-  cq_.Shutdown();
   th_.join();
+  cq_.Shutdown();
 }
 
 void TracerImpl::run() {
   void* got_tag;
   bool ok = false;
-  while (cq_.Next(&got_tag, &ok)) {
+  while (true) {
+    grpc::CompletionQueue::NextStatus status =
+        cq_.AsyncNext(&got_tag, &ok, gpr_inf_future(GPR_CLOCK_REALTIME));
+    if (status == grpc::CompletionQueue::SHUTDOWN) {
+      return;
+    }
+    TaggedStream* t_stream = deTag(got_tag);
     if (!ok) {
       continue;
     }
-    TaggedStream* t_stream = deTag(got_tag);
-    if (t_stream->operation == TaggedStream::Operation::Init) {
-      std::cout << "Connected" << std::endl;
-    } else if (t_stream->operation == TaggedStream::Operation::Write) {
-      std::cout << "Write finished" << std::endl;
-    } else if (t_stream->operation == TaggedStream::Operation::WriteDone) {
-      std::cout << "Write done, this stream will be closed" << std::endl;
-    } else {
-      GPR_ASSERT(false);
+    if (!t_stream->stream->handleOperation(t_stream->operation)) {
+      return;
     }
   }
 }
