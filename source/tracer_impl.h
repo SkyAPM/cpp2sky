@@ -29,6 +29,7 @@ class TracerImpl : public Tracer {
   ~TracerImpl();
 
   void sendSegment(SegmentObject& obj) override { client_->sendMessage(obj); }
+  void sendSegment(SegmentObject&& obj) override { client_->sendMessage(obj); }
 
  private:
   void run();
