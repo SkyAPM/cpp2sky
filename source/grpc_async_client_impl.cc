@@ -96,31 +96,28 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessages() {
 bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
   state_ = incoming_op;
   while (true) {
-    switch (state_) {
-      case Operation::Connected:
-        gpr_log(GPR_INFO, "Established connection: %s",
-                client_->peerAddress().c_str());
-        state_ = Operation::Idle;
-        break;
-      case Operation::Idle:
-        gpr_log(GPR_INFO, "Stream idleing");
-        // Release pending messages which are inserted when stream is not ready
-        // to write.
-        clearPendingMessages();
-        return true;
-      case Operation::WriteDone:
-        state_ = Operation::Idle;
-        gpr_log(GPR_INFO, "Write finished");
-        break;
-      case Operation::Finished:
-        gpr_log(GPR_INFO, "Stream closed with http status: %d",
-                grpcStatusToGenericHttpStatus(status_.error_code()));
-        if (!status_.ok()) {
-          gpr_log(GPR_ERROR, "%s", status_.error_message().c_str());
-        }
-        return false;
-      default:
-        throw TracerException("Unknown stream operation");
+    if (state_ == Operation::Connected) {
+      gpr_log(GPR_INFO, "Established connection: %s",
+        client_->peerAddress().c_str());
+      state_ = Operation::Idle;
+    } else if (state_ == Operation::WriteDone) {
+      state_ = Operation::Idle;
+      gpr_log(GPR_INFO, "Write finished");
+    } else if (state_ == Operation::Idle) {
+      gpr_log(GPR_INFO, "Stream idleing");
+      // Release pending messages which are inserted when stream is not ready
+      // to write.
+      clearPendingMessages();
+      return true;
+    } else if (state_ == Operation::Finished) {
+      gpr_log(GPR_INFO, "Stream closed with http status: %d",
+              grpcStatusToGenericHttpStatus(status_.error_code()));
+      if (!status_.ok()) {
+        gpr_log(GPR_ERROR, "%s", status_.error_message().c_str());
+      }
+      return false;
+    } else {
+      throw TracerException("Unknown stream operation");
     }
   }
 }
