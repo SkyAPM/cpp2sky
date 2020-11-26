@@ -28,7 +28,7 @@ namespace cpp2sky {
 using TracerRequestType = SegmentObject;
 using TracerResponseType = Commands;
 
-class TracerStubImpl
+class TracerStubImpl final
     : public TracerStub<TracerRequestType, TracerResponseType> {
  public:
   TracerStubImpl(std::shared_ptr<grpc::Channel> channel);
