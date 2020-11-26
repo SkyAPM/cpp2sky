@@ -14,4 +14,4 @@ services:
       dockerfile: ./e2e-docker/Dockerfile.provider
     ports:
       - 8081:8081
-    command: GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_provider
+    command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_provider"

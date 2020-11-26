@@ -12,7 +12,7 @@ int main() {
   std::string service_name = "e2e";
   std::string instance_name = "consumer";
 
-  auto tracer = createInsecureGrpcTracer("0.0.0.0:19876");
+  auto tracer = createInsecureGrpcTracer("collector:19876");
   Config config(service_name, instance_name, "");
   httplib::Server svr;
 
