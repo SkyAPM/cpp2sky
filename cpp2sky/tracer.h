@@ -28,6 +28,11 @@ class Tracer {
    * Send SegmentObject to the collector. (lvalue)
    */
   virtual void sendSegment(SegmentObject& obj) = 0;
+
+  /**
+   * Send SegmentObject to the collector. (rvalue)
+   */
+  virtual void sendSegment(SegmentObject&& obj) = 0;
 };
 
 using TracerPtr = std::unique_ptr<Tracer>;
