@@ -14,7 +14,10 @@
 
 #include "source/segment_context_impl.h"
 
+#include <algorithm>
+
 #include "language-agent/Tracing.pb.h"
+#include "source/utils/base64.h"
 #include "source/utils/random_generator.h"
 
 namespace cpp2sky {
