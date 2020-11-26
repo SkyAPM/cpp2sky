@@ -6,6 +6,7 @@ def cpp2sky_dependencies():
   com_github_grpc_grpc()
   com_google_googletest()
   com_google_protobuf()
+  com_github_httplib()
 
 def skywalking_data_collect_protocol():
   http_archive(
@@ -49,4 +50,13 @@ def com_google_protobuf():
     sha256 = "f8a547dfe143a9f61fadafba47fa6573713a33cb80909307c1502e26e1102298",
     strip_prefix = "protobuf-3.13.0",
     urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/protobuf-cpp-3.13.0.tar.gz"],
+  )
+
+def com_github_httplib():
+  http_archive(
+    name = "com_github_httplib",
+    sha256 = "0e424f92b607fc9245c144dada85c2e97bc6cc5938c0c69a598a5b2a5c1ab98a",
+    strip_prefix = "cpp-httplib-0.7.15",
+    build_file = "//bazel:httplib.BUILD",
+    urls = ["https://github.com/yhirose/cpp-httplib/archive/v0.7.15.tar.gz"]
   )
