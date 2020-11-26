@@ -37,3 +37,28 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "tracer_interface",
+  hdrs = ["tracer.h"],
+  deps = [
+    "@com_github_grpc_grpc//:grpc++",
+    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
+  name = "cpp2sky_interface",
+  hdrs = [
+    "tracer.h",
+    "segment_context.h",
+    "propagation.h",
+    "config.h",
+  ],
+  deps = [
+    "@com_github_grpc_grpc//:grpc++",
+    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
+  ],
+  visibility = ["//visibility:public"],
+) 
