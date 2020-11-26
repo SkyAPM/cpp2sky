@@ -83,6 +83,8 @@ class SegmentContextImpl : public SegmentContext {
   // This constructor is called when there is no parent SpanContext.
   SegmentContextImpl(Config& config, RandomGenerator& random);
   SegmentContextImpl(Config& config, SpanContextPtr parent_span_context,
+                     RandomGenerator& random);
+  SegmentContextImpl(Config& config, SpanContextPtr parent_span_context,
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
@@ -123,18 +125,30 @@ class SegmentContextImpl : public SegmentContext {
   std::string service_instance_;
 };
 
-SegmentContextPtr createSegmentContext(
-    Config& config, SpanContextPtr span_ctx = nullptr,
-    SpanContextExtensionPtr span_ctx_ext = nullptr) {
+SegmentContextPtr createSegmentContext(Config& config, SpanContextPtr span_ctx,
+                                       SpanContextExtensionPtr span_ctx_ext) {
   auto random_generator = RandomGeneratorImpl();
   if (!span_ctx && !span_ctx_ext) {
     return std::make_unique<SegmentContextImpl>(config, random_generator);
+  }
+  if (span_ctx && !span_ctx_ext) {
+    return std::make_unique<SegmentContextImpl>(config, span_ctx,
+                                                random_generator);
   }
   if (span_ctx && span_ctx_ext) {
     return std::make_unique<SegmentContextImpl>(config, span_ctx, span_ctx_ext,
                                                 random_generator);
   }
   return nullptr;
+}
+
+SegmentContextPtr createSegmentContext(Config& config,
+                                       SpanContextPtr span_ctx) {
+  return createSegmentContext(config, span_ctx, nullptr);
+}
+
+SegmentContextPtr createSegmentContext(Config& config) {
+  return createSegmentContext(config, nullptr, nullptr);
 }
 
 }  // namespace cpp2sky

@@ -96,6 +96,15 @@ SegmentContextImpl::SegmentContextImpl(
       service_(config.serviceName()),
       service_instance_(config.instanceName()) {}
 
+SegmentContextImpl::SegmentContextImpl(Config& config,
+                                       SpanContextPtr parent_span_context,
+                                       RandomGenerator& random)
+    : parent_span_context_(std::move(parent_span_context)),
+      trace_id_(parent_span_context_->traceId()),
+      trace_segment_id_(random.uuid()),
+      service_(config.serviceName()),
+      service_instance_(config.instanceName()) {}
+
 CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
     CurrentSegmentSpanPtr parent_span) {
   auto current_span =

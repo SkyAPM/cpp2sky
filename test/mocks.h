@@ -17,20 +17,49 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "cpp2sky/internal/async_client.h"
 #include "cpp2sky/internal/random_generator.h"
 
+using testing::_;
 using testing::Return;
 
 namespace cpp2sky {
 
 class MockRandomGenerator : public RandomGenerator {
  public:
-  MockRandomGenerator();
+  MockRandomGenerator() { ON_CALL(*this, uuid).WillByDefault(Return("uuid")); }
   MOCK_METHOD(std::string, uuid, ());
 };
 
-MockRandomGenerator::MockRandomGenerator() {
-  ON_CALL(*this, uuid).WillByDefault(Return("uuid"));
-}
+class MockAsyncStream : public AsyncStream {
+ public:
+  MOCK_METHOD(bool, startStream, ());
+  MOCK_METHOD(void, sendMessage, (Message&));
+  MOCK_METHOD(std::string, peerAddress, ());
+  MOCK_METHOD(bool, handleOperation, (Operation));
+};
+
+template <class RequestType, class ResponseType>
+class MockAsyncClient : public AsyncClient<RequestType, ResponseType> {
+ public:
+  MOCK_METHOD(void, sendMessage, (Message&));
+  MOCK_METHOD(std::unique_ptr<grpc::ClientAsyncWriter<RequestType>>,
+              createWriter, (grpc::ClientContext*, ResponseType*, void*));
+  MOCK_METHOD(std::string, peerAddress, ());
+};
+
+template <class RequestType, class ResponseType>
+class MockAsyncStreamFactory
+    : public AsyncStreamFactory<RequestType, ResponseType> {
+ public:
+  using AsyncClientType = AsyncClient<RequestType, ResponseType>;
+  MockAsyncStreamFactory(AsyncStreamPtr stream) : stream_(stream) {
+    ON_CALL(*this, create(_)).WillByDefault(Return(stream_));
+  }
+  MOCK_METHOD(AsyncStreamPtr, create, (AsyncClientType*));
+
+ private:
+  AsyncStreamPtr stream_;
+};
 
 }  // namespace cpp2sky

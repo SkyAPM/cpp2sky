@@ -170,4 +170,8 @@ using SegmentContextPtr = std::unique_ptr<SegmentContext>;
 SegmentContextPtr createSegmentContext(Config& config, SpanContextPtr span_ctx,
                                        SpanContextExtensionPtr span_ctx_ext);
 
+SegmentContextPtr createSegmentContext(Config& config, SpanContextPtr span_ctx);
+
+SegmentContextPtr createSegmentContext(Config& config);
+
 }  // namespace cpp2sky

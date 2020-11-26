@@ -27,3 +27,13 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "async_client_interface",
+  hdrs = ["internal/async_client.h"],
+  deps = [
+    "@com_github_grpc_grpc//:grpc++",
+    "@com_google_protobuf//:protobuf",
+  ],
+  visibility = ["//visibility:public"],
+)
