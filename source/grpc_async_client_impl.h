@@ -51,7 +51,7 @@ class GrpcAsyncSegmentReporterClient final
       std::shared_ptr<grpc::ChannelCredentials> cred, std::string address);
 
   // AsyncClient
-  void sendMessage(Message& message) override;
+  void sendMessage(TracerRequestType message) override;
   std::string peerAddress() override { return address_; }
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> createWriter(
       grpc::ClientContext* ctx, TracerResponseType* response,
@@ -62,7 +62,7 @@ class GrpcAsyncSegmentReporterClient final
   AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory_;
   TracerStubPtr<TracerRequestType, TracerResponseType> stub_;
   grpc::CompletionQueue* cq_;
-  AsyncStreamPtr stream_;
+  AsyncStreamPtr<TracerRequestType> stream_;
 };
 
 class GrpcAsyncSegmentReporterStream;
@@ -75,7 +75,8 @@ struct TaggedStream {
 void* toTag(TaggedStream* stream);
 TaggedStream* deTag(void* stream);
 
-class GrpcAsyncSegmentReporterStream final : public AsyncStream {
+class GrpcAsyncSegmentReporterStream final
+    : public AsyncStream<TracerRequestType> {
  public:
   GrpcAsyncSegmentReporterStream(
       AsyncClient<TracerRequestType, TracerResponseType>* client);
@@ -83,7 +84,7 @@ class GrpcAsyncSegmentReporterStream final : public AsyncStream {
 
   // AsyncStream
   bool startStream() override;
-  void sendMessage(Message& message) override;
+  void sendMessage(TracerRequestType message) override;
   bool handleOperation(Operation incoming_op) override;
 
  private:
@@ -94,7 +95,7 @@ class GrpcAsyncSegmentReporterStream final : public AsyncStream {
   grpc::Status status_;
   grpc::ClientContext ctx_;
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> request_writer_;
-  std::queue<std::reference_wrapper<Message>> pending_messages_;
+  std::queue<TracerRequestType> pending_messages_;
   Operation state_{Operation::Initialized};
 
   TaggedStream connected_{Operation::Connected, this};
@@ -106,7 +107,7 @@ class GrpcAsyncSegmentReporterStreamFactory final
     : public AsyncStreamFactory<TracerRequestType, TracerResponseType> {
  public:
   // AsyncStreamFactory
-  AsyncStreamPtr create(
+  AsyncStreamPtr<TracerRequestType> create(
       AsyncClient<TracerRequestType, TracerResponseType>* client) override;
 };
 
