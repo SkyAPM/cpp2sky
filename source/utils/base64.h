@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstring>
 #include <string>
 
 namespace cpp2sky {
@@ -28,6 +29,9 @@ class Base64 {
                             bool add_padding);
   static std::string encode(const char* input, uint64_t length) {
     return encode(input, length, true);
+  }
+  static std::string encode(std::string& input) {
+    return encode(input.c_str(), strlen(input.c_str()));
   }
   static std::string decodeWithoutPadding(std::string_view input);
 };

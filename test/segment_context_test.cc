@@ -58,7 +58,7 @@ TEST_F(SegmentContextTest, BasicTest) {
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
   // No parent span
-  auto span = sc.createCurrentSegmentSpan(nullptr);
+  auto span = sc.createCurrentSegmentRootSpan();
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
   span->setStartTime(10000);
@@ -71,12 +71,6 @@ TEST_F(SegmentContextTest, BasicTest) {
     "parentSpanId": "-1",
     "startTime": "10000",
     "endTime": "20000",
-    "refs": {
-      "traceId": "uuid",
-      "parentTraceSegmentId": "uuid",
-      "parentService": "mesh",
-      "parentServiceInstance": "service_0"
-    },
     "peer": "localhost:9000",
     "spanType": "Entry",
     "spanLayer": "Http",
@@ -101,12 +95,6 @@ TEST_F(SegmentContextTest, BasicTest) {
     "parentSpanId": "0",
     "startTime": "10000",
     "endTime": "12000",
-    "refs": {
-      "traceId": "uuid",
-      "parentTraceSegmentId": "uuid",
-      "parentService": "mesh",
-      "parentServiceInstance": "service_0"
-    },
     "peer": "localhost:9000",
     "spanType": "Exit",
     "spanLayer": "Http",
@@ -125,7 +113,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
   // No parent span
-  auto span = sc.createCurrentSegmentSpan(nullptr);
+  auto span = sc.createCurrentSegmentRootSpan();
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
   span->setStartTime(10000);
@@ -139,11 +127,12 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "startTime": "10000",
     "endTime": "20000",
     "refs": {
+      "refType": "CrossProcess",
       "traceId": "1",
-      "parentTraceSegmentId": "uuid",
+      "parentTraceSegmentId": "5",
       "parentSpanId": 3,
       "parentService": "mesh",
-      "parentServiceInstance": "service_0",
+      "parentServiceInstance": "instance",
       "parentEndpoint": "/api/v1/health"
     },
     "peer": "localhost:9000",
@@ -177,11 +166,12 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "startTime": "10000",
     "endTime": "12000",
     "refs": {
+      "refType": "CrossProcess",
       "traceId": "1",
-      "parentTraceSegmentId": "uuid",
+      "parentTraceSegmentId": "5",
       "parentSpanId": 3,
       "parentService": "mesh",
-      "parentServiceInstance": "service_0",
+      "parentServiceInstance": "instance",
       "parentEndpoint": "/api/v1/health"
     },
     "peer": "localhost:9000",
@@ -206,6 +196,25 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   JsonStringToMessage(json2, &expected_obj2);
   EXPECT_EQ(expected_obj2.DebugString(),
             span_child->createSpanObject().DebugString());
+}
+
+TEST_F(SegmentContextTest, SW8CreateTest) {
+  SegmentContextImpl sc(*config_.get(), span_ctx_, span_ext_ctx_, random_);
+  EXPECT_EQ(sc.service(), "mesh");
+  EXPECT_EQ(sc.serviceInstance(), "service_0");
+
+  auto span = sc.createCurrentSegmentRootSpan();
+  EXPECT_EQ(sc.spans().size(), 1);
+  EXPECT_EQ(span->spanId(), 0);
+  span->setStartTime(10000);
+  span->setEndTime(20000);
+  span->setOperationName("/ping");
+
+  std::string target_address("10.0.0.1:443");
+  std::string expect_sw8(
+      "1-MQ==-dXVpZA==-0-bWVzaA==-c2VydmljZV8w-L3Bpbmc=-MTAuMC4wLjE6NDQz");
+
+  EXPECT_EQ(expect_sw8, sc.createSW8HeaderValue(span, target_address));
 }
 
 }  // namespace cpp2sky
