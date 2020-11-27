@@ -21,18 +21,18 @@
 
 using namespace cpp2sky;
 
-static const std::string service_name = "e2e";
-static const std::string instance_name = "consumer";
+static const std::string service_name = "consumer";
+static const std::string instance_name = "node_0";
 static const std::string address = "collector:19876";
 
 Config config(service_name, instance_name, "");
 
-void handlePong(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
+void handlePong(Tracer* tracer, SegmentContext* scp, const httplib::Request& req,
                 httplib::Response& response) {
   auto span = scp->createCurrentSegmentRootSpan();
-  span->setStartTime(10050);
+  span->setStartTime(10110);
   span->setOperationName("/pong");
-  span->setEndTime(10500);
+  span->setEndTime(10190);
 }
 
 int main() {
@@ -40,9 +40,13 @@ int main() {
   auto tracer = createInsecureGrpcTracer(address);
 
   svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
-    auto current_segment = createSegmentContext(config);
-    handlePong(tracer.get(), current_segment.get(), req, res);
-    tracer->sendSegment(current_segment->createSegmentObject());
+    if (req.has_header("sw8")) {
+      auto parent = req.get_header_value("sw8");
+      auto parent_span = createSpanContext(parent);
+      auto current_segment = createSegmentContext(config, parent_span);
+      handlePong(tracer.get(), current_segment.get(), req, res);
+      tracer->sendSegment(current_segment->createSegmentObject());
+    }
   });
 
   svr.listen("0.0.0.0", 8080);

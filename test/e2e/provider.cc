@@ -21,27 +21,33 @@
 
 using namespace cpp2sky;
 
-static const std::string service_name = "e2e";
-static const std::string instance_name = "provider";
+static const std::string service_name = "provider";
+static const std::string instance_name = "node_0";
 static const std::string address = "collector:19876";
 
 Config config(service_name, instance_name, "");
 
-void requestPong(Tracer* tracer, SegmentContext* scp,
-                 CurrentSegmentSpanPtr span) {
+void requestPong(Tracer* tracer, SegmentContext* scp, CurrentSegmentSpanPtr parent_span) {
   std::string target_address = "consumer:8080";
+  auto current_span = scp->createCurrentSegmentSpan(parent_span);
+  current_span->setStartTime(10100);
+  current_span->setOperationName("/pong");
+
   httplib::Client cli("consumer", 8080);
   httplib::Headers headers = {
-      {"sw8", scp->createSW8HeaderValue(span, target_address)}};
+      {"sw8", scp->createSW8HeaderValue(current_span, target_address)}};
   auto res = cli.Get("/pong", headers);
+
+  current_span->setEndTime(10200);
 }
 
 void handlePing(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
                 httplib::Response& response) {
-  auto span = scp->createCurrentSegmentRootSpan();
-  span->setStartTime(10000);
-  span->setOperationName("/ping");
-  span->setEndTime(20000);
+  auto current_span = scp->createCurrentSegmentRootSpan();
+  current_span->setStartTime(10000);
+  current_span->setOperationName("/ping");
+  requestPong(tracer, scp, current_span);
+  current_span->setEndTime(20000);
 }
 
 int main() {

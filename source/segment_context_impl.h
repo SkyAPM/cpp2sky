@@ -120,7 +120,8 @@ class SegmentContextImpl : public SegmentContext {
 
   CurrentSegmentSpanPtr createCurrentSegmentRootSpan() override;
   std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent_span,
-                                   std::string& target_address) override;
+                                   std::string& target_address,
+                                   bool sample) override;
   SegmentObject createSegmentObject() override;
 
  private:
@@ -140,27 +141,20 @@ class SegmentContextImpl : public SegmentContext {
 SegmentContextPtr createSegmentContext(Config& config, SpanContextPtr span_ctx,
                                        SpanContextExtensionPtr span_ctx_ext) {
   auto random_generator = RandomGeneratorImpl();
-  if (!span_ctx && !span_ctx_ext) {
-    return std::make_unique<SegmentContextImpl>(config, random_generator);
-  }
-  if (span_ctx && !span_ctx_ext) {
-    return std::make_unique<SegmentContextImpl>(config, span_ctx,
-                                                random_generator);
-  }
-  if (span_ctx && span_ctx_ext) {
-    return std::make_unique<SegmentContextImpl>(config, span_ctx, span_ctx_ext,
-                                                random_generator);
-  }
-  return nullptr;
+  return std::make_unique<SegmentContextImpl>(config, span_ctx, span_ctx_ext,
+                                              random_generator);
 }
 
 SegmentContextPtr createSegmentContext(Config& config,
                                        SpanContextPtr span_ctx) {
-  return createSegmentContext(config, span_ctx, nullptr);
+  auto random_generator = RandomGeneratorImpl();
+  return std::make_unique<SegmentContextImpl>(config, span_ctx,
+                                              random_generator);
 }
 
 SegmentContextPtr createSegmentContext(Config& config) {
-  return createSegmentContext(config, nullptr, nullptr);
+  auto random_generator = RandomGeneratorImpl();
+  return std::make_unique<SegmentContextImpl>(config, random_generator);
 }
 
 }  // namespace cpp2sky

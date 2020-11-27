@@ -44,12 +44,16 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   // Inject request parent to the current segment.
   if (parent_span != nullptr) {
     auto* entry = obj.mutable_refs()->Add();
+    // TODO(shikugawa): cpp2sky only supports cross process propagation right
+    // now. So It is correct to specify this.
+    entry->set_reftype(RefType::CrossProcess);
     entry->set_traceid(parent_span->traceId());
     entry->set_parenttracesegmentid(parent_span->traceSegmentId());
     entry->set_parentservice(parent_span->service());
     entry->set_parentserviceinstance(parent_span->serviceInstance());
     entry->set_parentspanid(parent_span->spanId());
     entry->set_parentendpoint(parent_span->endpoint());
+    entry->set_networkaddressusedatpeer(parent_span->targetAddress());
   }
 
   for (auto& tag : tags_) {
@@ -130,23 +134,23 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
 }
 
 std::string SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, std::string& target_address) {
+    CurrentSegmentSpanPtr parent_span, std::string& target_address,
+    bool sample) {
   std::string header_value;
   if (parent_span == nullptr) {
     return header_value;
   }
-  auto reftype_str = std::to_string(static_cast<int>(RefType::CrossProcess));
   auto parent_spanid = std::to_string(parent_span->spanId());
   auto endpoint = spans_.front()->operationName();
 
-  header_value += Base64::encode(reftype_str) + "-";
+  header_value += sample ? "1-" : "0-";
   header_value += Base64::encode(trace_id_) + "-";
   header_value += Base64::encode(trace_segment_id_) + "-";
-  header_value += Base64::encode(parent_spanid) + "-";
+  header_value += parent_spanid + "-";
   header_value += Base64::encode(service_) + "-";
   header_value += Base64::encode(service_instance_) + "-";
   header_value += Base64::encode(endpoint) + "-";
-  header_value += Base64::encode(target_address) + "-";
+  header_value += Base64::encode(target_address);
 
   return header_value;
 }

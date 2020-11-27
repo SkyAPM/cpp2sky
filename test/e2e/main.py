@@ -5,6 +5,7 @@ import time
 from difflib import Differ
 from os.path import dirname
 
+import argparse
 import yaml
 import requests
 from requests import Response
@@ -36,5 +37,9 @@ def validate(expected_file_name):
     return response
 
 if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument('expected_file', help='File name which includes expected reported value')
+  args = parser.parse_args()
+
   requests.get('http://0.0.0.0:8081/ping')
-  validate('./data/expected.yaml')
+  validate(args.expected_file)
