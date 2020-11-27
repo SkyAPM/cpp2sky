@@ -1,5 +1,5 @@
 segmentItems:
-  - serviceName: provider
+  - serviceName: e2e
     segmentSize: 1
     segments:
       - segmentId: not null

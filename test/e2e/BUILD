@@ -17,6 +17,5 @@ cc_binary(
     "//cpp2sky:cpp2sky_interface",
     "//source:cpp2sky_lib",
     "@com_github_httplib//:httplib",
-    "@com_google_protobuf//:protobuf",
   ],
 )

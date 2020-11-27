@@ -32,8 +32,8 @@ def validate(expected_file_name):
       print('diff list: ')
       sys.stdout.writelines(diff_list)
 
-      assert response.status_code == 200
-      return response
+    assert response.status_code == 200
+    return response
 
 if __name__ == "__main__":
   requests.get('http://0.0.0.0:8081/ping')

@@ -39,6 +39,11 @@ class CurrentSegmentSpan {
   virtual int32_t spanId() const = 0;
 
   /**
+   * Get operation name.
+   */
+  virtual std::string operationName() const = 0;
+
+  /**
    * Set parent span ID of this span.
    */
   virtual void setParentSpanId(int32_t span_id) = 0;
@@ -144,7 +149,7 @@ class SegmentContext {
   virtual const std::list<CurrentSegmentSpanPtr>& spans() const = 0;
 
   /**
-   * Get span context which generated this segment context.
+   * Get span context which generated this segment context as parent.
    */
   virtual SpanContextPtr parentSpanContext() const = 0;
 
@@ -154,10 +159,25 @@ class SegmentContext {
   virtual SpanContextExtensionPtr parentSpanContextExtension() const = 0;
 
   /**
-   * Generate a segment spen related with this segment context.
+   * Generate a segment span related with this segment context.
+   * @param parent_span Parent span which is extracted from caller.
    */
   virtual CurrentSegmentSpanPtr createCurrentSegmentSpan(
       CurrentSegmentSpanPtr parent_span) = 0;
+
+  /**
+   * Generate root segment span, called once per workload.
+   */
+  virtual CurrentSegmentSpanPtr createCurrentSegmentRootSpan() = 0;
+
+  /**
+   * Generate sw8 value to send SegmentRef.
+   * @param parent Parent span that belongs to current segment.
+   * @param target_address Target address to send request. For more detail:
+   * https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L97-L101
+   */
+  virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
+                                           std::string& target_address) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object.

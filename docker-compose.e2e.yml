@@ -8,6 +8,14 @@ services:
       - 19876:19876
       - 12800:12800
 
+  consumer:
+    build:
+      context: .
+      dockerfile: ./e2e-docker/Dockerfile.consumer
+    expose: 
+      - 8080
+    command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_consumer"
+
   provider:
     build:
       context: .
