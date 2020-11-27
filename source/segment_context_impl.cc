@@ -14,7 +14,10 @@
 
 #include "source/segment_context_impl.h"
 
+#include <string>
+
 #include "language-agent/Tracing.pb.h"
+#include "source/utils/base64.h"
 #include "source/utils/random_generator.h"
 
 namespace cpp2sky {
@@ -37,17 +40,19 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   obj.set_iserror(is_error_);
   obj.set_peer(peer_);
 
-  auto* entry = obj.mutable_refs()->Add();
-  entry->set_traceid(parent_segment_context_->traceId());
-  entry->set_parenttracesegmentid(parent_segment_context_->traceSegmentId());
-  entry->set_parentservice(parent_segment_context_->service());
-  entry->set_parentserviceinstance(parent_segment_context_->serviceInstance());
-
-  if (parent_segment_context_->parentSpanContext() != nullptr) {
-    entry->set_parentspanid(
-        parent_segment_context_->parentSpanContext()->spanId());
-    entry->set_parentendpoint(
-        parent_segment_context_->parentSpanContext()->endpoint());
+  auto parent_span = parent_segment_context_->parentSpanContext();
+  // Inject request parent to the current segment.
+  if (parent_span != nullptr) {
+    auto* entry = obj.mutable_refs()->Add();
+    // TODO(shikugawa): cpp2sky only supports cross process propagation right
+    // now. So It is correct to specify this.
+    entry->set_reftype(RefType::CrossProcess);
+    entry->set_traceid(parent_span->traceId());
+    entry->set_parenttracesegmentid(parent_span->traceSegmentId());
+    entry->set_parentservice(parent_span->service());
+    entry->set_parentserviceinstance(parent_span->serviceInstance());
+    entry->set_parentspanid(parent_span->spanId());
+    entry->set_parentendpoint(parent_span->endpoint());
   }
 
   for (auto& tag : tags_) {
@@ -120,6 +125,33 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
   current_span->setSpanLayer(SpanLayer::Http);
   spans_.push_back(current_span);
   return current_span;
+}
+
+CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
+  assert(spans_.empty());
+  return createCurrentSegmentSpan(nullptr);
+}
+
+std::string SegmentContextImpl::createSW8HeaderValue(
+    CurrentSegmentSpanPtr parent_span, std::string& target_address,
+    bool sample) {
+  std::string header_value;
+  if (parent_span == nullptr) {
+    return header_value;
+  }
+  auto parent_spanid = std::to_string(parent_span->spanId());
+  auto endpoint = spans_.front()->operationName();
+
+  header_value += sample ? "1-" : "0-";
+  header_value += Base64::encode(trace_id_) + "-";
+  header_value += Base64::encode(trace_segment_id_) + "-";
+  header_value += parent_spanid + "-";
+  header_value += Base64::encode(service_) + "-";
+  header_value += Base64::encode(service_instance_) + "-";
+  header_value += Base64::encode(endpoint) + "-";
+  header_value += Base64::encode(target_address);
+
+  return header_value;
 }
 
 SegmentObject SegmentContextImpl::createSegmentObject() {

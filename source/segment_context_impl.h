@@ -29,7 +29,13 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
                          SegmentContext* parent_segment_context);
 
   SpanObject createSpanObject() override;
+
+#pragma region Getters
   int32_t spanId() const override { return span_id_; }
+  std::string operationName() const override { return operation_name_; }
+#pragma endregion
+
+#pragma region Setters
   void setParentSpanId(int32_t span_id) override { parent_span_id_ = span_id; }
   void setStartTime(int64_t start_time) override { start_time_ = start_time; }
   void setEndTime(int64_t end_time) override { end_time_ = end_time; }
@@ -54,6 +60,7 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
     tags_.emplace(std::move(key), std::move(value));
   }
   void addLog(int64_t time, std::string& key, std::string& value) override;
+#pragma endregion
 
  private:
   // Based on
@@ -88,6 +95,7 @@ class SegmentContextImpl : public SegmentContext {
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
+#pragma region Getters
   const std::string& traceId() const override { return trace_id_; }
   const std::string& traceSegmentId() const override {
     return trace_segment_id_;
@@ -105,10 +113,15 @@ class SegmentContextImpl : public SegmentContext {
   SpanContextExtensionPtr parentSpanContextExtension() const override {
     return parent_ext_span_context_;
   }
+#pragma endregion
 
   CurrentSegmentSpanPtr createCurrentSegmentSpan(
       CurrentSegmentSpanPtr parent_span) override;
 
+  CurrentSegmentSpanPtr createCurrentSegmentRootSpan() override;
+  std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent_span,
+                                   std::string& target_address,
+                                   bool sample = true) override;
   SegmentObject createSegmentObject() override;
 
  private:
@@ -128,27 +141,20 @@ class SegmentContextImpl : public SegmentContext {
 SegmentContextPtr createSegmentContext(Config& config, SpanContextPtr span_ctx,
                                        SpanContextExtensionPtr span_ctx_ext) {
   auto random_generator = RandomGeneratorImpl();
-  if (!span_ctx && !span_ctx_ext) {
-    return std::make_unique<SegmentContextImpl>(config, random_generator);
-  }
-  if (span_ctx && !span_ctx_ext) {
-    return std::make_unique<SegmentContextImpl>(config, span_ctx,
-                                                random_generator);
-  }
-  if (span_ctx && span_ctx_ext) {
-    return std::make_unique<SegmentContextImpl>(config, span_ctx, span_ctx_ext,
-                                                random_generator);
-  }
-  return nullptr;
+  return std::make_unique<SegmentContextImpl>(config, span_ctx, span_ctx_ext,
+                                              random_generator);
 }
 
 SegmentContextPtr createSegmentContext(Config& config,
                                        SpanContextPtr span_ctx) {
-  return createSegmentContext(config, span_ctx, nullptr);
+  auto random_generator = RandomGeneratorImpl();
+  return std::make_unique<SegmentContextImpl>(config, span_ctx,
+                                              random_generator);
 }
 
 SegmentContextPtr createSegmentContext(Config& config) {
-  return createSegmentContext(config, nullptr, nullptr);
+  auto random_generator = RandomGeneratorImpl();
+  return std::make_unique<SegmentContextImpl>(config, random_generator);
 }
 
 }  // namespace cpp2sky
