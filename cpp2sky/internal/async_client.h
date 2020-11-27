@@ -47,7 +47,7 @@ class AsyncClient {
   /**
    * Send the specified protobuf message
    */
-  virtual void sendMessage(Message& message) = 0;
+  virtual void sendMessage(RequestType message) = 0;
 
   /**
    * Get writer.
@@ -69,9 +69,10 @@ enum class Operation : uint8_t {
   Finished = 4,
 };
 
-template <class RequsetType, class ResponseType>
-using AsyncClientPtr = std::unique_ptr<AsyncClient<RequsetType, ResponseType>>;
+template <class RequestType, class ResponseType>
+using AsyncClientPtr = std::unique_ptr<AsyncClient<RequestType, ResponseType>>;
 
+template <class RequestType>
 class AsyncStream {
  public:
   virtual ~AsyncStream() = default;
@@ -84,7 +85,7 @@ class AsyncStream {
   /**
    * Send message. It will move the state from Init to Write.
    */
-  virtual void sendMessage(Message& message) = 0;
+  virtual void sendMessage(RequestType message) = 0;
 
   /**
    * Handle incoming event related to this stream.
@@ -92,7 +93,8 @@ class AsyncStream {
   virtual bool handleOperation(Operation incoming_op) = 0;
 };
 
-using AsyncStreamPtr = std::shared_ptr<AsyncStream>;
+template <class RequestType>
+using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType>>;
 
 template <class RequestType, class ResponseType>
 class AsyncStreamFactory {
@@ -102,7 +104,7 @@ class AsyncStreamFactory {
   /**
    * Create async stream entity
    */
-  virtual AsyncStreamPtr create(
+  virtual AsyncStreamPtr<RequestType> create(
       AsyncClient<RequestType, ResponseType>* client) = 0;
 };
 
