@@ -31,10 +31,11 @@ class MockRandomGenerator : public RandomGenerator {
   MOCK_METHOD(std::string, uuid, ());
 };
 
-class MockAsyncStream : public AsyncStream {
+template <class RequestType>
+class MockAsyncStream : public AsyncStream<RequestType> {
  public:
   MOCK_METHOD(bool, startStream, ());
-  MOCK_METHOD(void, sendMessage, (Message&));
+  MOCK_METHOD(void, sendMessage, (RequestType));
   MOCK_METHOD(std::string, peerAddress, ());
   MOCK_METHOD(bool, handleOperation, (Operation));
 };
@@ -53,13 +54,13 @@ class MockAsyncStreamFactory
     : public AsyncStreamFactory<RequestType, ResponseType> {
  public:
   using AsyncClientType = AsyncClient<RequestType, ResponseType>;
-  MockAsyncStreamFactory(AsyncStreamPtr stream) : stream_(stream) {
+  MockAsyncStreamFactory(AsyncStreamPtr<RequestType> stream) : stream_(stream) {
     ON_CALL(*this, create(_)).WillByDefault(Return(stream_));
   }
-  MOCK_METHOD(AsyncStreamPtr, create, (AsyncClientType*));
+  MOCK_METHOD(AsyncStreamPtr<RequestType>, create, (AsyncClientType*));
 
  private:
-  AsyncStreamPtr stream_;
+  AsyncStreamPtr<RequestType> stream_;
 };
 
 }  // namespace cpp2sky

@@ -37,7 +37,8 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
  protected:
   grpc::CompletionQueue cq_;
   std::string address_{"localhost:50051"};
-  std::shared_ptr<MockAsyncStream> stream_{std::make_shared<MockAsyncStream>()};
+  std::shared_ptr<MockAsyncStream<TracerRequestType>> stream_{
+      std::make_shared<MockAsyncStream<TracerRequestType>>()};
   MockAsyncStreamFactory<TracerRequestType, TracerResponseType> factory_{
       stream_};
   std::unique_ptr<GrpcAsyncSegmentReporterClient> client_;

@@ -42,7 +42,7 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
   stream_->startStream();
 }
 
-void GrpcAsyncSegmentReporterClient::sendMessage(Message& message) {
+void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
   GPR_ASSERT(stream_ != nullptr);
   stream_->sendMessage(message);
 }
@@ -76,7 +76,7 @@ bool GrpcAsyncSegmentReporterStream::startStream() {
   return true;
 }
 
-void GrpcAsyncSegmentReporterStream::sendMessage(Message& message) {
+void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
   pending_messages_.emplace(message);
   clearPendingMessages();
 }
@@ -87,9 +87,7 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessages() {
   }
   auto message = pending_messages_.back();
   pending_messages_.pop();
-  TracerRequestType obj;
-  obj.CopyFrom(message.get());
-  request_writer_->Write(obj, toTag(&write_done_));
+  request_writer_->Write(message, toTag(&write_done_));
   return true;
 }
 
@@ -122,7 +120,7 @@ bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
   }
 }
 
-AsyncStreamPtr GrpcAsyncSegmentReporterStreamFactory::create(
+AsyncStreamPtr<TracerRequestType> GrpcAsyncSegmentReporterStreamFactory::create(
     AsyncClient<TracerRequestType, TracerResponseType>* client) {
   if (client == nullptr) {
     return nullptr;
