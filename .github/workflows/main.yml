@@ -29,8 +29,10 @@ jobs:
 
       - name: Prepare service container
         run: |
-          docker-compose up -d
+          docker-compose -f docker-compose.e2e.yml up -d
 
       - name: Run e2e
         run: |
+          pip install requests
+          pip install pyyaml
           python test/e2e/main.py test/e2e/data/expected.yaml
