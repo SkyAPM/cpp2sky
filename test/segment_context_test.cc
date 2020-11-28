@@ -133,7 +133,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
       "parentSpanId": 3,
       "parentService": "mesh",
       "parentServiceInstance": "instance",
-      "parentEndpoint": "/api/v1/health"
+      "parentEndpoint": "/api/v1/health",
+      "networkAddressUsedAtPeer": "example.com:8080"
     },
     "peer": "localhost:9000",
     "spanType": "Entry",
@@ -172,7 +173,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
       "parentSpanId": 3,
       "parentService": "mesh",
       "parentServiceInstance": "instance",
-      "parentEndpoint": "/api/v1/health"
+      "parentEndpoint": "/api/v1/health",
+      "networkAddressUsedAtPeer": "example.com:8080"
     },
     "peer": "localhost:9000",
     "spanType": "Exit",

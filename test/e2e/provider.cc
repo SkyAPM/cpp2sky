@@ -27,7 +27,8 @@ static const std::string address = "collector:19876";
 
 Config config(service_name, instance_name, "");
 
-void requestPong(Tracer* tracer, SegmentContext* scp, CurrentSegmentSpanPtr parent_span) {
+void requestPong(Tracer* tracer, SegmentContext* scp,
+                 CurrentSegmentSpanPtr parent_span) {
   std::string target_address = "consumer:8080";
   auto current_span = scp->createCurrentSegmentSpan(parent_span);
   current_span->setStartTime(10100);

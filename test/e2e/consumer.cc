@@ -27,8 +27,8 @@ static const std::string address = "collector:19876";
 
 Config config(service_name, instance_name, "");
 
-void handlePong(Tracer* tracer, SegmentContext* scp, const httplib::Request& req,
-                httplib::Response& response) {
+void handlePong(Tracer* tracer, SegmentContext* scp,
+                const httplib::Request& req, httplib::Response& response) {
   auto span = scp->createCurrentSegmentRootSpan();
   span->setStartTime(10110);
   span->setOperationName("/pong");
