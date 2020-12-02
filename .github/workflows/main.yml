@@ -33,5 +33,5 @@ jobs:
 
       - name: Run e2e
         run: |
-          pip install requests pyyaml
+          pip install -r requirements.txt
           python test/e2e/main.py test/e2e/data/expected.yaml

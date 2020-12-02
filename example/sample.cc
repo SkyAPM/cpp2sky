@@ -32,14 +32,5 @@ int main(void) {
   auto tracer = createInsecureGrpcTracer("localhost:11800");
   auto m = current_segment->createSegmentObject();
 
-  // while (true) {
-  //   std::string s;
-  //   std::cin >> s;
-
-  //   if (s == "q") {
-  //     break;
-  //   } else {
   tracer->sendSegment(m);
-  // }
-  // }
 }
