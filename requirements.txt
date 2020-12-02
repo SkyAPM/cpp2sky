@@ -1,3 +1,4 @@
+setuptools
 asgiref==3.2.10
 aiofiles==0.6.0
 attrs==19.3.0
