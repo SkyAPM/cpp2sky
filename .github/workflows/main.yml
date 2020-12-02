@@ -9,19 +9,19 @@ on:
     branches: [ main ]
 
 jobs:
-  unittest:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+  # unittest:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
 
-      - name: Install Bazel
-        run: |
-          sudo wget -O /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
-          sudo chmod +x /usr/local/bin/bazel
+  #     - name: Install Bazel
+  #       run: |
+  #         sudo wget -O /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
+  #         sudo chmod +x /usr/local/bin/bazel
 
-      - name: Run bazel test
-        run: |
-          bazel test //...
+  #     - name: Run bazel test
+  #       run: |
+  #         bazel test //...
   e2e_cpp:
     runs-on: ubuntu-latest
     steps:
