@@ -15,6 +15,8 @@ services:
     expose: 
       - 8080
     command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_consumer"
+    depends_on:
+      - collector
 
   provider:
     build:
@@ -23,3 +25,6 @@ services:
     ports:
       - 8081:8081
     command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_provider"
+    depends_on:
+      - collector
+      - consumer

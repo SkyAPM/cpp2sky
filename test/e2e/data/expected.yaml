@@ -19,6 +19,7 @@ segmentItems:
             spanLayer: Http
             startTime: gt 0
             endTime: gt 0
+            peer: consumer:8080
             componentId: 9000
             spanType: Exit
             skipAnalysis: false
