@@ -27,11 +27,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Prepare service container
-        run: |
-          docker-compose -f docker-compose.e2e.yml up -d
+      # - name: Prepare service container
+        # run: |
+          # docker-compose -f docker-compose.e2e.yml up -d
 
       - name: Run e2e
         run: |
+          pip install --upgrade pip
           pip install -r requirements.txt
           python test/e2e/main.py test/e2e/data/expected.yaml
