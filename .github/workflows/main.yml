@@ -27,9 +27,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # - name: Prepare service container
-        # run: |
-          # docker-compose -f docker-compose.e2e.yml up -d
+      - name: Prepare service container
+        run: |
+          docker-compose -f docker-compose.e2e.yml up -d
 
       - name: Run e2e
         run: |
