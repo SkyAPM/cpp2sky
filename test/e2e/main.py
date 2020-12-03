@@ -19,6 +19,7 @@ except ImportError:
 def validate(expected_file_name):
   with open(expected_file_name) as expected_data_file:
     expected_data = os.linesep.join(expected_data_file.readlines())
+
     response = requests.post(url='http://0.0.0.0:12800/dataValidate', data=expected_data)
 
     if response.status_code != 200:
@@ -40,6 +41,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--expected_file', help='File name which includes expected reported value')
   parser.add_argument('--max_retry_times', help='Max retry times', type=int)
+  parser.add_argument('--target_path', help='Specify target path')
+  
   args = parser.parse_args()
 
   retry_times = 0
@@ -48,7 +51,7 @@ if __name__ == "__main__":
       raise RuntimeError("Max retry times exceeded")
 
     try:
-      requests.get('http://0.0.0.0:8081/ping', timeout=5)
+      requests.get('http://0.0.0.0:8081{0}'.format(args.target_path), timeout=5)
     except:
       retry_times += 1
       time.sleep(2)

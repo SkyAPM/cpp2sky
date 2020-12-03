@@ -32,13 +32,29 @@ void requestPong(Tracer* tracer, SegmentContext* scp,
   std::string target_address = "consumer:8080";
   auto current_span = scp->createCurrentSegmentSpan(parent_span);
   current_span->setStartTime(10100);
-  current_span->setPeer("consumer:8080");
+  current_span->setPeer(target_address);
   current_span->setOperationName("/pong");
 
   httplib::Client cli("consumer", 8080);
   httplib::Headers headers = {
       {"sw8", scp->createSW8HeaderValue(current_span, target_address)}};
   auto res = cli.Get("/pong", headers);
+
+  current_span->setEndTime(10200);
+}
+
+void requestUsers(Tracer* tracer, SegmentContext* scp,
+                  CurrentSegmentSpanPtr parent_span) {
+  std::string target_address = "interm:8082";
+  auto current_span = scp->createCurrentSegmentSpan(parent_span);
+  current_span->setStartTime(10100);
+  current_span->setPeer(target_address);
+  current_span->setOperationName("/users");
+
+  httplib::Client cli("interm", 8082);
+  httplib::Headers headers = {
+      {"sw8", scp->createSW8HeaderValue(current_span, target_address)}};
+  auto res = cli.Get("/users", headers);
 
   current_span->setEndTime(10200);
 }
@@ -52,6 +68,15 @@ void handlePing(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
   current_span->setEndTime(20000);
 }
 
+void handlePing2(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
+                 httplib::Response& response) {
+  auto current_span = scp->createCurrentSegmentRootSpan();
+  current_span->setStartTime(10000);
+  current_span->setOperationName("/ping2");
+  requestUsers(tracer, scp, current_span);
+  current_span->setEndTime(20000);
+}
+
 int main() {
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(address);
@@ -59,6 +84,12 @@ int main() {
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
     auto current_segment = createSegmentContext(config);
     handlePing(tracer.get(), current_segment.get(), req, res);
+    tracer->sendSegment(current_segment->createSegmentObject());
+  });
+
+  svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
+    auto current_segment = createSegmentContext(config);
+    handlePing2(tracer.get(), current_segment.get(), req, res);
     tracer->sendSegment(current_segment->createSegmentObject());
   });
 

@@ -1,0 +1,42 @@
+version: "3.7"
+services:
+  collector:
+    build:
+      context: .
+      dockerfile: ./e2e-docker/Dockerfile.tool
+    ports:
+      - 19876:19876
+      - 12800:12800
+
+  consumer:
+    build:
+      context: .
+      dockerfile: ./e2e-docker/Dockerfile.consumer
+    ports: 
+      - 8080:8080
+    command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_consumer"
+    depends_on:
+      - collector
+
+  interm:
+    build:
+      context: .
+      dockerfile: ./e2e-docker/Dockerfile.interm
+    ports:
+      - 8082:8082
+    command: python3 test/e2e/data/interm.py
+    depends_on:
+      - collector
+      - consumer
+
+  provider:
+    build:
+      context: .
+      dockerfile: ./e2e-docker/Dockerfile.provider
+    ports:
+      - 8081:8081
+    command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_provider"
+    depends_on:
+      - collector
+      - interm
+      - consumer

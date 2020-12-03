@@ -1,0 +1,102 @@
+---
+segmentItems:
+  - segmentSize: 1
+    segments:
+      - segmentId: not null
+        spans:
+          - componentId: 7002
+            endTime: gt 0
+            isError: false
+            operationName: /pong
+            parentSpanId: 0
+            peer: 'consumer:8080'
+            skipAnalysis: false
+            spanId: 1
+            spanLayer: Http
+            spanType: Exit
+            startTime: gt 0
+            tags:
+              - key: http.method
+                value: GET
+              - key: url
+                value: 'http://consumer:8080/pong'
+              - key: status.code
+                value: '200'
+          - componentId: 7001
+            endTime: gt 0
+            isError: false
+            operationName: /users
+            parentSpanId: -1
+            peer: not null
+            refs:
+              - networkAddress: 'interm:8082'
+                parentEndpoint: /ping2
+                parentService: provider
+                parentServiceInstance: node_0
+                parentSpanId: 1
+                parentTraceSegmentId: not null
+                refType: CrossProcess
+                traceId: not null
+            skipAnalysis: false
+            spanId: 0
+            spanLayer: Http
+            spanType: Entry
+            startTime: gt 0
+            tags:
+              - key: http.method
+                value: GET
+              - key: url
+                value: 'http://interm:8082/users'
+              - key: status.code
+                value: '200'
+    serviceName: interm
+  - segmentSize: 1
+    segments:
+      - segmentId: not null
+        spans:
+          - componentId: 9000
+            endTime: gt 0
+            isError: false
+            operationName: /ping2
+            parentSpanId: -1
+            skipAnalysis: false
+            spanId: 0
+            spanLayer: Http
+            spanType: Entry
+            startTime: gt 0
+          - componentId: 9000
+            endTime: gt 0
+            isError: false
+            operationName: /users
+            parentSpanId: 0
+            peer: 'interm:8082'
+            skipAnalysis: false
+            spanId: 1
+            spanLayer: Http
+            spanType: Exit
+            startTime: gt 0
+    serviceName: provider
+  - segmentSize: 1
+    segments:
+      - segmentId: not null
+        spans:
+          - componentId: 9000
+            endTime: gt 0
+            isError: false
+            operationName: /pong
+            parentSpanId: -1
+            refs:
+              - networkAddress: 'consumer:8080'
+                parentEndpoint: /pong
+                parentService: interm
+                parentServiceInstance: not null
+                parentSpanId: 1
+                parentTraceSegmentId: not null
+                refType: CrossProcess
+                traceId: not null
+            skipAnalysis: false
+            spanId: 0
+            spanLayer: Http
+            spanType: Entry
+            startTime: gt 0
+    serviceName: consumer
