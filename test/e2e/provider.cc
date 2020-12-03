@@ -44,7 +44,7 @@ void requestPong(Tracer* tracer, SegmentContext* scp,
 }
 
 void requestUsers(Tracer* tracer, SegmentContext* scp,
-                 CurrentSegmentSpanPtr parent_span) {
+                  CurrentSegmentSpanPtr parent_span) {
   std::string target_address = "interm:8082";
   auto current_span = scp->createCurrentSegmentSpan(parent_span);
   current_span->setStartTime(10100);
@@ -69,7 +69,7 @@ void handlePing(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
 }
 
 void handlePing2(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
-                httplib::Response& response) {
+                 httplib::Response& response) {
   auto current_span = scp->createCurrentSegmentRootSpan();
   current_span->setStartTime(10000);
   current_span->setOperationName("/ping2");
@@ -91,7 +91,6 @@ int main() {
     auto current_segment = createSegmentContext(config);
     handlePing2(tracer.get(), current_segment.get(), req, res);
     tracer->sendSegment(current_segment->createSegmentObject());
-    std::cout << "fuga" << std::endl;
   });
 
   svr.listen("0.0.0.0", 8081);
