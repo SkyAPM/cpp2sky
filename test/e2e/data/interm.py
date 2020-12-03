@@ -16,11 +16,7 @@ if __name__ == '__main__':
 
     @app.route("/users", methods=["POST", "GET"])
     def application():
-        from skywalking.trace.context import get_context
-        get_context().put_correlation("correlation", "correlation")
-
-        res = requests.post("http://consumer:8080/pong")
-
+        res = requests.get("http://consumer:8080/pong")
         return Response(status=res.status_code)
 
     PORT = 8082

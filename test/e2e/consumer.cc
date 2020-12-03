@@ -38,14 +38,17 @@ void handlePong(Tracer* tracer, SegmentContext* scp,
 int main() {
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(address);
-
   svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
+    for (const auto& [k, v]: req.headers) {
+      std::cout << k << ": " << v << std::endl;
+    }
     if (req.has_header("sw8")) {
       auto parent = req.get_header_value("sw8");
       auto parent_span = createSpanContext(parent);
       auto current_segment = createSegmentContext(config, parent_span);
       handlePong(tracer.get(), current_segment.get(), req, res);
       tracer->sendSegment(current_segment->createSegmentObject());
+      std::cout << "hoge" << std::endl;
     }
   });
 
