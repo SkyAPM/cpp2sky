@@ -32,6 +32,7 @@ void requestPong(Tracer* tracer, SegmentContext* scp,
   std::string target_address = "consumer:8080";
   auto current_span = scp->createCurrentSegmentSpan(parent_span);
   current_span->setStartTime(10100);
+  current_span->setPeer("consumer:8080");
   current_span->setOperationName("/pong");
 
   httplib::Client cli("consumer", 8080);
