@@ -8,6 +8,7 @@ from os.path import dirname
 import argparse
 import yaml
 import requests
+import time
 from requests import Response
 
 try:
@@ -33,13 +34,26 @@ def validate(expected_file_name):
       print('diff list: ')
       sys.stdout.writelines(diff_list)
 
-    assert response.status_code == 200
     return response
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument('expected_file', help='File name which includes expected reported value')
+  parser.add_argument('--expected_file', help='File name which includes expected reported value')
+  parser.add_argument('--max_retry_times', help='Max retry times', type=int)
   args = parser.parse_args()
 
-  requests.get('http://0.0.0.0:8081/ping')
-  validate(args.expected_file)
+  retry_times = 0
+  while True:
+    if retry_times > args.max_retry_times:
+      raise RuntimeError("Max retry times exceeded")
+
+    try:
+      requests.get('http://0.0.0.0:8081/ping', timeout=5)
+    except:
+      retry_times += 1
+      time.sleep(2)
+      continue
+
+    res = validate(args.expected_file)
+    assert res.status_code == 200
+    break
