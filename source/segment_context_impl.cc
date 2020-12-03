@@ -53,6 +53,7 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
     entry->set_parentserviceinstance(parent_span->serviceInstance());
     entry->set_parentspanid(parent_span->spanId());
     entry->set_parentendpoint(parent_span->endpoint());
+    entry->set_networkaddressusedatpeer(parent_span->targetAddress());
   }
 
   for (auto& tag : tags_) {

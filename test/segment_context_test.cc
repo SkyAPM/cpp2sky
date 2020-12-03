@@ -133,7 +133,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
       "parentSpanId": 3,
       "parentService": "mesh",
       "parentServiceInstance": "instance",
-      "parentEndpoint": "/api/v1/health"
+      "parentEndpoint": "/api/v1/health",
+      "networkAddressUsedAtPeer": "example.com:8080"
     },
     "peer": "localhost:9000",
     "spanType": "Entry",
@@ -172,7 +173,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
       "parentSpanId": 3,
       "parentService": "mesh",
       "parentServiceInstance": "instance",
-      "parentEndpoint": "/api/v1/health"
+      "parentEndpoint": "/api/v1/health",
+      "networkAddressUsedAtPeer": "example.com:8080"
     },
     "peer": "localhost:9000",
     "spanType": "Exit",
@@ -214,7 +216,7 @@ TEST_F(SegmentContextTest, SW8CreateTest) {
   std::string expect_sw8(
       "1-MQ==-dXVpZA==-0-bWVzaA==-c2VydmljZV8w-L3Bpbmc=-MTAuMC4wLjE6NDQz");
 
-  EXPECT_EQ(expect_sw8, sc.createSW8HeaderValue(span, target_address));
+  EXPECT_EQ(expect_sw8, sc.createSW8HeaderValue(span, target_address, true));
 }
 
 }  // namespace cpp2sky

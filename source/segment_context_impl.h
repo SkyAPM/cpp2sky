@@ -121,7 +121,7 @@ class SegmentContextImpl : public SegmentContext {
   CurrentSegmentSpanPtr createCurrentSegmentRootSpan() override;
   std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent_span,
                                    std::string& target_address,
-                                   bool sample = true) override;
+                                   bool sample) override;
   SegmentObject createSegmentObject() override;
 
  private:

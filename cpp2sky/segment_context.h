@@ -80,7 +80,7 @@ class CurrentSegmentSpan {
 
   /**
    * Set span type. Entry or Exit. Entry span means origin span which doesn't
-   * have parent span, , like root node of span tree. Exit span has opposite
+   * have parent span, like root node of span tree. Exit span has opposite
    * meaning, like leaf node of span tree.
    */
   virtual void setSpanType(SpanType type) = 0;
@@ -180,7 +180,7 @@ class SegmentContext {
    */
   virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
                                            std::string& target_address,
-                                           bool sample) = 0;
+                                           bool sample = true) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object.
