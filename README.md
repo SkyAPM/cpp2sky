@@ -86,14 +86,14 @@ SegmentContextPtr current_segment = createSegmentContext(config);
 First, you must create root span to trace current workload.
 
 ```
-CurrentSegmentSpanPtr current_span = scp->createCurrentSegmentRootSpan();
+CurrentSegmentSpanPtr current_span = current_segment->createCurrentSegmentRootSpan();
 ```
 
 After that, you can create another span to trace another workload, such as RPC to other services.
 Note that you must have parent span to create secondary span. It will construct parent-child relation when analysis.
 
 ```
-CurrentSegmentSpanPtr current_span = scp->createCurrentSegmentSpan(current_span);
+CurrentSegmentSpanPtr current_span = current_segment->createCurrentSegmentSpan(current_span);
 ```
 
 #### Send segment to OAP
@@ -103,5 +103,11 @@ to avoid undefined behavior.
 
 ```
 SegmentContextPtr current_segment = createSegmentContext(config);
+CurrentSegmentSpanPtr current_span = current_segment->createCurrentSegmentRootSpan();
+
+current_span->setOperationName("sample_workload");
+current_span->setStartTime(...);
+current_span->setEndTime(...);
+
 tracer->sendSegment(std::move(current_segment));
 ```
