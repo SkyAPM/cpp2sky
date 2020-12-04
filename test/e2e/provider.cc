@@ -84,13 +84,13 @@ int main() {
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
     auto current_segment = createSegmentContext(config);
     handlePing(tracer.get(), current_segment.get(), req, res);
-    tracer->sendSegment(current_segment->createSegmentObject());
+    tracer->sendSegment(std::move(current_segment));
   });
 
   svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
     auto current_segment = createSegmentContext(config);
     handlePing2(tracer.get(), current_segment.get(), req, res);
-    tracer->sendSegment(current_segment->createSegmentObject());
+    tracer->sendSegment(std::move(current_segment));
   });
 
   svr.listen("0.0.0.0", 8081);

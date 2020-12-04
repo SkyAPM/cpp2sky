@@ -30,7 +30,6 @@ int main(void) {
   auto current_segment = createSegmentContext(config, span_ctx);
 
   auto tracer = createInsecureGrpcTracer("localhost:11800");
-  auto m = current_segment->createSegmentObject();
 
-  tracer->sendSegment(m);
+  tracer->sendSegment(std::move(current_segment));
 }
