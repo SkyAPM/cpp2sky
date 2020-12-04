@@ -98,4 +98,10 @@ CurrentSegmentSpanPtr current_span = scp->createCurrentSegmentSpan(current_span)
 
 #### Send segment to OAP
 
-To send a segment to OAP, 
+Note that SegmentContextPtr is unique pointer. So when you'd like to send data, you must move it and don't refer after sending, 
+to avoid undefined behavior.
+
+```
+SegmentContextPtr current_segment = createSegmentContext(config);
+tracer->sendSegment(std::move(current_segment));
+```
