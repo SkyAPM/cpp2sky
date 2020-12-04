@@ -88,10 +88,10 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
 class SegmentContextImpl : public SegmentContext {
  public:
   // This constructor is called when there is no parent SpanContext.
-  SegmentContextImpl(Config& config, RandomGenerator& random);
-  SegmentContextImpl(Config& config, SpanContextPtr parent_span_context,
+  SegmentContextImpl(SegmentConfig& config, RandomGenerator& random);
+  SegmentContextImpl(SegmentConfig& config, SpanContextPtr parent_span_context,
                      RandomGenerator& random);
-  SegmentContextImpl(Config& config, SpanContextPtr parent_span_context,
+  SegmentContextImpl(SegmentConfig& config, SpanContextPtr parent_span_context,
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
@@ -138,21 +138,22 @@ class SegmentContextImpl : public SegmentContext {
   std::string service_instance_;
 };
 
-SegmentContextPtr createSegmentContext(Config& config, SpanContextPtr span_ctx,
+SegmentContextPtr createSegmentContext(SegmentConfig& config,
+                                       SpanContextPtr span_ctx,
                                        SpanContextExtensionPtr span_ctx_ext) {
   auto random_generator = RandomGeneratorImpl();
   return std::make_unique<SegmentContextImpl>(config, span_ctx, span_ctx_ext,
                                               random_generator);
 }
 
-SegmentContextPtr createSegmentContext(Config& config,
+SegmentContextPtr createSegmentContext(SegmentConfig& config,
                                        SpanContextPtr span_ctx) {
   auto random_generator = RandomGeneratorImpl();
   return std::make_unique<SegmentContextImpl>(config, span_ctx,
                                               random_generator);
 }
 
-SegmentContextPtr createSegmentContext(Config& config) {
+SegmentContextPtr createSegmentContext(SegmentConfig& config) {
   auto random_generator = RandomGeneratorImpl();
   return std::make_unique<SegmentContextImpl>(config, random_generator);
 }

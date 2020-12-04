@@ -86,14 +86,15 @@ void CurrentSegmentSpanImpl::addLog(int64_t time, std::string& key,
   logs_.emplace_back(l);
 }
 
-SegmentContextImpl::SegmentContextImpl(Config& config, RandomGenerator& random)
+SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
+                                       RandomGenerator& random)
     : trace_id_(random.uuid()),
       trace_segment_id_(random.uuid()),
       service_(config.serviceName()),
       service_instance_(config.instanceName()) {}
 
 SegmentContextImpl::SegmentContextImpl(
-    Config& config, SpanContextPtr parent_span_context,
+    SegmentConfig& config, SpanContextPtr parent_span_context,
     SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       parent_ext_span_context_(std::move(parent_ext_span_context)),
@@ -102,7 +103,7 @@ SegmentContextImpl::SegmentContextImpl(
       service_(config.serviceName()),
       service_instance_(config.instanceName()) {}
 
-SegmentContextImpl::SegmentContextImpl(Config& config,
+SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
                                        SpanContextPtr parent_span_context,
                                        RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),

@@ -23,7 +23,7 @@ namespace cpp2sky {
 
 class TracerImpl : public Tracer {
  public:
-  TracerImpl(std::string address,
+  TracerImpl(TracerConfig& config,
              std::shared_ptr<grpc::ChannelCredentials> cred,
              GrpcAsyncSegmentReporterStreamFactory& factory);
   ~TracerImpl();
@@ -40,6 +40,6 @@ class TracerImpl : public Tracer {
 
 static GrpcAsyncSegmentReporterStreamFactory stream_factory;
 
-TracerPtr createInsecureGrpcTracer(std::string address);
+TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
 
 }  // namespace cpp2sky

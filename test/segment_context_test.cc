@@ -37,7 +37,7 @@ static constexpr std::string_view sample_ctx =
 class SegmentContextTest : public testing::Test {
  public:
   SegmentContextTest() {
-    config_ = std::make_unique<Config>(service_name_, instance_name_, token_);
+    config_ = std::make_unique<SegmentConfig>(service_name_, instance_name_);
     span_ctx_ = std::make_shared<SpanContextImpl>(sample_ctx);
     span_ext_ctx_ = std::make_shared<SpanContextExtensionImpl>("1");
   }
@@ -46,8 +46,7 @@ class SegmentContextTest : public testing::Test {
   NiceMock<MockRandomGenerator> random_;
   std::string service_name_ = "mesh";
   std::string instance_name_ = "service_0";
-  std::string token_ = "dummy";
-  std::unique_ptr<Config> config_;
+  std::unique_ptr<SegmentConfig> config_;
   SpanContextPtr span_ctx_;
   SpanContextExtensionPtr span_ext_ctx_;
 };
