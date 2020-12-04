@@ -16,7 +16,7 @@
 
 #include <memory>
 
-#include "language-agent/Tracing.pb.h"
+#include "cpp2sky/segment_context.h"
 
 namespace cpp2sky {
 
@@ -25,14 +25,9 @@ class Tracer {
   virtual ~Tracer() = default;
 
   /**
-   * Send SegmentObject to the collector. (lvalue)
+   * Send SegmentContext to the collector.
    */
-  virtual void sendSegment(SegmentObject& obj) = 0;
-
-  /**
-   * Send SegmentObject to the collector. (rvalue)
-   */
-  virtual void sendSegment(SegmentObject&& obj) = 0;
+  virtual void sendSegment(SegmentContextPtr obj) = 0;
 };
 
 using TracerPtr = std::unique_ptr<Tracer>;
