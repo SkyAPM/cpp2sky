@@ -111,3 +111,7 @@ current_span->setEndTime(...);
 
 tracer->sendSegment(std::move(current_segment));
 ```
+
+## LICENSE
+
+Apache 2.0 License. See [LICENSE](https://github.com/SkyAPM/cpp2sky/blob/main/LICENSE) for more detail.
