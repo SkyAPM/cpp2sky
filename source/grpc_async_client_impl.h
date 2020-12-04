@@ -48,7 +48,8 @@ class GrpcAsyncSegmentReporterClient final
   GrpcAsyncSegmentReporterClient(
       grpc::CompletionQueue* cq,
       AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
-      std::shared_ptr<grpc::ChannelCredentials> cred, std::string address);
+      std::shared_ptr<grpc::ChannelCredentials> cred, std::string address,
+      std::string token);
 
   // AsyncClient
   void sendMessage(TracerRequestType message) override;
@@ -58,6 +59,7 @@ class GrpcAsyncSegmentReporterClient final
       void* tag) override;
 
  private:
+  std::string token_;
   std::string address_;
   AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory_;
   TracerStubPtr<TracerRequestType, TracerResponseType> stub_;

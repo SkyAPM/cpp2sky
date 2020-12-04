@@ -14,10 +14,16 @@
 
 #include "grpc_async_client_impl.h"
 
+#include <string_view>
+
 #include "source/utils/exception.h"
 #include "utils/grpc_status.h"
 
 namespace cpp2sky {
+
+namespace {
+static constexpr std::string_view authenticationKey = "authentication";
+}
 
 void* toTag(TaggedStream* stream) { return reinterpret_cast<void*>(stream); }
 TaggedStream* deTag(void* stream) { return static_cast<TaggedStream*>(stream); }
@@ -35,8 +41,9 @@ TracerStubImpl::createWriter(grpc::ClientContext* ctx,
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     grpc::CompletionQueue* cq,
     AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
-    std::shared_ptr<grpc::ChannelCredentials> cred, std::string address)
-    : address_(address), factory_(factory), cq_(cq) {
+    std::shared_ptr<grpc::ChannelCredentials> cred, std::string address,
+    std::string token)
+    : token_(token), address_(address), factory_(factory), cq_(cq) {
   stub_ = std::make_unique<TracerStubImpl>(grpc::CreateChannel(address, cred));
   stream_ = factory_.create(this);
   stream_->startStream();
@@ -51,6 +58,9 @@ std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>>
 GrpcAsyncSegmentReporterClient::createWriter(grpc::ClientContext* ctx,
                                              TracerResponseType* response,
                                              void* tag) {
+  if (!token_.empty()) {
+    ctx->AddMetadata(authenticationKey.data(), token_);
+  }
   return stub_->createWriter(ctx, response, cq_, tag);
 }
 

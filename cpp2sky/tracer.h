@@ -16,6 +16,7 @@
 
 #include <memory>
 
+#include "cpp2sky/config.h"
 #include "cpp2sky/segment_context.h"
 
 namespace cpp2sky {
@@ -32,6 +33,6 @@ class Tracer {
 
 using TracerPtr = std::unique_ptr<Tracer>;
 
-TracerPtr createInsecureGrpcTracer(std::string address);
+TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
 
 }  // namespace cpp2sky

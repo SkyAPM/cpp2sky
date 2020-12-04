@@ -25,7 +25,8 @@ static const std::string service_name = "provider";
 static const std::string instance_name = "node_0";
 static const std::string address = "collector:19876";
 
-Config config(service_name, instance_name, "");
+SegmentConfig seg_config(service_name, instance_name);
+TracerConfig tracer_config(address);
 
 void requestPong(Tracer* tracer, SegmentContext* scp,
                  CurrentSegmentSpanPtr parent_span) {
@@ -79,16 +80,16 @@ void handlePing2(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
 
 int main() {
   httplib::Server svr;
-  auto tracer = createInsecureGrpcTracer(address);
+  auto tracer = createInsecureGrpcTracer(tracer_config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    auto current_segment = createSegmentContext(config);
+    auto current_segment = createSegmentContext(seg_config);
     handlePing(tracer.get(), current_segment.get(), req, res);
     tracer->sendSegment(std::move(current_segment));
   });
 
   svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
-    auto current_segment = createSegmentContext(config);
+    auto current_segment = createSegmentContext(seg_config);
     handlePing2(tracer.get(), current_segment.get(), req, res);
     tracer->sendSegment(std::move(current_segment));
   });

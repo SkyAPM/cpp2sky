@@ -20,26 +20,36 @@ namespace cpp2sky {
 
 enum Protocol { REST, GRPC };
 
-class Config {
+class TracerConfig {
  public:
-  Config(std::string service_name, std::string instance_name, std::string token,
-         Protocol protocol = Protocol::GRPC)
-      : service_name_(service_name),
-        instance_name_(instance_name),
-        token_(token),
-        protocol_(protocol) {}
-  ~Config() = default;
+  TracerConfig(std::string address, Protocol protocol = Protocol::GRPC)
+      : address_(address), protocol_(protocol) {}
+  TracerConfig(std::string address, std::string token,
+               Protocol protocol = Protocol::GRPC)
+      : address_(address), token_(token), protocol_(protocol) {}
+  ~TracerConfig() = default;
 
-  const std::string& serviceName() const { return service_name_; }
-  const std::string& instanceName() const { return instance_name_; }
+  const std::string& address() const { return address_; }
   const std::string& token() const { return token_; }
   Protocol protocol() const { return protocol_; }
 
  private:
-  std::string service_name_;
-  std::string instance_name_;
+  std::string address_;
   std::string token_;
   Protocol protocol_;
+};
+
+class SegmentConfig {
+ public:
+  SegmentConfig(std::string service_name, std::string instance_name)
+      : service_name_(service_name), instance_name_(instance_name) {}
+
+  const std::string& serviceName() const { return service_name_; }
+  const std::string& instanceName() const { return instance_name_; }
+
+ private:
+  std::string service_name_;
+  std::string instance_name_;
 };
 
 }  // namespace cpp2sky
