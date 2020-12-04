@@ -31,6 +31,13 @@ TracerImpl::~TracerImpl() {
   cq_.Shutdown();
 }
 
+void TracerImpl::sendSegment(SegmentContextPtr obj) {
+  if (!obj) {
+    return;
+  }
+  client_->sendMessage(obj->createSegmentObject());
+}
+
 void TracerImpl::run() {
   void* got_tag;
   bool ok = false;

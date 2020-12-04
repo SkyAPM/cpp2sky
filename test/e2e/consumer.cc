@@ -45,7 +45,7 @@ int main() {
       auto parent_span = createSpanContext(parent);
       auto current_segment = createSegmentContext(config, parent_span);
       handlePong(tracer.get(), current_segment.get(), req, res);
-      tracer->sendSegment(current_segment->createSegmentObject());
+      tracer->sendSegment(std::move(current_segment));
     }
   });
 
