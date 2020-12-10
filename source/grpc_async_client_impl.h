@@ -59,6 +59,14 @@ class GrpcAsyncSegmentReporterClient final
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> createWriter(
       grpc::ClientContext* ctx, TracerResponseType* response,
       void* tag) override;
+  void drainPendingMessages(
+      std::queue<TracerRequestType>& pending_messages) override;
+  void resetStream() override {
+    if (stream_) {
+      stream_.reset();
+    }
+  }
+  void startStream() override;
 
  private:
   std::string token_;
@@ -66,7 +74,9 @@ class GrpcAsyncSegmentReporterClient final
   AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory_;
   TracerStubPtr<TracerRequestType, TracerResponseType> stub_;
   grpc::CompletionQueue* cq_;
+  std::shared_ptr<grpc::Channel> channel_;
   AsyncStreamPtr<TracerRequestType> stream_;
+  std::queue<TracerRequestType> drained_messages_;
 };
 
 class GrpcAsyncSegmentReporterStream;

@@ -43,10 +43,12 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
     std::shared_ptr<grpc::ChannelCredentials> cred, std::string address,
     std::string token)
-    : token_(token), address_(address), factory_(factory), cq_(cq) {
-  stub_ = std::make_unique<TracerStubImpl>(grpc::CreateChannel(address, cred));
-  stream_ = factory_.create(this);
-  stream_->startStream();
+    : token_(token),
+      factory_(factory),
+      cq_(cq),
+      channel_(grpc::CreateChannel(address, cred)) {
+  stub_ = std::make_unique<TracerStubImpl>(channel_);
+  startStream();
 }
 
 void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
@@ -64,16 +66,35 @@ GrpcAsyncSegmentReporterClient::createWriter(grpc::ClientContext* ctx,
   return stub_->createWriter(ctx, response, cq_, tag);
 }
 
+void GrpcAsyncSegmentReporterClient::startStream() {
+  resetStream();
+
+  // Try to establish connection.
+  channel_->GetState(true);
+  stream_ = factory_.create(this);
+  stream_->startStream();
+}
+
+void GrpcAsyncSegmentReporterClient::drainPendingMessages(
+    std::queue<TracerRequestType>& pending_messages) {
+  while (!pending_messages.empty()) {
+    auto msg = pending_messages.front();
+    pending_messages.pop();
+    drained_messages_.emplace(msg);
+  }
+}
+
 GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
     AsyncClient<TracerRequestType, TracerResponseType>* client)
     : client_(client) {}
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
+  std::cout << "GrpcAsyncSegmentReporter" << std::endl;
   {
     std::unique_lock<std::mutex> lck_(mux_);
     cond_.wait(lck_, [this] { return pending_messages_.empty(); });
   }
-
+  std::cout << "GrpcAsyncSegmentReporterStream" << std::endl;
   ctx_.TryCancel();
   request_writer_->Finish(&status_, toTag(&finish_));
 }
@@ -92,6 +113,9 @@ bool GrpcAsyncSegmentReporterStream::startStream() {
 }
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
+  if (state_ == Operation::Initialized) {
+    request_writer_->StartCall(toTag(&connected_));
+  }
   pending_messages_.emplace(message);
   clearPendingMessages();
 }

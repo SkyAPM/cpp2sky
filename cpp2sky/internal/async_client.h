@@ -18,6 +18,7 @@
 #include <grpcpp/grpcpp.h>
 
 #include <memory>
+#include <queue>
 
 using google::protobuf::Message;
 
@@ -59,6 +60,22 @@ class AsyncClient {
    * Peer address of current gRPC client..
    */
   virtual std::string peerAddress() = 0;
+
+  /**
+   * Drain pending messages
+   */
+  virtual void drainPendingMessages(
+      std::queue<RequestType>& pending_messages) = 0;
+
+  /**
+   * Reset stream if it is living.
+   */
+  virtual void resetStream() = 0;
+
+  /**
+   * Start stream if there is no living stream.
+   */
+  virtual void startStream() = 0;
 };
 
 enum class Operation : uint8_t {

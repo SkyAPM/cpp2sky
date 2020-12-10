@@ -21,6 +21,9 @@
 
 namespace cpp2sky {
 
+using TracerRequestType = SegmentObject;
+using TracerResponseType = Commands;
+
 class TracerImpl : public Tracer {
  public:
   TracerImpl(TracerConfig& config,
@@ -33,8 +36,9 @@ class TracerImpl : public Tracer {
  private:
   void run();
 
-  GrpcAsyncSegmentReporterClient* client_;
+  AsyncClientPtr<TracerRequestType, TracerResponseType> client_;
   grpc::CompletionQueue cq_;
+  grpc::CompletionQueue cq2_;
   std::thread th_;
 };
 
