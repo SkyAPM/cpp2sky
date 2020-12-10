@@ -89,12 +89,10 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
     : client_(client) {}
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
-  std::cout << "GrpcAsyncSegmentReporter" << std::endl;
   {
     std::unique_lock<std::mutex> lck_(mux_);
     cond_.wait(lck_, [this] { return pending_messages_.empty(); });
   }
-  std::cout << "GrpcAsyncSegmentReporterStream" << std::endl;
   ctx_.TryCancel();
   request_writer_->Finish(&status_, toTag(&finish_));
 }
