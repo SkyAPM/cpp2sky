@@ -76,6 +76,11 @@ class AsyncClient {
    * Start stream if there is no living stream.
    */
   virtual void startStream() = 0;
+
+  /**
+   * The number of drained pending messages.
+   */
+  virtual size_t numOfMessages() = 0;
 };
 
 enum class Operation : uint8_t {
@@ -122,7 +127,8 @@ class AsyncStreamFactory {
    * Create async stream entity
    */
   virtual AsyncStreamPtr<RequestType> create(
-      AsyncClient<RequestType, ResponseType>* client) = 0;
+      AsyncClient<RequestType, ResponseType>* client,
+      std::queue<RequestType>& drained_messages) = 0;
 };
 
 template <class RequestType, class ResponseType>
