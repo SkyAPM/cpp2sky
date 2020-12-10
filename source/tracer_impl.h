@@ -38,7 +38,6 @@ class TracerImpl : public Tracer {
 
   AsyncClientPtr<TracerRequestType, TracerResponseType> client_;
   grpc::CompletionQueue cq_;
-  grpc::CompletionQueue cq2_;
   std::thread th_;
 };
 

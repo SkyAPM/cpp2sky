@@ -60,9 +60,10 @@ class MockAsyncStreamFactory
  public:
   using AsyncClientType = AsyncClient<RequestType, ResponseType>;
   MockAsyncStreamFactory(AsyncStreamPtr<RequestType> stream) : stream_(stream) {
-    ON_CALL(*this, create(_)).WillByDefault(Return(stream_));
+    ON_CALL(*this, create(_, _)).WillByDefault(Return(stream_));
   }
-  MOCK_METHOD(AsyncStreamPtr<RequestType>, create, (AsyncClientType*));
+  MOCK_METHOD(AsyncStreamPtr<RequestType>, create,
+              (AsyncClientType*, std::queue<RequestType>&));
 
  private:
   AsyncStreamPtr<RequestType> stream_;
