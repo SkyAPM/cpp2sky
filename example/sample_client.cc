@@ -18,6 +18,7 @@
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/segment_context.h"
 #include "cpp2sky/tracer.h"
+#include "httplib.h"
 
 using namespace cpp2sky;
 
@@ -46,6 +47,12 @@ int main() {
   // 4. Set info
   current_span->setOperationName("/ping");
   current_span->setStartTime(now());
+
+  httplib::Client cli("remote", 8082);
+  httplib::Headers headers = {{"sw8", current_segment->createSW8HeaderValue(
+                                          current_span, "remote:8082")}};
+  auto res = cli.Get("/ping", headers);
+
   current_span->setEndTime(now());
 
   // 5. Send span data

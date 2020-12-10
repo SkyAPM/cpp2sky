@@ -16,5 +16,6 @@ cc_binary(
   deps = [
     "//cpp2sky:cpp2sky_interface",
     "//source:cpp2sky_lib",
+    "@com_github_httplib//:httplib",
   ],
 )

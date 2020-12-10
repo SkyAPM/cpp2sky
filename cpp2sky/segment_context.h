@@ -181,6 +181,9 @@ class SegmentContext {
   virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
                                            std::string& target_address,
                                            bool sample = true) = 0;
+  virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
+                                           std::string&& target_address,
+                                           bool sample = true) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object.

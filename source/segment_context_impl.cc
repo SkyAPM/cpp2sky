@@ -156,6 +156,12 @@ std::string SegmentContextImpl::createSW8HeaderValue(
   return header_value;
 }
 
+std::string SegmentContextImpl::createSW8HeaderValue(
+    CurrentSegmentSpanPtr parent_span, std::string&& target_address,
+    bool sample) {
+  return createSW8HeaderValue(parent_span, target_address, sample);
+}
+
 SegmentObject SegmentContextImpl::createSegmentObject() {
   SegmentObject obj;
   obj.set_traceid(trace_id_);
