@@ -17,6 +17,7 @@
 #include <google/protobuf/message.h>
 #include <grpcpp/grpcpp.h>
 
+#include <condition_variable>
 #include <memory>
 #include <queue>
 
@@ -128,7 +129,8 @@ class AsyncStreamFactory {
    */
   virtual AsyncStreamPtr<RequestType> create(
       AsyncClient<RequestType, ResponseType>* client,
-      std::queue<RequestType>& drained_messages) = 0;
+      std::queue<RequestType>& drained_messages,
+      std::condition_variable& cv) = 0;
 };
 
 template <class RequestType, class ResponseType>

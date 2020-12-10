@@ -17,6 +17,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <condition_variable>
+
 #include "cpp2sky/internal/async_client.h"
 #include "cpp2sky/internal/random_generator.h"
 
@@ -60,10 +62,11 @@ class MockAsyncStreamFactory
  public:
   using AsyncClientType = AsyncClient<RequestType, ResponseType>;
   MockAsyncStreamFactory(AsyncStreamPtr<RequestType> stream) : stream_(stream) {
-    ON_CALL(*this, create(_, _)).WillByDefault(Return(stream_));
+    ON_CALL(*this, create(_, _, _)).WillByDefault(Return(stream_));
   }
   MOCK_METHOD(AsyncStreamPtr<RequestType>, create,
-              (AsyncClientType*, std::queue<RequestType>&));
+              (AsyncClientType*, std::queue<RequestType>&,
+               std::condition_variable&));
 
  private:
   AsyncStreamPtr<RequestType> stream_;

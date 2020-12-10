@@ -28,7 +28,7 @@ using testing::_;
 class GrpcAsyncSegmentReporterClientTest : public testing::Test {
  public:
   GrpcAsyncSegmentReporterClientTest() {
-    EXPECT_CALL(factory_, create(_, _));
+    EXPECT_CALL(factory_, create(_, _, _));
     EXPECT_CALL(*stream_, startStream());
     client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
         &cq_, factory_, grpc::InsecureChannelCredentials(), address_, token_);

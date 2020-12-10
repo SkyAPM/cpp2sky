@@ -54,6 +54,7 @@ class GrpcAsyncSegmentReporterClient final
       AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
       std::shared_ptr<grpc::ChannelCredentials> cred, std::string address,
       std::string token);
+  ~GrpcAsyncSegmentReporterClient();
 
   // AsyncClient
   void sendMessage(TracerRequestType message) override;
@@ -65,8 +66,8 @@ class GrpcAsyncSegmentReporterClient final
       std::queue<TracerRequestType>& pending_messages) override;
   void resetStream() override {
     if (stream_) {
+      gpr_log(GPR_INFO, "Stream %p had destroyed.", stream_.get());
       stream_.reset();
-      stream_ = nullptr;
     }
   }
   void startStream() override;
@@ -81,6 +82,9 @@ class GrpcAsyncSegmentReporterClient final
   std::shared_ptr<grpc::Channel> channel_;
   AsyncStreamPtr<TracerRequestType> stream_;
   std::queue<TracerRequestType> drained_messages_;
+
+  std::mutex mux_;
+  std::condition_variable cv_;
 };
 
 struct TaggedStream {
@@ -96,7 +100,8 @@ class GrpcAsyncSegmentReporterStream final
  public:
   GrpcAsyncSegmentReporterStream(
       AsyncClient<TracerRequestType, TracerResponseType>* client,
-      std::queue<TracerRequestType>& drained_messages);
+      std::queue<TracerRequestType>& drained_messages,
+      std::condition_variable& cv);
   ~GrpcAsyncSegmentReporterStream() override;
 
   // AsyncStream
@@ -119,8 +124,7 @@ class GrpcAsyncSegmentReporterStream final
   TaggedStream write_done_{Operation::WriteDone, this};
   TaggedStream finish_{Operation::Finished, this};
 
-  std::mutex mux_;
-  std::condition_variable cond_;
+  std::condition_variable& cv_;
 };
 
 class GrpcAsyncSegmentReporterStreamFactory final
@@ -129,7 +133,8 @@ class GrpcAsyncSegmentReporterStreamFactory final
   // AsyncStreamFactory
   AsyncStreamPtr<TracerRequestType> create(
       AsyncClient<TracerRequestType, TracerResponseType>* client,
-      std::queue<TracerRequestType>& drained_messages) override;
+      std::queue<TracerRequestType>& drained_messages,
+      std::condition_variable& cv) override;
 };
 
 }  // namespace cpp2sky
