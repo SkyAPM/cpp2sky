@@ -22,12 +22,12 @@ TracerImpl::TracerImpl(TracerConfig& config,
                        std::shared_ptr<grpc::ChannelCredentials> cred,
                        GrpcAsyncSegmentReporterStreamFactory& factory)
     : th_([this] { this->run(); }) {
-  client_ = new GrpcAsyncSegmentReporterClient(
+  client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
       &cq_, factory, cred, config.address(), config.token());
 }
 
 TracerImpl::~TracerImpl() {
-  delete client_;
+  client_.reset();
   th_.join();
   cq_.Shutdown();
 }
@@ -50,10 +50,11 @@ void TracerImpl::run() {
     }
     TaggedStream* t_stream = deTag(got_tag);
     if (!ok) {
+      client_->resetStream();
       continue;
     }
     if (!t_stream->stream->handleOperation(t_stream->operation)) {
-      return;
+      client_->startStream();
     }
   }
 }

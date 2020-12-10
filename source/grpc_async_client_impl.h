@@ -44,6 +44,8 @@ class TracerStubImpl final
   std::unique_ptr<TraceSegmentReportService::Stub> stub_;
 };
 
+class GrpcAsyncSegmentReporterStream;
+
 class GrpcAsyncSegmentReporterClient final
     : public AsyncClient<TracerRequestType, TracerResponseType> {
  public:
@@ -59,6 +61,16 @@ class GrpcAsyncSegmentReporterClient final
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> createWriter(
       grpc::ClientContext* ctx, TracerResponseType* response,
       void* tag) override;
+  void drainPendingMessages(
+      std::queue<TracerRequestType>& pending_messages) override;
+  void resetStream() override {
+    if (stream_) {
+      stream_.reset();
+      stream_ = nullptr;
+    }
+  }
+  void startStream() override;
+  size_t numOfMessages() override { return drained_messages_.size(); }
 
  private:
   std::string token_;
@@ -66,10 +78,10 @@ class GrpcAsyncSegmentReporterClient final
   AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory_;
   TracerStubPtr<TracerRequestType, TracerResponseType> stub_;
   grpc::CompletionQueue* cq_;
+  std::shared_ptr<grpc::Channel> channel_;
   AsyncStreamPtr<TracerRequestType> stream_;
+  std::queue<TracerRequestType> drained_messages_;
 };
-
-class GrpcAsyncSegmentReporterStream;
 
 struct TaggedStream {
   Operation operation;
@@ -83,7 +95,8 @@ class GrpcAsyncSegmentReporterStream final
     : public AsyncStream<TracerRequestType> {
  public:
   GrpcAsyncSegmentReporterStream(
-      AsyncClient<TracerRequestType, TracerResponseType>* client);
+      AsyncClient<TracerRequestType, TracerResponseType>* client,
+      std::queue<TracerRequestType>& drained_messages);
   ~GrpcAsyncSegmentReporterStream() override;
 
   // AsyncStream
@@ -115,7 +128,8 @@ class GrpcAsyncSegmentReporterStreamFactory final
  public:
   // AsyncStreamFactory
   AsyncStreamPtr<TracerRequestType> create(
-      AsyncClient<TracerRequestType, TracerResponseType>* client) override;
+      AsyncClient<TracerRequestType, TracerResponseType>* client,
+      std::queue<TracerRequestType>& drained_messages) override;
 };
 
 }  // namespace cpp2sky

@@ -43,14 +43,23 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
     std::shared_ptr<grpc::ChannelCredentials> cred, std::string address,
     std::string token)
-    : token_(token), address_(address), factory_(factory), cq_(cq) {
-  stub_ = std::make_unique<TracerStubImpl>(grpc::CreateChannel(address, cred));
-  stream_ = factory_.create(this);
-  stream_->startStream();
+    : token_(token),
+      factory_(factory),
+      cq_(cq),
+      channel_(grpc::CreateChannel(address, cred)) {
+  stub_ = std::make_unique<TracerStubImpl>(channel_);
+  startStream();
 }
 
 void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
-  GPR_ASSERT(stream_ != nullptr);
+  if (!stream_) {
+    drained_messages_.emplace(message);
+    gpr_log(GPR_INFO,
+            "No active stream, inserted message into draining message queue. "
+            "pending message size: %ld",
+            drained_messages_.size());
+    return;
+  }
   stream_->sendMessage(message);
 }
 
@@ -64,16 +73,45 @@ GrpcAsyncSegmentReporterClient::createWriter(grpc::ClientContext* ctx,
   return stub_->createWriter(ctx, response, cq_, tag);
 }
 
+void GrpcAsyncSegmentReporterClient::startStream() {
+  resetStream();
+
+  // Try to establish connection.
+  channel_->GetState(true);
+  stream_ = factory_.create(this, drained_messages_);
+  stream_->startStream();
+}
+
+void GrpcAsyncSegmentReporterClient::drainPendingMessages(
+    std::queue<TracerRequestType>& pending_messages) {
+  const auto pending_messages_size = pending_messages.size();
+  while (!pending_messages.empty()) {
+    auto msg = pending_messages.front();
+    pending_messages.pop();
+    drained_messages_.emplace(msg);
+  }
+  gpr_log(GPR_INFO, "%ld pending messages drained.", pending_messages_size);
+}
+
 GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
-    AsyncClient<TracerRequestType, TracerResponseType>* client)
-    : client_(client) {}
+    AsyncClient<TracerRequestType, TracerResponseType>* client,
+    std::queue<TracerRequestType>& drained_messages)
+    : client_(client) {
+  const auto drained_messages_size = drained_messages.size();
+  while (!drained_messages.empty()) {
+    auto msg = drained_messages.front();
+    pending_messages_.emplace(msg);
+    drained_messages.pop();
+  }
+  gpr_log(GPR_INFO, "%ld drained messages inserted into pending messages.",
+          drained_messages_size);
+}
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
   {
     std::unique_lock<std::mutex> lck_(mux_);
     cond_.wait(lck_, [this] { return pending_messages_.empty(); });
   }
-
   ctx_.TryCancel();
   request_writer_->Finish(&status_, toTag(&finish_));
 }
@@ -132,6 +170,7 @@ bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
   } else if (state_ == Operation::Finished) {
     gpr_log(GPR_INFO, "Stream closed with http status: %d",
             grpcStatusToGenericHttpStatus(status_.error_code()));
+    client_->drainPendingMessages(pending_messages_);
     if (!status_.ok()) {
       gpr_log(GPR_ERROR, "%s", status_.error_message().c_str());
     }
@@ -141,11 +180,13 @@ bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
 }
 
 AsyncStreamPtr<TracerRequestType> GrpcAsyncSegmentReporterStreamFactory::create(
-    AsyncClient<TracerRequestType, TracerResponseType>* client) {
+    AsyncClient<TracerRequestType, TracerResponseType>* client,
+    std::queue<TracerRequestType>& drained_messages) {
   if (client == nullptr) {
     return nullptr;
   }
-  return std::make_shared<GrpcAsyncSegmentReporterStream>(client);
+  return std::make_shared<GrpcAsyncSegmentReporterStream>(client,
+                                                          drained_messages);
 }
 
 }  // namespace cpp2sky

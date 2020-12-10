@@ -28,7 +28,7 @@ using testing::_;
 class GrpcAsyncSegmentReporterClientTest : public testing::Test {
  public:
   GrpcAsyncSegmentReporterClientTest() {
-    EXPECT_CALL(factory_, create(_));
+    EXPECT_CALL(factory_, create(_, _));
     EXPECT_CALL(*stream_, startStream());
     client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
         &cq_, factory_, grpc::InsecureChannelCredentials(), address_, token_);
@@ -49,6 +49,16 @@ TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
   SegmentObject fake_message;
   EXPECT_CALL(*stream_, sendMessage(_));
   client_->sendMessage(fake_message);
+}
+
+TEST_F(GrpcAsyncSegmentReporterClientTest, MessageDrainTest) {
+  std::queue<TracerRequestType> fake_pending_messages;
+  for (int i = 0; i < 3; ++i) {
+    fake_pending_messages.emplace(SegmentObject());
+  }
+  client_->drainPendingMessages(fake_pending_messages);
+  EXPECT_EQ(fake_pending_messages.size(), 0);
+  EXPECT_EQ(client_->numOfMessages(), 3);
 }
 
 }  // namespace cpp2sky
