@@ -23,7 +23,7 @@
 using namespace cpp2sky;
 
 static const std::string service_name = "";
-static const std::string instance_name = "node_0";
+static const std::string instance_name = "client_0";
 static const std::string address = "0.0.0.0:11800";
 
 SegmentConfig seg_config(service_name, instance_name);
@@ -36,26 +36,27 @@ uint64_t now() {
 }
 
 int main() {
-  httplib::Server svr;
   // 1. Create tracer object to send span data to OAP.
   auto tracer = createInsecureGrpcTracer(tracer_config);
+  // 2. Create segment context
+  auto current_segment = createSegmentContext(seg_config);
 
-  svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    // 2. Create segment context
-    auto current_segment = createSegmentContext(seg_config);
+  // 3. Initialize span data to track root workload on current service.
+  auto current_span = current_segment->createCurrentSegmentRootSpan();
 
-    // 3. Initialize span data to track root workload on current service.
-    auto current_span = current_segment->createCurrentSegmentRootSpan();
+  // 4. Set info
+  current_span->setOperationName("/ping");
+  current_span->setStartTime(now());
 
-    // 4. Set info
-    current_span->setOperationName("/ping");
-    current_span->setStartTime(now());
-    current_span->setEndTime(now());
+  httplib::Client cli("remote", 8082);
+  httplib::Headers headers = {{"sw8", current_segment->createSW8HeaderValue(
+                                          current_span, "remote:8082")}};
+  auto res = cli.Get("/ping", headers);
 
-    // 5. Send span data
-    tracer->sendSegment(std::move(current_segment));
-  });
+  current_span->setEndTime(now());
 
-  svr.listen("0.0.0.0", 8081);
+  // 5. Send span data
+  tracer->sendSegment(std::move(current_segment));
+
   return 0;
 }

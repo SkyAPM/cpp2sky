@@ -69,6 +69,11 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
     : client_(client) {}
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
+  {
+    std::unique_lock<std::mutex> lck_(mux_);
+    cond_.wait(lck_, [this] { return pending_messages_.empty(); });
+  }
+
   ctx_.TryCancel();
   request_writer_->Finish(&status_, toTag(&finish_));
 }
@@ -117,6 +122,12 @@ bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
     // Release pending messages which are inserted when stream is not ready
     // to write.
     clearPendingMessages();
+
+    // Release if lock with condition variable has been acquired.
+    // It will blocked if stream has notified to be closed.
+    if (pending_messages_.empty()) {
+      cond_.notify_all();
+    }
     return true;
   } else if (state_ == Operation::Finished) {
     gpr_log(GPR_INFO, "Stream closed with http status: %d",

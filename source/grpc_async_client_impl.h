@@ -16,7 +16,9 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <queue>
 
 #include "cpp2sky/internal/async_client.h"
@@ -103,6 +105,9 @@ class GrpcAsyncSegmentReporterStream final
   TaggedStream connected_{Operation::Connected, this};
   TaggedStream write_done_{Operation::WriteDone, this};
   TaggedStream finish_{Operation::Finished, this};
+
+  std::mutex mux_;
+  std::condition_variable cond_;
 };
 
 class GrpcAsyncSegmentReporterStreamFactory final
