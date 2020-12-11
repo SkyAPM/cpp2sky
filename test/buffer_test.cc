@@ -15,68 +15,68 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-// #include "source/utils/circular_buffer.h"
+#include "source/utils/circular_buffer.h"
 
 namespace cpp2sky {
 
-// class std::queueTest : public testing::Test {
-//  protected:
-//   void setup(size_t size) {
-//     buf_ = std::make_unique<std::queueImpl<int>>(size);
-//   }
+class CircularBufferTest : public testing::Test {
+ protected:
+  void setup(size_t size) {
+    buf_ = std::make_unique<CircularBufferImpl<int>>(size);
+  }
 
-//   void evaluate(size_t expect_front, size_t expect_back, bool expect_empty) {
-//     EXPECT_EQ(expect_front, buf_->frontIdx());
-//     EXPECT_EQ(expect_back, buf_->backIdx());
-//     EXPECT_EQ(expect_empty, buf_->empty());
-//   }
+  void evaluate(size_t expect_front, size_t expect_back, bool expect_empty) {
+    EXPECT_EQ(expect_front, buf_->frontIdx());
+    EXPECT_EQ(expect_back, buf_->backIdx());
+    EXPECT_EQ(expect_empty, buf_->empty());
+  }
 
-//   void checkFront(int expect_value) {
-//     auto a = buf_->front();
-//     ASSERT_TRUE(a.has_value());
-//     EXPECT_EQ(a.value(), expect_value);
-//   }
+  void checkFront(int expect_value) {
+    auto a = buf_->front();
+    ASSERT_TRUE(a.has_value());
+    EXPECT_EQ(a.value(), expect_value);
+  }
 
-//   std::unique_ptr<std::queueImpl<int>> buf_;
-// };
+  std::unique_ptr<CircularBufferImpl<int>> buf_;
+};
 
-// TEST_F(std::queueTest, Basic) {
-//   setup(3);
+TEST_F(CircularBufferTest, Basic) {
+  setup(3);
 
-//   buf_->push(1);
-//   buf_->push(2);
-//   buf_->push(3);
-//   evaluate(0, 2, false);
+  buf_->push(1);
+  buf_->push(2);
+  buf_->push(3);
+  evaluate(0, 2, false);
 
-//   buf_->push(4);
-//   evaluate(1, 0, false);
+  buf_->push(4);
+  evaluate(1, 0, false);
 
-//   buf_->push(5);
-//   buf_->push(6);
-//   evaluate(0, 2, false);
+  buf_->push(5);
+  buf_->push(6);
+  evaluate(0, 2, false);
 
-//   checkFront(4);
-//   buf_->pop();
-//   evaluate(1, 2, false);
+  checkFront(4);
+  buf_->pop();
+  evaluate(1, 2, false);
 
-//   checkFront(5);
-//   buf_->pop();
-//   evaluate(2, 2, false);
+  checkFront(5);
+  buf_->pop();
+  evaluate(2, 2, false);
 
-//   buf_->push(7);
-//   evaluate(2, 0, false);
+  buf_->push(7);
+  evaluate(2, 0, false);
 
-//   checkFront(6);
-//   buf_->pop();
-//   evaluate(0, 0, false);
+  checkFront(6);
+  buf_->pop();
+  evaluate(0, 0, false);
 
-//   checkFront(7);
-//   buf_->pop();
-//   // Return to Empty state
-//   evaluate(1, 0, true);
+  checkFront(7);
+  buf_->pop();
+  // Return to Empty state
+  evaluate(1, 0, true);
 
-//   buf_->push(8);
-//   evaluate(1, 1, false);
-// }
+  buf_->push(8);
+  evaluate(1, 1, false);
+}
 
 }  // namespace cpp2sky

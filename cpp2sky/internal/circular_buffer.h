@@ -21,7 +21,7 @@ namespace cpp2sky {
 template <class T>
 class CircularBuffer {
  public:
-  virtual ~std::queue() = default;
+  virtual ~CircularBuffer() = default;
 
   /**
    * Get value which inserted older than any other values.
