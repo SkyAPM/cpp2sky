@@ -77,6 +77,20 @@ TEST_F(CircularBufferTest, Basic) {
 
   buf_->push(8);
   evaluate(1, 1, false);
+
+  buf_->push(9);
+  buf_->push(10);
+  buf_->push(11);
+  buf_->push(12);
+
+  checkFront(10);
+  evaluate(0, 2, false);
+
+  buf_->pop();
+  buf_->pop();
+  buf_->pop();
+
+  evaluate(0, 2, true);
 }
 
 }  // namespace cpp2sky
