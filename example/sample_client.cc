@@ -57,6 +57,5 @@ int main() {
 
   // 5. Send span data
   tracer->sendSegment(std::move(current_segment));
-
   return 0;
 }
