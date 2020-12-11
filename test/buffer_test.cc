@@ -42,6 +42,9 @@ class CircularBufferTest : public testing::Test {
 
 TEST_F(CircularBufferTest, Basic) {
   setup(3);
+  for (auto i = 0; i < 1000; ++i) {
+    buf_->pop();
+  }
 
   buf_->push(1);
   buf_->push(2);
@@ -91,6 +94,10 @@ TEST_F(CircularBufferTest, Basic) {
   buf_->pop();
 
   evaluate(0, 2, true);
+
+  for (auto i = 0; i < 1000; ++i) {
+    buf_->pop();
+  }
 }
 
 }  // namespace cpp2sky
