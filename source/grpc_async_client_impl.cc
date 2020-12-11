@@ -75,14 +75,13 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
         std::chrono::seconds(DEFAULT_CONNECTION_ACTIVE_RETRY_SLEEP_SEC));
   }
 
-  // // It will wait until there is no drained messages.
-  // // There are no timeout option to handle this, so if you would like to stop
-  // // them, you should send signals like SIGTERM.
-  // // If server stopped with accidental issue, the event loop handle that it
-  // // failed to send message and close stream, then recreate new stream and
-  // try
-  // // to do it. This process will continue forever without sending explicit
-  // // signal.
+  // It will wait until there is no drained messages.
+  // There are no timeout option to handle this, so if you would like to stop
+  // them, you should send signals like SIGTERM.
+  // If server stopped with accidental issue, the event loop handle that it
+  // failed to send message and close stream, then recreate new stream and try
+  // to do it. This process will continue forever without sending explicit
+  // signal.
   {
     std::unique_lock<std::mutex> lck(mux_);
     while (!drained_messages_.empty()) {
@@ -95,7 +94,7 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
 
 void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
   if (!stream_) {
-    drained_messages_.emplace(message);
+    drained_messages_.push(message);
     gpr_log(GPR_INFO,
             "No active stream, inserted message into draining message queue. "
             "pending message size: %ld",
@@ -124,7 +123,9 @@ void GrpcAsyncSegmentReporterClient::startStream() {
   while (!drained_messages_.empty()) {
     auto msg = drained_messages_.front();
     drained_messages_.pop();
-    stream_->undrainMessage(msg);
+    if (msg.has_value()) {
+      stream_->undrainMessage(msg.value());
+    }
   }
   gpr_log(GPR_INFO, "%ld drained messages inserted into pending messages.",
           drained_messages_size);
@@ -143,7 +144,9 @@ GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
   while (!pending_messages_.empty()) {
     auto msg = pending_messages_.front();
     pending_messages_.pop();
-    client_->drainPendingMessage(msg);
+    if (msg.has_value()) {
+      client_->drainPendingMessage(msg.value());
+    }
   }
   gpr_log(GPR_INFO, "%ld pending messages drained.", pending_messages_size);
 
@@ -165,7 +168,7 @@ bool GrpcAsyncSegmentReporterStream::startStream() {
 }
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
-  pending_messages_.emplace(message);
+  pending_messages_.push(message);
   clearPendingMessages();
 }
 
@@ -173,8 +176,11 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessages() {
   if (state_ != Operation::Idle || pending_messages_.empty()) {
     return false;
   }
-  auto message = pending_messages_.back();
-  request_writer_->Write(message, toTag(&write_done_));
+  auto message = pending_messages_.front();
+  if (!message.has_value()) {
+    return false;
+  }
+  request_writer_->Write(message.value(), toTag(&write_done_));
   return true;
 }
 

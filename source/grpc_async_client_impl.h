@@ -24,6 +24,10 @@
 #include "cpp2sky/internal/async_client.h"
 #include "language-agent/Tracing.grpc.pb.h"
 #include "language-agent/Tracing.pb.h"
+#include "source/utils/circular_buffer.h"
+
+#define DRAIN_BUFFER_SIZE 1024
+#define PENDING_MESSAGE_BUFFER_SIZE 1024
 
 namespace cpp2sky {
 
@@ -63,7 +67,7 @@ class GrpcAsyncSegmentReporterClient final
       grpc::ClientContext* ctx, TracerResponseType* response,
       void* tag) override;
   void drainPendingMessage(TracerRequestType pending_message) override {
-    drained_messages_.emplace(pending_message);
+    drained_messages_.push(pending_message);
   }
   void resetStream() override {
     if (stream_) {
@@ -82,7 +86,7 @@ class GrpcAsyncSegmentReporterClient final
   grpc::CompletionQueue* cq_;
   std::shared_ptr<grpc::Channel> channel_;
   AsyncStreamPtr<TracerRequestType> stream_;
-  std::queue<TracerRequestType> drained_messages_;
+  CircularBuffer<TracerRequestType> drained_messages_{DRAIN_BUFFER_SIZE};
 
   std::mutex mux_;
   std::condition_variable cv_;
@@ -109,7 +113,7 @@ class GrpcAsyncSegmentReporterStream final
   void sendMessage(TracerRequestType message) override;
   bool handleOperation(Operation incoming_op) override;
   void undrainMessage(TracerRequestType message) override {
-    pending_messages_.emplace(message);
+    pending_messages_.push(message);
   }
 
  private:
@@ -120,7 +124,8 @@ class GrpcAsyncSegmentReporterStream final
   grpc::Status status_;
   grpc::ClientContext ctx_;
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> request_writer_;
-  std::queue<TracerRequestType> pending_messages_;
+  CircularBuffer<TracerRequestType> pending_messages_{
+      PENDING_MESSAGE_BUFFER_SIZE};
   Operation state_{Operation::Initialized};
 
   TaggedStream connected_{Operation::Connected, this};

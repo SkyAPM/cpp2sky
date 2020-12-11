@@ -17,37 +17,47 @@
 #include <deque>
 #include <mutex>
 
-#include "cpp2sky/internal/circular_buffer.h"
-
 namespace cpp2sky {
 
 template <class T>
-class CircularBufferImpl : public CircularBuffer<T> {
+class CircularBuffer {
  public:
-  CircularBufferImpl(size_t max_capacity) : max_capacity_(max_capacity) {}
+  CircularBuffer(size_t max_capacity) : max_capacity_(max_capacity) {}
 
   // disable copy
-  CircularBufferImpl(const CircularBufferImpl<T>&) = delete;
-  CircularBufferImpl& operator=(const CircularBufferImpl<T>&) = delete;
+  CircularBuffer(const CircularBuffer<T>&) = delete;
+  CircularBuffer& operator=(const CircularBuffer<T>&) = delete;
 
   struct Buffer {
     T value;
     bool is_destroyed_ = false;
   };
 
-  std::optional<T> front() override {
+  /**
+   * Get value which inserted older than any other values.
+   * It will return nullopt if buffer is empty.
+   */
+  std::optional<T> front() {
     if (empty()) {
       return std::nullopt;
     }
     return buf_[front_].value;
   }
 
-  void pop() override {
+  /**
+   * Delete oldest value. It won't delete actual data we can treat as logical
+   * deletion.
+   */
+  void pop() {
     std::unique_lock<std::mutex> lock(mux_);
     popInternal();
   }
 
-  void push(T value) override {
+  /**
+   * Insert new value. If the buffer has more than max_capacity, it will delete
+   * the oldest value.
+   */
+  void push(T value) {
     std::unique_lock<std::mutex> lock(mux_);
     if (buf_.size() < max_capacity_) {
       buf_.emplace_back(Buffer{value, false});
@@ -64,7 +74,15 @@ class CircularBufferImpl : public CircularBuffer<T> {
     ++item_count_;
   }
 
-  bool empty() override { return item_count_ == 0; }
+  /**
+   * Check whether buffer is empty or not.
+   */
+  bool empty() { return item_count_ == 0; }
+
+  /**
+   * Get item count
+   */
+  size_t size() const { return item_count_; }
 
   // Used for test
 #pragma region test

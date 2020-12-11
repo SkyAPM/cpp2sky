@@ -22,7 +22,7 @@ namespace cpp2sky {
 class CircularBufferTest : public testing::Test {
  protected:
   void setup(size_t size) {
-    buf_ = std::make_unique<CircularBufferImpl<int>>(size);
+    buf_ = std::make_unique<CircularBuffer<int>>(size);
   }
 
   void evaluate(size_t expect_front, size_t expect_back, bool expect_empty) {
@@ -37,7 +37,7 @@ class CircularBufferTest : public testing::Test {
     EXPECT_EQ(a.value(), expect_value);
   }
 
-  std::unique_ptr<CircularBufferImpl<int>> buf_;
+  std::unique_ptr<CircularBuffer<int>> buf_;
 };
 
 TEST_F(CircularBufferTest, Basic) {

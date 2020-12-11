@@ -11,7 +11,6 @@ cc_library(
   ],
   deps = [
     "//cpp2sky:random_interface",
-    "//cpp2sky:buffer_interface",
   ],
   visibility = ["//visibility:public"],
 )

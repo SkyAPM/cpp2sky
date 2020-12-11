@@ -13,12 +13,6 @@ cc_library(
 )
 
 cc_library(
-  name = "buffer_interface",
-  hdrs = ["internal/circular_buffer.h"],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
   name = "propagation_interface",
   hdrs = ["propagation.h"],
   visibility = ["//visibility:public"],
