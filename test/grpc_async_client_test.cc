@@ -28,7 +28,7 @@ using testing::_;
 class GrpcAsyncSegmentReporterClientTest : public testing::Test {
  public:
   GrpcAsyncSegmentReporterClientTest() {
-    EXPECT_CALL(factory_, create(_, _, _));
+    EXPECT_CALL(factory_, create(_, _));
     EXPECT_CALL(*stream_, startStream());
     client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
         &cq_, factory_, grpc::InsecureChannelCredentials(), address_, token_);
@@ -56,7 +56,11 @@ TEST_F(GrpcAsyncSegmentReporterClientTest, MessageDrainTest) {
   for (int i = 0; i < 3; ++i) {
     fake_pending_messages.emplace(SegmentObject());
   }
-  client_->drainPendingMessages(fake_pending_messages);
+  while (fake_pending_messages.size() != 0) {
+    auto msg = fake_pending_messages.front();
+    fake_pending_messages.pop();
+    client_->drainPendingMessage(msg);
+  }
   EXPECT_EQ(fake_pending_messages.size(), 0);
   EXPECT_EQ(client_->numOfMessages(), 3);
 }

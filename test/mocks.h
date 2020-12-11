@@ -40,7 +40,7 @@ class MockAsyncStream : public AsyncStream<RequestType> {
   MOCK_METHOD(void, sendMessage, (RequestType));
   MOCK_METHOD(std::string, peerAddress, ());
   MOCK_METHOD(bool, handleOperation, (Operation));
-  MOCK_METHOD(size_t, numOfMessages, ());
+  MOCK_METHOD(void, undrainMessage, (RequestType));
 };
 
 template <class RequestType, class ResponseType>
@@ -50,7 +50,7 @@ class MockAsyncClient : public AsyncClient<RequestType, ResponseType> {
   MOCK_METHOD(std::unique_ptr<grpc::ClientAsyncWriter<RequestType>>,
               createWriter, (grpc::ClientContext*, ResponseType*, void*));
   MOCK_METHOD(std::string, peerAddress, ());
-  MOCK_METHOD(void, drainPendingMessages, (std::queue<RequestType>&));
+  MOCK_METHOD(void, drainPendingMessage, (RequestType));
   MOCK_METHOD(void, resetStream, ());
   MOCK_METHOD(void, startStream, ());
   MOCK_METHOD(size_t, numOfMessages, ());
@@ -62,11 +62,10 @@ class MockAsyncStreamFactory
  public:
   using AsyncClientType = AsyncClient<RequestType, ResponseType>;
   MockAsyncStreamFactory(AsyncStreamPtr<RequestType> stream) : stream_(stream) {
-    ON_CALL(*this, create(_, _, _)).WillByDefault(Return(stream_));
+    ON_CALL(*this, create(_, _)).WillByDefault(Return(stream_));
   }
   MOCK_METHOD(AsyncStreamPtr<RequestType>, create,
-              (AsyncClientType*, std::queue<RequestType>&,
-               std::condition_variable&));
+              (AsyncClientType*, std::condition_variable&));
 
  private:
   AsyncStreamPtr<RequestType> stream_;

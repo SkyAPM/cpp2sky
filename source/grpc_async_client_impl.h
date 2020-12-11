@@ -62,8 +62,9 @@ class GrpcAsyncSegmentReporterClient final
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> createWriter(
       grpc::ClientContext* ctx, TracerResponseType* response,
       void* tag) override;
-  void drainPendingMessages(
-      std::queue<TracerRequestType>& pending_messages) override;
+  void drainPendingMessage(TracerRequestType pending_message) override {
+    drained_messages_.emplace(pending_message);
+  }
   void resetStream() override {
     if (stream_) {
       gpr_log(GPR_INFO, "Stream %p had destroyed.", stream_.get());
@@ -100,7 +101,6 @@ class GrpcAsyncSegmentReporterStream final
  public:
   GrpcAsyncSegmentReporterStream(
       AsyncClient<TracerRequestType, TracerResponseType>* client,
-      std::queue<TracerRequestType>& drained_messages,
       std::condition_variable& cv);
   ~GrpcAsyncSegmentReporterStream() override;
 
@@ -108,6 +108,9 @@ class GrpcAsyncSegmentReporterStream final
   bool startStream() override;
   void sendMessage(TracerRequestType message) override;
   bool handleOperation(Operation incoming_op) override;
+  void undrainMessage(TracerRequestType message) override {
+    pending_messages_.emplace(message);
+  }
 
  private:
   bool clearPendingMessages();
@@ -133,7 +136,6 @@ class GrpcAsyncSegmentReporterStreamFactory final
   // AsyncStreamFactory
   AsyncStreamPtr<TracerRequestType> create(
       AsyncClient<TracerRequestType, TracerResponseType>* client,
-      std::queue<TracerRequestType>& drained_messages,
       std::condition_variable& cv) override;
 };
 

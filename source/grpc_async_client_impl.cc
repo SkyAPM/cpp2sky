@@ -21,7 +21,7 @@
 #include "source/utils/exception.h"
 #include "utils/grpc_status.h"
 
-#define DEFAULT_CONNECTION_ACTIVE_RETRY_TIMES 10
+#define DEFAULT_CONNECTION_ACTIVE_RETRY_TIMES 5
 #define DEFAULT_CONNECTION_ACTIVE_RETRY_SLEEP_SEC 3
 
 namespace cpp2sky {
@@ -75,13 +75,14 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
         std::chrono::seconds(DEFAULT_CONNECTION_ACTIVE_RETRY_SLEEP_SEC));
   }
 
-  // It will wait until there is no drained messages.
-  // There are no timeout option to handle this, so if you would like to stop
-  // them, you should send signals like SIGTERM.
-  // If server stopped with accidental issue, the event loop handle that it
-  // failed to send message and close stream, then recreate new stream and try
-  // to do it. This process will continue forever without sending explicit
-  // signal.
+  // // It will wait until there is no drained messages.
+  // // There are no timeout option to handle this, so if you would like to stop
+  // // them, you should send signals like SIGTERM.
+  // // If server stopped with accidental issue, the event loop handle that it
+  // // failed to send message and close stream, then recreate new stream and
+  // try
+  // // to do it. This process will continue forever without sending explicit
+  // // signal.
   {
     std::unique_lock<std::mutex> lck(mux_);
     while (!drained_messages_.empty()) {
@@ -117,39 +118,35 @@ GrpcAsyncSegmentReporterClient::createWriter(grpc::ClientContext* ctx,
 void GrpcAsyncSegmentReporterClient::startStream() {
   resetStream();
 
-  stream_ = factory_.create(this, drained_messages_, cv_);
-  stream_->startStream();
-  gpr_log(GPR_INFO, "Stream %p had created", stream_.get());
-}
+  stream_ = factory_.create(this, cv_);
 
-void GrpcAsyncSegmentReporterClient::drainPendingMessages(
-    std::queue<TracerRequestType>& pending_messages) {
-  const auto pending_messages_size = pending_messages.size();
-  while (!pending_messages.empty()) {
-    auto msg = pending_messages.front();
-    pending_messages.pop();
-    drained_messages_.emplace(msg);
+  const auto drained_messages_size = drained_messages_.size();
+  while (!drained_messages_.empty()) {
+    auto msg = drained_messages_.front();
+    drained_messages_.pop();
+    stream_->undrainMessage(msg);
   }
-  gpr_log(GPR_INFO, "%ld pending messages drained.", pending_messages_size);
+  gpr_log(GPR_INFO, "%ld drained messages inserted into pending messages.",
+          drained_messages_size);
+
+  stream_->startStream();
+  gpr_log(GPR_INFO, "Stream %p had created.", stream_.get());
 }
 
 GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
     AsyncClient<TracerRequestType, TracerResponseType>* client,
-    std::queue<TracerRequestType>& drained_messages,
     std::condition_variable& cv)
-    : client_(client), cv_(cv) {
-  const auto drained_messages_size = drained_messages.size();
-  while (!drained_messages.empty()) {
-    auto msg = drained_messages.front();
-    pending_messages_.emplace(msg);
-    drained_messages.pop();
-  }
-  gpr_log(GPR_INFO, "%ld drained messages inserted into pending messages.",
-          drained_messages_size);
-}
+    : client_(client), cv_(cv) {}
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
-  client_->drainPendingMessages(pending_messages_);
+  const auto pending_messages_size = pending_messages_.size();
+  while (!pending_messages_.empty()) {
+    auto msg = pending_messages_.front();
+    pending_messages_.pop();
+    client_->drainPendingMessage(msg);
+  }
+  gpr_log(GPR_INFO, "%ld pending messages drained.", pending_messages_size);
+
   ctx_.TryCancel();
   request_writer_->Finish(&status_, toTag(&finish_));
 }
@@ -220,13 +217,11 @@ bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
 
 AsyncStreamPtr<TracerRequestType> GrpcAsyncSegmentReporterStreamFactory::create(
     AsyncClient<TracerRequestType, TracerResponseType>* client,
-    std::queue<TracerRequestType>& drained_messages,
     std::condition_variable& cv) {
   if (client == nullptr) {
     return nullptr;
   }
-  return std::make_shared<GrpcAsyncSegmentReporterStream>(client,
-                                                          drained_messages, cv);
+  return std::make_shared<GrpcAsyncSegmentReporterStream>(client, cv);
 }
 
 }  // namespace cpp2sky

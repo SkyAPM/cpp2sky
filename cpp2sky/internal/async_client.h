@@ -19,7 +19,6 @@
 
 #include <condition_variable>
 #include <memory>
-#include <queue>
 
 using google::protobuf::Message;
 
@@ -63,10 +62,9 @@ class AsyncClient {
   virtual std::string peerAddress() = 0;
 
   /**
-   * Drain pending messages
+   * Drain pending message.
    */
-  virtual void drainPendingMessages(
-      std::queue<RequestType>& pending_messages) = 0;
+  virtual void drainPendingMessage(RequestType message) = 0;
 
   /**
    * Reset stream if it is living.
@@ -111,6 +109,11 @@ class AsyncStream {
   virtual void sendMessage(RequestType message) = 0;
 
   /**
+   * Restore drained message.
+   */
+  virtual void undrainMessage(RequestType message) = 0;
+
+  /**
    * Handle incoming event related to this stream.
    */
   virtual bool handleOperation(Operation incoming_op) = 0;
@@ -129,7 +132,6 @@ class AsyncStreamFactory {
    */
   virtual AsyncStreamPtr<RequestType> create(
       AsyncClient<RequestType, ResponseType>* client,
-      std::queue<RequestType>& drained_messages,
       std::condition_variable& cv) = 0;
 };
 
