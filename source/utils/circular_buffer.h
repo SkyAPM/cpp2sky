@@ -92,7 +92,7 @@ class CircularBuffer {
 
  private:
   void popInternal() {
-    if (buf_[front_].is_destroyed_) {
+    if (empty() || buf_[front_].is_destroyed_) {
       return;
     }
 
