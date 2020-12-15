@@ -55,7 +55,10 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
                                   ? config.max_connection_retry_interval_ms()
                                   : 5) {
   stub_ = std::make_unique<TracerStubImpl>(channel_);
-  startStream();
+  if (!startStream()) {
+    gpr_log(GPR_ERROR, "Failed to start stream");
+    GPR_ASSERT(false);
+  }
 }
 
 GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
@@ -113,10 +116,11 @@ bool GrpcAsyncSegmentReporterClient::startStream() {
   gpr_log(GPR_INFO, "%ld drained messages inserted into pending messages.",
           drained_messages_size);
 
-  // If connection hasn't been inactive, it dispose all drained messages even if
-  // it has tons of messages.
+  // If connection hasn't been inactive, it dispose all drained messages even
+  // if it has tons of messages.
   uint64_t retry_times = default_retry_times_;
-  while (channel_->GetState(false) !=
+  // TODO: mock channel
+  while (channel_->GetState(true) !=
          grpc_connectivity_state::GRPC_CHANNEL_READY) {
     if (retry_times <= 0) {
       gpr_log(GPR_INFO,
@@ -126,6 +130,7 @@ bool GrpcAsyncSegmentReporterClient::startStream() {
       resetStream();
       return false;
     }
+    gpr_log(GPR_INFO, "Retry to establish connection");
     retry_times--;
     std::this_thread::sleep_for(default_retry_sleep_ms_);
   }
@@ -152,9 +157,11 @@ GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
     }
   }
   gpr_log(GPR_INFO, "%ld pending messages drained.", pending_messages_size);
-
   ctx_.TryCancel();
-  request_writer_->Finish(&status_, toTag(&finish_));
+
+  if (state_ >= Operation::Connected) {
+    request_writer_->Finish(&status_, toTag(&finish_));
+  }
 }
 
 void GrpcAsyncSegmentReporterStream::startStream() {

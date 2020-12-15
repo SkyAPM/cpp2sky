@@ -60,7 +60,10 @@ void TracerImpl::run() {
       continue;
     }
     if (!t_stream->stream->handleOperation(t_stream->operation)) {
-      client_->startStream();
+      if (!client_->startStream()) {
+        gpr_log(GPR_ERROR, "Failed to start stream");
+        GPR_ASSERT(false);
+      }
     }
   }
 }
