@@ -22,12 +22,8 @@
 
 using namespace cpp2sky;
 
-static const std::string service_name = "";
-static const std::string instance_name = "node_0";
-static const std::string address = "0.0.0.0:11800";
-
-SegmentConfig seg_config(service_name, instance_name);
-TracerConfig tracer_config(address);
+static SegmentConfig seg_config;
+static ClientConfig client_config;
 
 uint64_t now() {
   using namespace std::chrono;
@@ -35,7 +31,23 @@ uint64_t now() {
       .count();
 }
 
+void init() {
+  const std::string service_name = "";
+  const std::string instance_name = "node_0";
+  const std::string address = "0.0.0.0:11800";
+
+  seg_config.set_instance_name(instance_name);
+  seg_config.set_service_name(service_name);
+
+  client_config.set_address(address);
+}
+
 int main() {
+  init();
+
+  TracerConfig tracer_config;
+  tracer_config.set_allocated_client_config(&client_config);
+
   httplib::Server svr;
   // 1. Create tracer object to send span data to OAP.
   auto tracer = createInsecureGrpcTracer(tracer_config);

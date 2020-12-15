@@ -21,9 +21,6 @@
 #include "source/utils/exception.h"
 #include "utils/grpc_status.h"
 
-#define DEFAULT_CONNECTION_ACTIVE_RETRY_TIMES 5
-#define DEFAULT_CONNECTION_ACTIVE_RETRY_SLEEP_SEC 3
-
 namespace cpp2sky {
 
 namespace {
@@ -44,37 +41,24 @@ TracerStubImpl::createWriter(grpc::ClientContext* ctx,
 }
 
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
-    grpc::CompletionQueue* cq,
+    const ClientConfig& config, grpc::CompletionQueue* cq,
     AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
-    std::shared_ptr<grpc::ChannelCredentials> cred, std::string address,
-    std::string token)
-    : token_(token),
+    std::shared_ptr<grpc::ChannelCredentials> cred)
+    : token_(config.token()),
       factory_(factory),
       cq_(cq),
-      channel_(grpc::CreateChannel(address, cred)) {
+      channel_(grpc::CreateChannel(config.address(), cred)),
+      drained_messages_(config.drain_buffer_size() ? config.drain_buffer_size()
+                                                   : 1024),
+      default_retry_times_(config.max_connection_retry()),
+      default_retry_sleep_ms_(config.max_connection_retry_interval_ms()
+                                  ? config.max_connection_retry_interval_ms()
+                                  : 5) {
   stub_ = std::make_unique<TracerStubImpl>(channel_);
   startStream();
 }
 
 GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
-  // If connection is inactive, it dispose all drained messages even if it has
-  // tons of messages.
-  uint8_t retry_times = DEFAULT_CONNECTION_ACTIVE_RETRY_TIMES;
-  while (channel_->GetState(false) !=
-         grpc_connectivity_state::GRPC_CHANNEL_READY) {
-    if (retry_times <= 0) {
-      gpr_log(GPR_INFO,
-              "All %ld pending messages have disposed because of no active "
-              "connection",
-              drained_messages_.size());
-      resetStream();
-      return;
-    }
-    retry_times--;
-    std::this_thread::sleep_for(
-        std::chrono::seconds(DEFAULT_CONNECTION_ACTIVE_RETRY_SLEEP_SEC));
-  }
-
   // It will wait until there is no drained messages.
   // There are no timeout option to handle this, so if you would like to stop
   // them, you should send signals like SIGTERM.
@@ -82,14 +66,13 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
   // failed to send message and close stream, then recreate new stream and try
   // to do it. This process will continue forever without sending explicit
   // signal.
-  {
+  if (stream_) {
     std::unique_lock<std::mutex> lck(mux_);
     while (!drained_messages_.empty()) {
       cv_.wait(lck);
     }
+    resetStream();
   }
-
-  resetStream();
 }
 
 void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
@@ -114,7 +97,7 @@ GrpcAsyncSegmentReporterClient::createWriter(grpc::ClientContext* ctx,
   return stub_->createWriter(ctx, response, cq_, tag);
 }
 
-void GrpcAsyncSegmentReporterClient::startStream() {
+bool GrpcAsyncSegmentReporterClient::startStream() {
   resetStream();
 
   stream_ = factory_.create(this, cv_);
@@ -130,14 +113,34 @@ void GrpcAsyncSegmentReporterClient::startStream() {
   gpr_log(GPR_INFO, "%ld drained messages inserted into pending messages.",
           drained_messages_size);
 
+  // If connection hasn't been inactive, it dispose all drained messages even if
+  // it has tons of messages.
+  uint64_t retry_times = default_retry_times_;
+  while (channel_->GetState(false) !=
+         grpc_connectivity_state::GRPC_CHANNEL_READY) {
+    if (retry_times <= 0) {
+      gpr_log(GPR_INFO,
+              "All %ld pending messages have disposed because of no active "
+              "connection",
+              drained_messages_.size());
+      resetStream();
+      return false;
+    }
+    retry_times--;
+    std::this_thread::sleep_for(default_retry_sleep_ms_);
+  }
+
   stream_->startStream();
   gpr_log(GPR_INFO, "Stream %p had created.", stream_.get());
+  return true;
 }
 
 GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
     AsyncClient<TracerRequestType, TracerResponseType>* client,
-    std::condition_variable& cv)
-    : client_(client), cv_(cv) {}
+    uint64_t pending_messages_size, std::condition_variable& cv)
+    : client_(client),
+      pending_messages_(pending_messages_size ? pending_messages_size : 1024),
+      cv_(cv) {}
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
   const auto pending_messages_size = pending_messages_.size();
@@ -154,7 +157,7 @@ GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
   request_writer_->Finish(&status_, toTag(&finish_));
 }
 
-bool GrpcAsyncSegmentReporterStream::startStream() {
+void GrpcAsyncSegmentReporterStream::startStream() {
   request_writer_.reset();
 
   // Ensure pending RPC will complete if connection to the server is not
@@ -164,7 +167,6 @@ bool GrpcAsyncSegmentReporterStream::startStream() {
   ctx_.set_wait_for_ready(true);
   request_writer_ =
       client_->createWriter(&ctx_, &commands_, toTag(&connected_));
-  return true;
 }
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
@@ -227,7 +229,8 @@ AsyncStreamPtr<TracerRequestType> GrpcAsyncSegmentReporterStreamFactory::create(
   if (client == nullptr) {
     return nullptr;
   }
-  return std::make_shared<GrpcAsyncSegmentReporterStream>(client, cv);
+  return std::make_shared<GrpcAsyncSegmentReporterStream>(
+      client, pending_buffer_size_, cv);
 }
 
 }  // namespace cpp2sky

@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+message SegmentConfig {
+  // Service name
+  string service_name = 1;
+
+  // Instance name
+  string instance_name = 2;
+}
+
+enum Protocol {
+  GRPC = 0;
+  REST = 1;
+}
+
+message ClientConfig {
+  // OAP address.
+  string address = 1;
+
+  // OAP token.
+  string token = 2;
+  
+  // Max times to retry establising connection.
+  uint32 max_connection_retry = 3;
+
+  // Max interval time to wait invocation of next retry.
+  // The default value is 5 seconds.
+  uint64 max_connection_retry_interval_ms = 4;
+
+  // Size of buffer to save drained message.
+  // The default size is 1024.
+  uint32 drain_buffer_size = 5;
+
+  // Size of pending messages per stream.
+  // The default size is 1024.
+  uint32 pending_message_buffer_size = 6;
+}
+
+message TracerConfig {
+  // Tracer protocol.
+  Protocol protocol = 3;
+
+  ClientConfig client_config = 4;
+}

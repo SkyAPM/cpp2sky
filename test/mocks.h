@@ -36,7 +36,7 @@ class MockRandomGenerator : public RandomGenerator {
 template <class RequestType>
 class MockAsyncStream : public AsyncStream<RequestType> {
  public:
-  MOCK_METHOD(bool, startStream, ());
+  MOCK_METHOD(void, startStream, ());
   MOCK_METHOD(void, sendMessage, (RequestType));
   MOCK_METHOD(std::string, peerAddress, ());
   MOCK_METHOD(bool, handleOperation, (Operation));
@@ -52,7 +52,7 @@ class MockAsyncClient : public AsyncClient<RequestType, ResponseType> {
   MOCK_METHOD(std::string, peerAddress, ());
   MOCK_METHOD(void, drainPendingMessage, (RequestType));
   MOCK_METHOD(void, resetStream, ());
-  MOCK_METHOD(void, startStream, ());
+  MOCK_METHOD(bool, startStream, ());
   MOCK_METHOD(size_t, numOfMessages, ());
 };
 
@@ -66,6 +66,7 @@ class MockAsyncStreamFactory
   }
   MOCK_METHOD(AsyncStreamPtr<RequestType>, create,
               (AsyncClientType*, std::condition_variable&));
+  MOCK_METHOD(void, setPendingBufferSize, (uint64_t));
 
  private:
   AsyncStreamPtr<RequestType> stream_;

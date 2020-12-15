@@ -21,13 +21,11 @@
 #include <mutex>
 #include <queue>
 
+#include "cpp2sky/config.pb.h"
 #include "cpp2sky/internal/async_client.h"
 #include "language-agent/Tracing.grpc.pb.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/utils/circular_buffer.h"
-
-#define DRAIN_BUFFER_SIZE 1024
-#define PENDING_MESSAGE_BUFFER_SIZE 1024
 
 namespace cpp2sky {
 
@@ -54,10 +52,9 @@ class GrpcAsyncSegmentReporterClient final
     : public AsyncClient<TracerRequestType, TracerResponseType> {
  public:
   GrpcAsyncSegmentReporterClient(
-      grpc::CompletionQueue* cq,
+      const ClientConfig& config, grpc::CompletionQueue* cq,
       AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
-      std::shared_ptr<grpc::ChannelCredentials> cred, std::string address,
-      std::string token);
+      std::shared_ptr<grpc::ChannelCredentials> cred);
   ~GrpcAsyncSegmentReporterClient();
 
   // AsyncClient
@@ -75,7 +72,7 @@ class GrpcAsyncSegmentReporterClient final
       stream_.reset();
     }
   }
-  void startStream() override;
+  bool startStream() override;
   size_t numOfMessages() override { return drained_messages_.size(); }
 
  private:
@@ -86,7 +83,10 @@ class GrpcAsyncSegmentReporterClient final
   grpc::CompletionQueue* cq_;
   std::shared_ptr<grpc::Channel> channel_;
   AsyncStreamPtr<TracerRequestType> stream_;
-  CircularBuffer<TracerRequestType> drained_messages_{DRAIN_BUFFER_SIZE};
+  CircularBuffer<TracerRequestType> drained_messages_;
+
+  uint64_t default_retry_times_;
+  std::chrono::milliseconds default_retry_sleep_ms_;
 
   std::mutex mux_;
   std::condition_variable cv_;
@@ -105,11 +105,11 @@ class GrpcAsyncSegmentReporterStream final
  public:
   GrpcAsyncSegmentReporterStream(
       AsyncClient<TracerRequestType, TracerResponseType>* client,
-      std::condition_variable& cv);
+      uint64_t pending_messages_size, std::condition_variable& cv);
   ~GrpcAsyncSegmentReporterStream() override;
 
   // AsyncStream
-  bool startStream() override;
+  void startStream() override;
   void sendMessage(TracerRequestType message) override;
   bool handleOperation(Operation incoming_op) override;
   void undrainMessage(TracerRequestType message) override {
@@ -124,8 +124,7 @@ class GrpcAsyncSegmentReporterStream final
   grpc::Status status_;
   grpc::ClientContext ctx_;
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> request_writer_;
-  CircularBuffer<TracerRequestType> pending_messages_{
-      PENDING_MESSAGE_BUFFER_SIZE};
+  CircularBuffer<TracerRequestType> pending_messages_;
   Operation state_{Operation::Initialized};
 
   TaggedStream connected_{Operation::Connected, this};
@@ -142,6 +141,13 @@ class GrpcAsyncSegmentReporterStreamFactory final
   AsyncStreamPtr<TracerRequestType> create(
       AsyncClient<TracerRequestType, TracerResponseType>* client,
       std::condition_variable& cv) override;
+
+  void setPendingBufferSize(uint64_t pending_buffer_size) override {
+    pending_buffer_size_ = pending_buffer_size;
+  }
+
+ private:
+  uint32_t pending_buffer_size_ = 1024;
 };
 
 }  // namespace cpp2sky

@@ -22,7 +22,8 @@ namespace cpp2sky {
 template <class T>
 class CircularBuffer {
  public:
-  CircularBuffer(size_t max_capacity) : max_capacity_(max_capacity) {}
+  CircularBuffer(size_t max_capacity)
+      : back_(max_capacity - 1), max_capacity_(max_capacity) {}
 
   // disable copy
   CircularBuffer(const CircularBuffer<T>&) = delete;
@@ -61,7 +62,7 @@ class CircularBuffer {
     std::unique_lock<std::mutex> lock(mux_);
     if (buf_.size() < max_capacity_) {
       buf_.emplace_back(Buffer{value, false});
-      back_ = buf_.size() - 1;
+      back_ = (back_ + 1) % max_capacity_;
       ++item_count_;
       return;
     }
@@ -95,7 +96,6 @@ class CircularBuffer {
     if (empty() || buf_[front_].is_destroyed_) {
       return;
     }
-
     // Not to destroy actual data.
     buf_[front_].is_destroyed_ = true;
     --item_count_;

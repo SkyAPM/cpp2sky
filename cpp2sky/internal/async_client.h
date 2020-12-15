@@ -74,7 +74,7 @@ class AsyncClient {
   /**
    * Start stream if there is no living stream.
    */
-  virtual void startStream() = 0;
+  virtual bool startStream() = 0;
 
   /**
    * The number of drained pending messages.
@@ -101,7 +101,7 @@ class AsyncStream {
   /**
    * Start stream. It will move the state of stream to Init.
    */
-  virtual bool startStream() = 0;
+  virtual void startStream() = 0;
 
   /**
    * Send message. It will move the state from Init to Write.
@@ -133,6 +133,11 @@ class AsyncStreamFactory {
   virtual AsyncStreamPtr<RequestType> create(
       AsyncClient<RequestType, ResponseType>* client,
       std::condition_variable& cv) = 0;
+
+  /**
+   * Set pending buffer size
+   */
+  virtual void setPendingBufferSize(uint64_t pending_buffer_size) = 0;
 };
 
 template <class RequestType, class ResponseType>
