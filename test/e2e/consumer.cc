@@ -21,12 +21,12 @@
 
 using namespace cpp2sky;
 
-static const std::string service_name = "consumer";
-static const std::string instance_name = "node_0";
-static const std::string address = "collector:19876";
+SegmentConfig seg_config;
 
-SegmentConfig seg_config(service_name, instance_name);
-TracerConfig tracer_config(address);
+void init() {
+  seg_config.set_instance_name("node_0");
+  seg_config.set_service_name("consumer");
+}
 
 void handlePong(Tracer* tracer, SegmentContext* scp,
                 const httplib::Request& req, httplib::Response& response) {
@@ -37,6 +37,12 @@ void handlePong(Tracer* tracer, SegmentContext* scp,
 }
 
 int main() {
+  init();
+
+  TracerConfig tracer_config;
+  auto* client_config = tracer_config.mutable_client_config();
+  client_config->set_address("collector:19876");
+
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(tracer_config);
 
