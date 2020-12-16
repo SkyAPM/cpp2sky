@@ -39,7 +39,7 @@ class MockAsyncStream : public AsyncStream<RequestType> {
   MOCK_METHOD(bool, startStream, ());
   MOCK_METHOD(void, sendMessage, (RequestType));
   MOCK_METHOD(std::string, peerAddress, ());
-  MOCK_METHOD(bool, handleOperation, (Operation));
+  MOCK_METHOD(void, handleOperation, (Operation));
   MOCK_METHOD(void, undrainMessage, (RequestType));
 };
 
