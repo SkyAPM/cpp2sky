@@ -19,14 +19,6 @@ message ClientConfig {
 
   // OAP token.
   string token = 2;
-
-  // Size of buffer to save drained message.
-  // The default size is 1024.
-  uint32 drain_buffer_size = 5;
-
-  // Size of pending messages per stream.
-  // The default size is 1024.
-  uint32 pending_message_buffer_size = 6;
 }
 
 message TracerConfig {
