@@ -115,6 +115,11 @@ class CurrentSegmentSpan {
    * Add log related with current span.
    */
   virtual void addLog(int64_t time, std::string& key, std::string& value) = 0;
+
+  /**
+   * Set component ID.
+   */
+  virtual void setComponentId(int32_t component_id) = 0;
 };
 
 using CurrentSegmentSpanPtr = std::shared_ptr<CurrentSegmentSpan>;

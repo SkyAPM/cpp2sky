@@ -60,6 +60,7 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
     tags_.emplace(std::move(key), std::move(value));
   }
   void addLog(int64_t time, std::string& key, std::string& value) override;
+  void setComponentId(int32_t component_id) override;
 #pragma endregion
 
  private:
