@@ -44,5 +44,6 @@ cc_library(
     "//cpp2sky:segment_context_interface",
     "//cpp2sky:propagation_interface",
     "//source/utils:util_lib",
-  ]
+  ],
+  visibility = ["//visibility:public"],
 )
