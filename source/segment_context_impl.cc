@@ -86,6 +86,15 @@ void CurrentSegmentSpanImpl::addLog(int64_t time, std::string& key,
   logs_.emplace_back(l);
 }
 
+void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
+  // Component ID is reserved on Skywalking spec.
+  // For more details here:
+  // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
+  if (9000 <= component_id && component_id < 10000) {
+    component_id_ = component_id;
+  }
+}
+
 SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
                                        RandomGenerator& random)
     : trace_id_(random.uuid()),
