@@ -39,7 +39,7 @@ cpp2sky provides simple configuration for tracer and segment. We can set `servic
 The detail information is described in [official protobuf definition](https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L57-L67).
 
 ```cpp
-#include <cpp2sky/config.h>
+#include <cpp2sky/config.pb.h>
 
 int main() {
   using namespace cpp2sky;

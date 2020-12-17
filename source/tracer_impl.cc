@@ -22,8 +22,12 @@ TracerImpl::TracerImpl(TracerConfig& config,
                        std::shared_ptr<grpc::ChannelCredentials> cred,
                        GrpcAsyncSegmentReporterStreamFactory& factory)
     : th_([this] { this->run(); }) {
-  client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
-      &cq_, factory, cred, config.address(), config.token());
+  if (config.protocol() == Protocol::GRPC) {
+    client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
+        config.client_config(), &cq_, factory, cred);
+  } else {
+    throw TracerException("REST is not supported.");
+  }
 }
 
 TracerImpl::~TracerImpl() {

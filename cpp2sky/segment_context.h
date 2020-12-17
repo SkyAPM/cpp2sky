@@ -18,7 +18,7 @@
 #include <memory>
 #include <string_view>
 
-#include "cpp2sky/config.h"
+#include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "language-agent/Tracing.pb.h"
 

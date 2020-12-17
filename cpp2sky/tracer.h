@@ -16,7 +16,7 @@
 
 #include <memory>
 
-#include "cpp2sky/config.h"
+#include "cpp2sky/config.pb.h"
 #include "cpp2sky/segment_context.h"
 
 namespace cpp2sky {

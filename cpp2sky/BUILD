@@ -1,8 +1,16 @@
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 
-cc_library(
-  name = "config_interface",
-  hdrs = ["config.h"],
+licenses(["notice"])  # Apache 2
+
+proto_library(
+  name = "config_proto_lib",
+  srcs = ["config.proto"],
+)
+
+cc_proto_library(
+  name = "config_cc_proto",
+  deps = [":config_proto_lib"],
   visibility = ["//visibility:public"],
 )
 
@@ -22,8 +30,8 @@ cc_library(
   name = "segment_context_interface",
   hdrs = ["segment_context.h"],
   deps = [
-    ":config_interface",
     ":propagation_interface",
+    ":config_cc_proto",
   ],
   visibility = ["//visibility:public"],
 )
@@ -44,6 +52,7 @@ cc_library(
   deps = [
     "@com_github_grpc_grpc//:grpc++",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
+    ":config_cc_proto",
   ],
   visibility = ["//visibility:public"],
 )
@@ -54,11 +63,11 @@ cc_library(
     "tracer.h",
     "segment_context.h",
     "propagation.h",
-    "config.h",
   ],
   deps = [
     "@com_github_grpc_grpc//:grpc++",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
+    ":config_cc_proto",
   ],
   visibility = ["//visibility:public"],
-) 
+)

@@ -16,7 +16,7 @@
 
 #include <unordered_map>
 
-#include "cpp2sky/config.h"
+#include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/segment_context.h"
 #include "source/utils/random_generator.h"
