@@ -27,3 +27,22 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "cpp2sky_data",
+  hdrs  =[
+    "propagation_impl.h",
+    "segment_context_impl.h",
+  ],
+  srcs = [
+    "propagation_impl.cc",
+    "segment_context_impl.cc",
+  ],
+  deps = [
+    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
+    "//cpp2sky:config_cc_proto",
+    "//cpp2sky:segment_context_interface",
+    "//cpp2sky:propagation_interface",
+    "//source/utils:util_lib",
+  ]
+)
