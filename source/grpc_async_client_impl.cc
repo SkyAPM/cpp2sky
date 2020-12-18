@@ -81,7 +81,7 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
   // failed to send message and close stream, then recreate new stream and try
   // to do it. This process will continue forever without sending explicit
   // signal.
-  {
+  if (stream_) {
     std::unique_lock<std::mutex> lck(mux_);
     while (!drained_messages_.empty()) {
       cv_.wait(lck);
@@ -148,9 +148,6 @@ GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
     }
   }
   gpr_log(GPR_INFO, "%ld pending messages drained.", pending_messages_size);
-
-  ctx_.TryCancel();
-  request_writer_->Finish(&status_, toTag(&finish_));
 }
 
 bool GrpcAsyncSegmentReporterStream::startStream() {
@@ -183,7 +180,7 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessages() {
   return true;
 }
 
-bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
+void GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
   state_ = incoming_op;
   if (state_ == Operation::Connected) {
     gpr_log(GPR_INFO, "Established connection: %s",
@@ -208,16 +205,9 @@ bool GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
     if (pending_messages_.empty()) {
       cv_.notify_all();
     }
-    return true;
-  } else if (state_ == Operation::Finished) {
-    gpr_log(GPR_INFO, "Stream closed with http status: %d",
-            grpcStatusToGenericHttpStatus(status_.error_code()));
-    if (!status_.ok()) {
-      gpr_log(GPR_ERROR, "%s", status_.error_message().c_str());
-    }
-    return false;
+  } else {
+    throw TracerException("Unknown stream operation");
   }
-  throw TracerException("Unknown stream operation");
 }
 
 AsyncStreamPtr<TracerRequestType> GrpcAsyncSegmentReporterStreamFactory::create(

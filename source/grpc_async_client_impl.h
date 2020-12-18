@@ -111,7 +111,7 @@ class GrpcAsyncSegmentReporterStream final
   // AsyncStream
   bool startStream() override;
   void sendMessage(TracerRequestType message) override;
-  bool handleOperation(Operation incoming_op) override;
+  void handleOperation(Operation incoming_op) override;
   void undrainMessage(TracerRequestType message) override {
     pending_messages_.push(message);
   }
@@ -121,7 +121,6 @@ class GrpcAsyncSegmentReporterStream final
 
   AsyncClient<TracerRequestType, TracerResponseType>* client_;
   TracerResponseType commands_;
-  grpc::Status status_;
   grpc::ClientContext ctx_;
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> request_writer_;
   CircularBuffer<TracerRequestType> pending_messages_{
@@ -130,7 +129,6 @@ class GrpcAsyncSegmentReporterStream final
 
   TaggedStream connected_{Operation::Connected, this};
   TaggedStream write_done_{Operation::WriteDone, this};
-  TaggedStream finish_{Operation::Finished, this};
 
   std::condition_variable& cv_;
 };

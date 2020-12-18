@@ -55,11 +55,10 @@ void TracerImpl::run() {
     TaggedStream* t_stream = deTag(got_tag);
     if (!ok) {
       client_->resetStream();
+      client_->startStream();
       continue;
     }
-    if (!t_stream->stream->handleOperation(t_stream->operation)) {
-      client_->startStream();
-    }
+    t_stream->stream->handleOperation(t_stream->operation);
   }
 }
 
