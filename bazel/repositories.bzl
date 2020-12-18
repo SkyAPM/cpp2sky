@@ -11,10 +11,9 @@ def cpp2sky_dependencies():
 def skywalking_data_collect_protocol():
   http_archive(
     name = "skywalking_data_collect_protocol",
-    sha256 = "ca495537bb85dbe8df5984ac7b571a0b87660281be69be1f9a0fa16fbf58f953",
-    # TODO(shikugawa): Bazel upstreaming
-    urls = ["https://github.com/Shikugawa/skywalking-data-collect-protocol/archive/v8.1.0-bazel.tar.gz"],
-    strip_prefix = "skywalking-data-collect-protocol-8.1.0-bazel",
+    sha256 = "8158e095b9b37c39e18938fe08bd4fca6f2b8e16763ff21fe8118d79241a6e0b",
+    urls = ["https://github.com/apache/skywalking-data-collect-protocol/archive/v8.3.0.tar.gz"],
+    strip_prefix = "skywalking-data-collect-protocol-8.3.0",
   )
 
 def com_github_grpc_grpc():

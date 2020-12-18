@@ -10,7 +10,7 @@ cc_library(
     "circular_buffer.h",
   ],
   deps = [
-    "//cpp2sky:random_interface",
+    "//cpp2sky:cpp2sky_internal_interface",
   ],
   visibility = ["//visibility:public"],
 )
