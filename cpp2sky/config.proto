@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package cpp2sky;
+
 message SegmentConfig {
   // Service name
   string service_name = 1;
