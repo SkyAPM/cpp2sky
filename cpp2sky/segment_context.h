@@ -213,13 +213,30 @@ class SegmentContext {
 
 using SegmentContextPtr = std::shared_ptr<SegmentContext>;
 
-SegmentContextPtr createSegmentContext(const SegmentConfig& config,
-                                       SpanContextPtr span_ctx,
-                                       SpanContextExtensionPtr span_ctx_ext);
+class SegmentContextFactory {
+ public:
+  ~SegmentContextFactory() = default;
 
-SegmentContextPtr createSegmentContext(const SegmentConfig& config,
-                                       SpanContextPtr span_ctx);
+  /**
+   * Create segment context that doesn't have propagated info.
+   */
+  virtual SegmentContextPtr create() = 0;
 
-SegmentContextPtr createSegmentContext(const SegmentConfig& config);
+  /**
+   * Create segment context with propagated span context.
+   */
+  virtual SegmentContextPtr create(SpanContextPtr span_context) = 0;
+
+  /**
+   * Create segment context with propagated span context and extensions.
+   */
+  virtual SegmentContextPtr create(
+      SpanContextPtr span_context,
+      SpanContextExtensionPtr ext_span_context) = 0;
+};
+
+using SegmentContextFactoryPtr = std::unique_ptr<SegmentContextFactory>;
+
+SegmentContextFactoryPtr createSegmentContextFactory(const SegmentConfig& cfg);
 
 }  // namespace cpp2sky

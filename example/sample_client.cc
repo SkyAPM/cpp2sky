@@ -38,6 +38,8 @@ void init() {
 int main() {
   init();
 
+  SegmentContextFactoryPtr factory = createSegmentContextFactory(seg_config);
+
   TracerConfig tracer_config;
   auto* client_config = tracer_config.mutable_client_config();
   client_config->set_address("0.0.0.0:11800");
@@ -45,7 +47,7 @@ int main() {
   // 1. Create tracer object to send span data to OAP.
   auto tracer = createInsecureGrpcTracer(tracer_config);
   // 2. Create segment context
-  auto current_segment = createSegmentContext(seg_config);
+  auto current_segment = factory->create();
 
   // 3. Initialize span data to track root workload on current service.
   auto current_span = current_segment->createCurrentSegmentRootSpan();

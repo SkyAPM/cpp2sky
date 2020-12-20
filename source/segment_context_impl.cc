@@ -199,4 +199,24 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
   return obj;
 }
 
+SegmentContextFactoryImpl::SegmentContextFactoryImpl(
+    const SegmentConfig& config)
+    : config_(config) {}
+
+SegmentContextPtr SegmentContextFactoryImpl::create() {
+  return std::make_unique<SegmentContextImpl>(config_, random_generator_);
+}
+
+SegmentContextPtr SegmentContextFactoryImpl::create(
+    SpanContextPtr span_context) {
+  return std::make_unique<SegmentContextImpl>(config_, span_context,
+                                              random_generator_);
+}
+
+SegmentContextPtr SegmentContextFactoryImpl::create(
+    SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
+  return std::make_unique<SegmentContextImpl>(
+      config_, span_context, ext_span_context, random_generator_);
+}
+
 }  // namespace cpp2sky

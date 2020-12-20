@@ -46,11 +46,13 @@ int main() {
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(tracer_config);
 
+  SegmentContextFactoryPtr factory = createSegmentContextFactory(seg_config);
+
   svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
     if (req.has_header("sw8")) {
       auto parent = req.get_header_value("sw8");
       auto parent_span = createSpanContext(parent);
-      auto current_segment = createSegmentContext(seg_config, parent_span);
+      auto current_segment = factory->create(parent_span);
       handlePong(tracer.get(), current_segment.get(), req, res);
       tracer->sendSegment(std::move(current_segment));
     }

@@ -79,7 +79,9 @@ Create segment for current workload.
 
 ```cpp
 SegmentConfig seg_config(service_name, instance_name);
-SegmentContextPtr current_segment = createSegmentContext(seg_config);
+SegmentContextFactoryPtr segment_context_factory = createSegmentContextFactory(seg_config);
+
+SegmentContextPtr current_segment = segment_context_factory->create();
 ```
 
 #### Create span
@@ -103,7 +105,7 @@ Note that SegmentContextPtr is unique pointer. So when you'd like to send data, 
 to avoid undefined behavior.
 
 ```cpp
-SegmentContextPtr current_segment = createSegmentContext(config);
+SegmentContextPtr current_segment = segment_context_factory->create();
 CurrentSegmentSpanPtr current_span = current_segment->createCurrentSegmentRootSpan();
 
 current_span->setOperationName("sample_workload");

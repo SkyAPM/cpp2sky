@@ -165,24 +165,23 @@ class SegmentContextImpl : public SegmentContext {
   bool sample_ = true;
 };
 
-SegmentContextPtr createSegmentContext(const SegmentConfig& config,
-                                       SpanContextPtr span_ctx,
-                                       SpanContextExtensionPtr span_ctx_ext) {
-  auto random_generator = RandomGeneratorImpl();
-  return std::make_unique<SegmentContextImpl>(config, span_ctx, span_ctx_ext,
-                                              random_generator);
-}
+class SegmentContextFactoryImpl : public SegmentContextFactory {
+ public:
+  SegmentContextFactoryImpl(const SegmentConfig& config);
 
-SegmentContextPtr createSegmentContext(const SegmentConfig& config,
-                                       SpanContextPtr span_ctx) {
-  auto random_generator = RandomGeneratorImpl();
-  return std::make_unique<SegmentContextImpl>(config, span_ctx,
-                                              random_generator);
-}
+  // SegmentContextFactory
+  SegmentContextPtr create() override;
+  SegmentContextPtr create(SpanContextPtr span_context) override;
+  SegmentContextPtr create(SpanContextPtr span_context,
+                           SpanContextExtensionPtr ext_span_context) override;
 
-SegmentContextPtr createSegmentContext(const SegmentConfig& config) {
-  auto random_generator = RandomGeneratorImpl();
-  return std::make_unique<SegmentContextImpl>(config, random_generator);
+ private:
+  const SegmentConfig config_;
+  RandomGeneratorImpl random_generator_;
+};
+
+SegmentContextFactoryPtr createSegmentContextFactory(const SegmentConfig& cfg) {
+  return std::make_unique<SegmentContextFactoryImpl>(cfg);
 }
 
 }  // namespace cpp2sky
