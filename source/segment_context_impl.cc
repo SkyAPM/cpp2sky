@@ -100,7 +100,8 @@ SegmentContextImpl::SegmentContextImpl(const SegmentConfig& config,
     : trace_id_(random.uuid()),
       trace_segment_id_(random.uuid()),
       service_(config.service_name()),
-      service_instance_(config.instance_name()) {}
+      service_instance_(config.instance_name()),
+      is_root_(true) {}
 
 SegmentContextImpl::SegmentContextImpl(
     const SegmentConfig& config, SpanContextPtr parent_span_context,
@@ -110,7 +111,8 @@ SegmentContextImpl::SegmentContextImpl(
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
       service_(config.service_name()),
-      service_instance_(config.instance_name()) {}
+      service_instance_(config.instance_name()),
+      is_root_(false) {}
 
 SegmentContextImpl::SegmentContextImpl(const SegmentConfig& config,
                                        SpanContextPtr parent_span_context,
@@ -119,7 +121,14 @@ SegmentContextImpl::SegmentContextImpl(const SegmentConfig& config,
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
       service_(config.service_name()),
-      service_instance_(config.instance_name()) {}
+      service_instance_(config.instance_name()),
+      is_root_(false) {}
+
+void SegmentContextImpl::disableSampling() {
+  if (is_root_) {
+    sample_ = false;
+  }
+}
 
 CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
     CurrentSegmentSpanPtr parent_span) {

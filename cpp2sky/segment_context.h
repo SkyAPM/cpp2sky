@@ -130,6 +130,19 @@ class SegmentContext {
   virtual ~SegmentContext() = default;
 
   /**
+   * Change sampling flag to false. When this value is true, belonging spans
+   * will be sent to OAP. This value is inconfigurable when self segment context
+   * is not root because it will be specified by propagated flag.
+   */
+  virtual void disableSampling() = 0;
+
+  /**
+   * Get sampling status. If true, spans belongs to this segment will be sent to
+   * OAP.
+   */
+  virtual bool samplingStatus() const = 0;
+
+  /**
    * Get trace ID. This value must be unique globally.
    */
   virtual const std::string& traceId() const = 0;

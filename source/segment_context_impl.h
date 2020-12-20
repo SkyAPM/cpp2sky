@@ -101,7 +101,12 @@ class SegmentContextImpl : public SegmentContext {
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
+#pragma region Setters
+  void disableSampling() override;
+#pragma endregion
+
 #pragma region Getters
+  bool samplingStatus() const override { return sample_; }
   const std::string& traceId() const override { return trace_id_; }
   const std::string& traceSegmentId() const override {
     return trace_segment_id_;
@@ -156,6 +161,12 @@ class SegmentContextImpl : public SegmentContext {
   std::string trace_segment_id_;
   std::string service_;
   std::string service_instance_;
+
+  bool is_root_ = false;
+  // Sampling flag. It will send to OAP if propagated span context doesn't have
+  // sampleing flag. When this context is root. It is configurable whether
+  // sample or not.
+  bool sample_ = true;
 };
 
 SegmentContextPtr createSegmentContext(const SegmentConfig& config,
