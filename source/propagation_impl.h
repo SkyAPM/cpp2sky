@@ -26,7 +26,7 @@ class SpanContextImpl : public SpanContext {
  public:
   SpanContextImpl(std::string_view header_value);
 
-  bool mustSend() const override { return must_send_; }
+  bool sample() const override { return must_send_; }
   const std::string& traceId() const override { return trace_id_; }
   const std::string& traceSegmentId() const override {
     return trace_segment_id_;

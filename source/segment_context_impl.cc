@@ -23,7 +23,7 @@
 namespace cpp2sky {
 
 CurrentSegmentSpanImpl::CurrentSegmentSpanImpl(
-    int32_t span_id, SegmentContext* parent_segment_context)
+    int32_t span_id, SegmentContext& parent_segment_context)
     : span_id_(span_id), parent_segment_context_(parent_segment_context) {}
 
 SpanObject CurrentSegmentSpanImpl::createSpanObject() {
@@ -40,7 +40,7 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   obj.set_iserror(is_error_);
   obj.set_peer(peer_);
 
-  auto parent_span = parent_segment_context_->parentSpanContext();
+  auto parent_span = parent_segment_context_.parentSpanContext();
   // Inject request parent to the current segment.
   if (parent_span != nullptr) {
     auto* entry = obj.mutable_refs()->Add();
@@ -67,8 +67,8 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
     *entry = log;
   }
 
-  if (parent_segment_context_->parentSpanContextExtension() != nullptr) {
-    if (parent_segment_context_->parentSpanContextExtension()->tracingMode() ==
+  if (parent_segment_context_.parentSpanContextExtension() != nullptr) {
+    if (parent_segment_context_.parentSpanContextExtension()->tracingMode() ==
         TracingMode::Skip) {
       obj.set_skipanalysis(true);
     }
@@ -76,8 +76,8 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   return obj;
 }
 
-void CurrentSegmentSpanImpl::addLog(int64_t time, std::string& key,
-                                    std::string& value) {
+void CurrentSegmentSpanImpl::addLog(int64_t time, const std::string& key,
+                                    const std::string& value) {
   Log l;
   l.set_time(time);
   auto* entry = l.add_data();
@@ -95,7 +95,7 @@ void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
   }
 }
 
-SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
+SegmentContextImpl::SegmentContextImpl(const SegmentConfig& config,
                                        RandomGenerator& random)
     : trace_id_(random.uuid()),
       trace_segment_id_(random.uuid()),
@@ -103,7 +103,7 @@ SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
       service_instance_(config.instance_name()) {}
 
 SegmentContextImpl::SegmentContextImpl(
-    SegmentConfig& config, SpanContextPtr parent_span_context,
+    const SegmentConfig& config, SpanContextPtr parent_span_context,
     SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       parent_ext_span_context_(std::move(parent_ext_span_context)),
@@ -112,7 +112,7 @@ SegmentContextImpl::SegmentContextImpl(
       service_(config.service_name()),
       service_instance_(config.instance_name()) {}
 
-SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
+SegmentContextImpl::SegmentContextImpl(const SegmentConfig& config,
                                        SpanContextPtr parent_span_context,
                                        RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
@@ -124,7 +124,7 @@ SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
 CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
     CurrentSegmentSpanPtr parent_span) {
   auto current_span =
-      std::make_shared<CurrentSegmentSpanImpl>(spans_.size(), this);
+      std::make_shared<CurrentSegmentSpanImpl>(spans_.size(), *this);
   if (parent_span != nullptr) {
     current_span->setParentSpanId(parent_span->spanId());
     current_span->setSpanType(SpanType::Exit);
@@ -144,7 +144,7 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
 }
 
 std::string SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, std::string& target_address,
+    CurrentSegmentSpanPtr parent_span, const std::string& target_address,
     bool sample) {
   if (parent_span == nullptr) {
     return encodeSpan(spans_.back(), target_address, sample);
@@ -159,7 +159,7 @@ std::string SegmentContextImpl::createSW8HeaderValue(
 }
 
 std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
-                                           std::string& target_address,
+                                           const std::string& target_address,
                                            bool sample) {
   std::string header_value;
 

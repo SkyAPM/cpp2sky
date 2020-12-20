@@ -26,7 +26,7 @@ using TracerResponseType = Commands;
 
 class TracerImpl : public Tracer {
  public:
-  TracerImpl(TracerConfig& config,
+  TracerImpl(const TracerConfig& config,
              std::shared_ptr<grpc::ChannelCredentials> cred,
              GrpcAsyncSegmentReporterStreamFactory& factory);
   ~TracerImpl();
@@ -43,6 +43,6 @@ class TracerImpl : public Tracer {
 
 static GrpcAsyncSegmentReporterStreamFactory stream_factory;
 
-TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
+TracerPtr createInsecureGrpcTracer(const TracerConfig& cfg);
 
 }  // namespace cpp2sky

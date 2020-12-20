@@ -61,7 +61,7 @@ class CurrentSegmentSpan {
   /**
    * Set operation name for this span (lvalue)
    */
-  virtual void setOperationName(std::string& operation_name) = 0;
+  virtual void setOperationName(const std::string& operation_name) = 0;
 
   /**
    * Set operation name for this span (rvalue)
@@ -71,7 +71,7 @@ class CurrentSegmentSpan {
   /**
    * Set peer address for this span (lvalue)
    */
-  virtual void setPeer(std::string& remote_address) = 0;
+  virtual void setPeer(const std::string& remote_address) = 0;
 
   /**
    * Set peer address for this span (rvalue)
@@ -104,7 +104,7 @@ class CurrentSegmentSpan {
   /**
    * Set tag to current span. (lvalue)
    */
-  virtual void addTag(std::string& key, std::string& value) = 0;
+  virtual void addTag(const std::string& key, const std::string& value) = 0;
 
   /**
    * Set tag to current span. (rvalue)
@@ -114,7 +114,8 @@ class CurrentSegmentSpan {
   /**
    * Add log related with current span.
    */
-  virtual void addLog(int64_t time, std::string& key, std::string& value) = 0;
+  virtual void addLog(int64_t time, const std::string& key,
+                      const std::string& value) = 0;
 
   /**
    * Set component ID.
@@ -184,14 +185,14 @@ class SegmentContext {
    * https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L97-L101
    */
   virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                           std::string& target_address,
+                                           const std::string& target_address,
                                            bool sample = true) = 0;
   virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
                                            std::string&& target_address,
                                            bool sample = true) = 0;
   // If you don't specify parent span, stored to current segment, it will be
   // selected newest span as parent span.
-  virtual std::string createSW8HeaderValue(std::string& target_address,
+  virtual std::string createSW8HeaderValue(const std::string& target_address,
                                            bool sample = true) = 0;
   virtual std::string createSW8HeaderValue(std::string&& target_address,
                                            bool sample = true) = 0;
@@ -204,13 +205,13 @@ class SegmentContext {
 
 using SegmentContextPtr = std::unique_ptr<SegmentContext>;
 
-SegmentContextPtr createSegmentContext(SegmentConfig& config,
+SegmentContextPtr createSegmentContext(const SegmentConfig& config,
                                        SpanContextPtr span_ctx,
                                        SpanContextExtensionPtr span_ctx_ext);
 
-SegmentContextPtr createSegmentContext(SegmentConfig& config,
+SegmentContextPtr createSegmentContext(const SegmentConfig& config,
                                        SpanContextPtr span_ctx);
 
-SegmentContextPtr createSegmentContext(SegmentConfig& config);
+SegmentContextPtr createSegmentContext(const SegmentConfig& config);
 
 }  // namespace cpp2sky

@@ -40,7 +40,7 @@ static constexpr std::string_view invalid_sample =
 TEST(TestSpanContext, Basic) {
   auto data = std::string(sample.data());
   SpanContextImpl sc(data);
-  EXPECT_TRUE(sc.mustSend());
+  EXPECT_TRUE(sc.sample());
   EXPECT_EQ(sc.traceId(), "1");
   EXPECT_EQ(sc.traceSegmentId(), "5");
   EXPECT_EQ(sc.spanId(), 3);
