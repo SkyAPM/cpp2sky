@@ -211,7 +211,7 @@ class SegmentContext {
   virtual SegmentObject createSegmentObject() = 0;
 };
 
-using SegmentContextPtr = std::unique_ptr<SegmentContext>;
+using SegmentContextPtr = std::shared_ptr<SegmentContext>;
 
 SegmentContextPtr createSegmentContext(const SegmentConfig& config,
                                        SpanContextPtr span_ctx,
