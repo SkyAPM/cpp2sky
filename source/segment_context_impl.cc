@@ -146,10 +146,23 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
 std::string SegmentContextImpl::createSW8HeaderValue(
     CurrentSegmentSpanPtr parent_span, std::string& target_address,
     bool sample) {
-  std::string header_value;
   if (parent_span == nullptr) {
-    return header_value;
+    return encodeSpan(spans_.back(), target_address, sample);
   }
+  return encodeSpan(parent_span, target_address, sample);
+}
+
+std::string SegmentContextImpl::createSW8HeaderValue(
+    CurrentSegmentSpanPtr parent_span, std::string&& target_address,
+    bool sample) {
+  return createSW8HeaderValue(parent_span, target_address, sample);
+}
+
+std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
+                                           std::string& target_address,
+                                           bool sample) {
+  std::string header_value;
+
   auto parent_spanid = std::to_string(parent_span->spanId());
   auto endpoint = spans_.front()->operationName();
 
@@ -163,12 +176,6 @@ std::string SegmentContextImpl::createSW8HeaderValue(
   header_value += Base64::encode(target_address);
 
   return header_value;
-}
-
-std::string SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, std::string&& target_address,
-    bool sample) {
-  return createSW8HeaderValue(parent_span, target_address, sample);
 }
 
 SegmentObject SegmentContextImpl::createSegmentObject() {

@@ -189,6 +189,12 @@ class SegmentContext {
   virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
                                            std::string&& target_address,
                                            bool sample = true) = 0;
+  // If you don't specify parent span, stored to current segment, it will be
+  // selected newest span as parent span.
+  virtual std::string createSW8HeaderValue(std::string& target_address,
+                                           bool sample = true) = 0;
+  virtual std::string createSW8HeaderValue(std::string&& target_address,
+                                           bool sample = true) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object.
