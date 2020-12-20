@@ -153,29 +153,26 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
 }
 
 std::string SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, const std::string& target_address,
-    bool sample) {
+    CurrentSegmentSpanPtr parent_span, const std::string& target_address) {
   if (parent_span == nullptr) {
-    return encodeSpan(spans_.back(), target_address, sample);
+    return encodeSpan(spans_.back(), target_address);
   }
-  return encodeSpan(parent_span, target_address, sample);
+  return encodeSpan(parent_span, target_address);
 }
 
 std::string SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, std::string&& target_address,
-    bool sample) {
-  return createSW8HeaderValue(parent_span, target_address, sample);
+    CurrentSegmentSpanPtr parent_span, std::string&& target_address) {
+  return createSW8HeaderValue(parent_span, target_address);
 }
 
 std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
-                                           const std::string& target_address,
-                                           bool sample) {
+                                           const std::string& target_address) {
   std::string header_value;
 
   auto parent_spanid = std::to_string(parent_span->spanId());
   auto endpoint = spans_.front()->operationName();
 
-  header_value += sample ? "1-" : "0-";
+  header_value += sample_ ? "1-" : "0-";
   header_value += Base64::encode(trace_id_) + "-";
   header_value += Base64::encode(trace_segment_id_) + "-";
   header_value += parent_spanid + "-";

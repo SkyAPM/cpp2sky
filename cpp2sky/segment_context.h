@@ -193,22 +193,17 @@ class SegmentContext {
    * Generate sw8 value to send SegmentRef.
    * @param parent Parent span that belongs to current segment.
    * @param target_address Target address to send request. For more detail:
-   * @param sample If false, it means this trace shouldn't need to be sampled
-   * and send to backend.
    * https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L97-L101
    */
+  virtual std::string createSW8HeaderValue(
+      CurrentSegmentSpanPtr parent, const std::string& target_address) = 0;
   virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                           const std::string& target_address,
-                                           bool sample = true) = 0;
-  virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                           std::string&& target_address,
-                                           bool sample = true) = 0;
+                                           std::string&& target_address) = 0;
   // If you don't specify parent span, stored to current segment, it will be
   // selected newest span as parent span.
-  virtual std::string createSW8HeaderValue(const std::string& target_address,
-                                           bool sample = true) = 0;
-  virtual std::string createSW8HeaderValue(std::string&& target_address,
-                                           bool sample = true) = 0;
+  virtual std::string createSW8HeaderValue(
+      const std::string& target_address) = 0;
+  virtual std::string createSW8HeaderValue(std::string&& target_address) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object.
