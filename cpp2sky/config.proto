@@ -22,4 +22,7 @@ message TracerConfig {
 
   // OAP token.
   string token = 5;
+
+  // The size of buffer it stores pending messages.
+  uint32 delayed_buffer_size = 6;
 }
