@@ -22,11 +22,12 @@
 
 using namespace cpp2sky;
 
-SegmentConfig seg_config;
+TracerConfig config;
 
 void init() {
-  seg_config.set_instance_name("node_0");
-  seg_config.set_service_name("provider");
+  config.set_instance_name("node_0");
+  config.set_service_name("provider");
+  config.set_address("collector:19876");
 }
 
 void requestPong(Tracer* tracer, SegmentContext* scp,
@@ -84,14 +85,9 @@ void handlePing2(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
 int main() {
   init();
 
-  TracerConfig tracer_config;
-  auto* client_config = tracer_config.mutable_client_config();
-  client_config->set_address("collector:19876");
-
   httplib::Server svr;
-  auto tracer = createInsecureGrpcTracer(tracer_config);
-
-  SegmentContextFactoryPtr factory = createSegmentContextFactory(seg_config);
+  auto tracer = createInsecureGrpcTracer(config);
+  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
     auto current_segment = factory->create();

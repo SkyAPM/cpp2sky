@@ -243,6 +243,6 @@ class SegmentContextFactory {
 
 using SegmentContextFactoryPtr = std::unique_ptr<SegmentContextFactory>;
 
-SegmentContextFactoryPtr createSegmentContextFactory(const SegmentConfig& cfg);
+SegmentContextFactoryPtr createSegmentContextFactory(const TracerConfig& cfg);
 
 }  // namespace cpp2sky

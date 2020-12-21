@@ -23,30 +23,21 @@
 
 using namespace cpp2sky;
 
-SegmentConfig seg_config;
-
-uint64_t now() {
-  using namespace std::chrono;
-  return duration_cast<milliseconds>(system_clock::now().time_since_epoch())
-      .count();
-}
+TracerConfig config;
 
 void init() {
-  seg_config.set_instance_name("client_0");
-  seg_config.set_service_name("");
+  config.set_instance_name("client_0");
+  config.set_service_name("");
+  config.set_address("0.0.0.0:11800");
 }
 
 int main() {
   init();
 
-  SegmentContextFactoryPtr factory = createSegmentContextFactory(seg_config);
-
-  TracerConfig tracer_config;
-  auto* client_config = tracer_config.mutable_client_config();
-  client_config->set_address("0.0.0.0:11800");
+  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
 
   // 1. Create tracer object to send span data to OAP.
-  auto tracer = createInsecureGrpcTracer(tracer_config);
+  auto tracer = createInsecureGrpcTracer(config);
   // 2. Create segment context
   auto current_segment = factory->create();
 
@@ -63,7 +54,7 @@ int main() {
        current_segment->createSW8HeaderValue(current_span, "remote:8082")}};
   auto res = cli.Get("/ping", headers);
 
-  current_span->endSpan(now());
+  current_span->endSpan();
 
   // 5. Send span data
   tracer->sendSegment(std::move(current_segment));

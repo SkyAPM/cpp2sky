@@ -22,11 +22,12 @@
 
 using namespace cpp2sky;
 
-SegmentConfig seg_config;
+TracerConfig config;
 
 void init() {
-  seg_config.set_instance_name("node_0");
-  seg_config.set_service_name("consumer");
+  config.set_instance_name("node_0");
+  config.set_service_name("consumer");
+  config.set_address("collector:19876");
 }
 
 void handlePong(Tracer* tracer, SegmentContext* scp,
@@ -40,14 +41,10 @@ void handlePong(Tracer* tracer, SegmentContext* scp,
 int main() {
   init();
 
-  TracerConfig tracer_config;
-  auto* client_config = tracer_config.mutable_client_config();
-  client_config->set_address("collector:19876");
-
   httplib::Server svr;
-  auto tracer = createInsecureGrpcTracer(tracer_config);
+  auto tracer = createInsecureGrpcTracer(config);
 
-  SegmentContextFactoryPtr factory = createSegmentContextFactory(seg_config);
+  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
 
   svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
     if (req.has_header(kPropagationHeader.data())) {

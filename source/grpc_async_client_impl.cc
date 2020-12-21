@@ -44,13 +44,14 @@ TracerStubImpl::createWriter(grpc::ClientContext* ctx,
 }
 
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
-    const ClientConfig& config, grpc::CompletionQueue* cq,
+    const std::string& address, const std::string& token,
+    grpc::CompletionQueue* cq,
     AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
     std::shared_ptr<grpc::ChannelCredentials> cred)
-    : token_(config.token()),
+    : token_(token),
       factory_(factory),
       cq_(cq),
-      channel_(grpc::CreateChannel(config.address(), cred)) {
+      channel_(grpc::CreateChannel(address, cred)) {
   stub_ = std::make_unique<TracerStubImpl>(channel_);
   startStream();
 }

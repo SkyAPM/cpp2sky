@@ -92,11 +92,14 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
 class SegmentContextImpl : public SegmentContext {
  public:
   // This constructor is called when there is no parent SpanContext.
-  SegmentContextImpl(const SegmentConfig& config, RandomGenerator& random);
-  SegmentContextImpl(const SegmentConfig& config,
+  SegmentContextImpl(const std::string& service_name,
+                     const std::string& instance_name, RandomGenerator& random);
+  SegmentContextImpl(const std::string& service_name,
+                     const std::string& instance_name,
                      SpanContextPtr parent_span_context,
                      RandomGenerator& random);
-  SegmentContextImpl(const SegmentConfig& config,
+  SegmentContextImpl(const std::string& service_name,
+                     const std::string& instance_name,
                      SpanContextPtr parent_span_context,
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
@@ -167,7 +170,7 @@ class SegmentContextImpl : public SegmentContext {
 
 class SegmentContextFactoryImpl : public SegmentContextFactory {
  public:
-  SegmentContextFactoryImpl(const SegmentConfig& config);
+  SegmentContextFactoryImpl(const TracerConfig& cfg);
 
   // SegmentContextFactory
   SegmentContextPtr create() override;
@@ -176,11 +179,12 @@ class SegmentContextFactoryImpl : public SegmentContextFactory {
                            SpanContextExtensionPtr ext_span_context) override;
 
  private:
-  const SegmentConfig config_;
+  std::string service_name_;
+  std::string instance_name_;
   RandomGeneratorImpl random_generator_;
 };
 
-SegmentContextFactoryPtr createSegmentContextFactory(const SegmentConfig& cfg) {
+SegmentContextFactoryPtr createSegmentContextFactory(const TracerConfig& cfg) {
   return std::make_unique<SegmentContextFactoryImpl>(cfg);
 }
 

@@ -22,25 +22,22 @@
 
 using namespace cpp2sky;
 
-SegmentConfig seg_config;
+TracerConfig config;
 
 void init() {
-  seg_config.set_instance_name("node_0");
-  seg_config.set_service_name("");
+  config.set_instance_name("node_0");
+  config.set_service_name("");
+  config.set_address("0.0.0.0:11800");
 }
 
 int main() {
   init();
 
-  TracerConfig tracer_config;
-  auto* client_config = tracer_config.mutable_client_config();
-  client_config->set_address("0.0.0.0:11800");
-
   httplib::Server svr;
   // 1. Create tracer object to send span data to OAP.
-  auto tracer = createInsecureGrpcTracer(tracer_config);
+  auto tracer = createInsecureGrpcTracer(config);
 
-  SegmentContextFactoryPtr factory = createSegmentContextFactory(seg_config);
+  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
     // 2. Create segment context
