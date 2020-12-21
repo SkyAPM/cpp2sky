@@ -109,8 +109,8 @@ SegmentContextPtr current_segment = segment_context_factory->create();
 CurrentSegmentSpanPtr current_span = current_segment->createCurrentSegmentRootSpan();
 
 current_span->setOperationName("sample_workload");
-current_span->setStartTime(...);
-current_span->setEndTime(...);
+current_span->startSpan();
+current_span->endSpan();
 
 tracer->sendSegment(std::move(current_segment));
 ```

@@ -37,8 +37,8 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
 
 #pragma region Setters
   void setParentSpanId(int32_t span_id) override { parent_span_id_ = span_id; }
-  void setStartTime(int64_t start_time) override { start_time_ = start_time; }
-  void setEndTime(int64_t end_time) override { end_time_ = end_time; }
+  void startSpan(bool set_time) override;
+  void endSpan(bool set_time) override;
   void setOperationName(const std::string& operation_name) override {
     operation_name_ = operation_name;
   }
@@ -71,8 +71,8 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   // https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto
   int32_t span_id_;
   int32_t parent_span_id_;
-  int64_t start_time_;
-  int64_t end_time_;
+  int64_t start_time_ = 0;
+  int64_t end_time_ = 0;
   std::string operation_name_;
   std::string peer_;
   SpanType type_;

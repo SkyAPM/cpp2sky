@@ -50,13 +50,17 @@ class CurrentSegmentSpan {
 
   /**
    * Set start time to calculate execution time.
+   * @param set_time To determine whether to set actual time or not.
+   * This value is introduced for unit-test.
    */
-  virtual void setStartTime(int64_t start_time) = 0;
+  virtual void startSpan(bool set_time = true) = 0;
 
   /**
    * Set end time to calculate execution time.
+   * @param set_time To determine whether to set actual time or not.
+   * This value is introduced for unit-test.
    */
-  virtual void setEndTime(int64_t end_time) = 0;
+  virtual void endSpan(bool set_time = true) = 0;
 
   /**
    * Set operation name for this span (lvalue)
@@ -215,7 +219,7 @@ using SegmentContextPtr = std::shared_ptr<SegmentContext>;
 
 class SegmentContextFactory {
  public:
-  virtual ~SegmentContextFactory() = default;
+  ~SegmentContextFactory() = default;
 
   /**
    * Create segment context that doesn't have propagated info.

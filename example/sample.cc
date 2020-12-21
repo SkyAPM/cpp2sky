@@ -24,12 +24,6 @@ using namespace cpp2sky;
 
 SegmentConfig seg_config;
 
-uint64_t now() {
-  using namespace std::chrono;
-  return duration_cast<milliseconds>(system_clock::now().time_since_epoch())
-      .count();
-}
-
 void init() {
   seg_config.set_instance_name("node_0");
   seg_config.set_service_name("");
@@ -57,8 +51,8 @@ int main() {
 
     // 4. Set info
     current_span->setOperationName("/ping");
-    current_span->setStartTime(now());
-    current_span->setEndTime(now());
+    current_span->startSpan();
+    current_span->endSpan();
 
     // 5. Send span data
     tracer->sendSegment(std::move(current_segment));

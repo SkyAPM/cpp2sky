@@ -32,7 +32,7 @@ void requestPong(Tracer* tracer, SegmentContext* scp,
                  CurrentSegmentSpanPtr parent_span) {
   std::string target_address = "consumer:8080";
   auto current_span = scp->createCurrentSegmentSpan(parent_span);
-  current_span->setStartTime(10100);
+  current_span->startSpan();
   current_span->setPeer(target_address);
   current_span->setOperationName("/pong");
 
@@ -41,14 +41,14 @@ void requestPong(Tracer* tracer, SegmentContext* scp,
       {"sw8", scp->createSW8HeaderValue(current_span, target_address)}};
   auto res = cli.Get("/pong", headers);
 
-  current_span->setEndTime(10200);
+  current_span->endSpan();
 }
 
 void requestUsers(Tracer* tracer, SegmentContext* scp,
                   CurrentSegmentSpanPtr parent_span) {
   std::string target_address = "interm:8082";
   auto current_span = scp->createCurrentSegmentSpan(parent_span);
-  current_span->setStartTime(10100);
+  current_span->startSpan();
   current_span->setPeer(target_address);
   current_span->setOperationName("/users");
 
@@ -57,25 +57,25 @@ void requestUsers(Tracer* tracer, SegmentContext* scp,
       {"sw8", scp->createSW8HeaderValue(current_span, target_address)}};
   auto res = cli.Get("/users", headers);
 
-  current_span->setEndTime(10200);
+  current_span->endSpan();
 }
 
 void handlePing(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
                 httplib::Response& response) {
   auto current_span = scp->createCurrentSegmentRootSpan();
-  current_span->setStartTime(10000);
+  current_span->startSpan();
   current_span->setOperationName("/ping");
   requestPong(tracer, scp, current_span);
-  current_span->setEndTime(20000);
+  current_span->endSpan();
 }
 
 void handlePing2(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
                  httplib::Response& response) {
   auto current_span = scp->createCurrentSegmentRootSpan();
-  current_span->setStartTime(10000);
+  current_span->startSpan();
   current_span->setOperationName("/ping2");
   requestUsers(tracer, scp, current_span);
-  current_span->setEndTime(20000);
+  current_span->endSpan();
 }
 
 int main() {

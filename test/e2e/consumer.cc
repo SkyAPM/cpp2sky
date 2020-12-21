@@ -31,9 +31,9 @@ void init() {
 void handlePong(Tracer* tracer, SegmentContext* scp,
                 const httplib::Request& req, httplib::Response& response) {
   auto span = scp->createCurrentSegmentRootSpan();
-  span->setStartTime(10110);
+  span->startSpan();
   span->setOperationName("/pong");
-  span->setEndTime(10190);
+  span->endSpan();
 }
 
 int main() {

@@ -19,6 +19,7 @@
 #include "language-agent/Tracing.pb.h"
 #include "source/utils/base64.h"
 #include "source/utils/random_generator.h"
+#include "source/utils/time.h"
 
 namespace cpp2sky {
 
@@ -84,6 +85,20 @@ void CurrentSegmentSpanImpl::addLog(int64_t time, const std::string& key,
   entry->set_key(key);
   entry->set_value(value);
   logs_.emplace_back(l);
+}
+
+void CurrentSegmentSpanImpl::startSpan(bool set_time) {
+  if (set_time) {
+    auto now = SystemTime::now();
+    start_time_ = millisecondsFromEpoch(now);
+  }
+}
+
+void CurrentSegmentSpanImpl::endSpan(bool set_time) {
+  if (set_time) {
+    auto now = SystemTime::now();
+    end_time_ = millisecondsFromEpoch(now);
+  }
 }
 
 void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
