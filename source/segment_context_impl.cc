@@ -77,10 +77,13 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   return obj;
 }
 
-void CurrentSegmentSpanImpl::addLog(int64_t time, const std::string& key,
-                                    const std::string& value) {
+void CurrentSegmentSpanImpl::addLog(const std::string& key,
+                                    const std::string& value, bool set_time) {
   Log l;
-  l.set_time(time);
+  if (set_time) {
+    SystemTimePoint now = SystemTime::now();
+    l.set_time(millisecondsFromEpoch(now));
+  }
   auto* entry = l.add_data();
   entry->set_key(key);
   entry->set_value(value);

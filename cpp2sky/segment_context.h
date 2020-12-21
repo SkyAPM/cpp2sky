@@ -117,9 +117,11 @@ class CurrentSegmentSpan {
 
   /**
    * Add log related with current span.
+   * @param set_time To determine whether to set actual time or not.
+   * This value is introduced for unit-test.
    */
-  virtual void addLog(int64_t time, const std::string& key,
-                      const std::string& value) = 0;
+  virtual void addLog(const std::string& key, const std::string& value,
+                      bool set_time = true) = 0;
 
   /**
    * Set component ID.

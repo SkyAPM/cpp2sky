@@ -159,7 +159,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
 
   std::string log_key = "service_0";
   std::string log_value = "error";
-  span_child->addLog(10500, log_key, log_value);
+  span_child->addLog(log_key, log_value, false);
 
   std::string json2 = R"EOF(
   {
@@ -187,7 +187,6 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
       "value": "database"
     },
     "logs": {
-      "time": "10500",
       "data": {
         "key": "service_0",
         "value": "error"
