@@ -221,7 +221,7 @@ using SegmentContextPtr = std::shared_ptr<SegmentContext>;
 
 class SegmentContextFactory {
  public:
-  ~SegmentContextFactory() = default;
+  virtual ~SegmentContextFactory() = default;
 
   /**
    * Create segment context that doesn't have propagated info.
