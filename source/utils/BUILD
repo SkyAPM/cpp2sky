@@ -5,7 +5,6 @@ cc_library(
   hdrs = [
     "base64.h",
     "time.h",
-    "exception.h",
     "random_generator.h",
     "grpc_status.h",
     "circular_buffer.h",

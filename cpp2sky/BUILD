@@ -20,7 +20,8 @@ cc_library(
     "tracer.h",
     "segment_context.h",
     "propagation.h",
-    "well_known_names.h"
+    "well_known_names.h",
+    "exception.h",
   ],
   deps = [
     "@com_github_grpc_grpc//:grpc++",
@@ -49,6 +50,7 @@ cc_library(
   hdrs = [
     "segment_context.h",
     "propagation.h",
+    "exception.h",
   ],
   deps = [
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",

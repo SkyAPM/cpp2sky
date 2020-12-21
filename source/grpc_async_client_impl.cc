@@ -18,7 +18,7 @@
 #include <string_view>
 #include <thread>
 
-#include "source/utils/exception.h"
+#include "cpp2sky/exception.h"
 #include "utils/grpc_status.h"
 
 #define DEFAULT_CONNECTION_ACTIVE_RETRY_TIMES 5
