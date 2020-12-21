@@ -44,16 +44,3 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
-
-cc_library(
-  name = "cpp2sky_data_interface",
-  hdrs = [
-    "segment_context.h",
-    "propagation.h",
-    "exception.h",
-  ],
-  deps = [
-    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
-  ],
-  visibility = ["//visibility:public"],
-)
