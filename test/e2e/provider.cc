@@ -17,6 +17,7 @@
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/segment_context.h"
 #include "cpp2sky/tracer.h"
+#include "cpp2sky/well_known_names.h"
 #include "httplib.h"
 
 using namespace cpp2sky;
@@ -38,7 +39,8 @@ void requestPong(Tracer* tracer, SegmentContext* scp,
 
   httplib::Client cli("consumer", 8080);
   httplib::Headers headers = {
-      {"sw8", scp->createSW8HeaderValue(current_span, target_address)}};
+      {kPropagationHeader.data(),
+       scp->createSW8HeaderValue(current_span, target_address)}};
   auto res = cli.Get("/pong", headers);
 
   current_span->endSpan();
@@ -54,7 +56,8 @@ void requestUsers(Tracer* tracer, SegmentContext* scp,
 
   httplib::Client cli("interm", 8082);
   httplib::Headers headers = {
-      {"sw8", scp->createSW8HeaderValue(current_span, target_address)}};
+      {kPropagationHeader.data(),
+       scp->createSW8HeaderValue(current_span, target_address)}};
   auto res = cli.Get("/users", headers);
 
   current_span->endSpan();

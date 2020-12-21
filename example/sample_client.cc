@@ -18,6 +18,7 @@
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/segment_context.h"
 #include "cpp2sky/tracer.h"
+#include "cpp2sky/well_known_names.h"
 #include "httplib.h"
 
 using namespace cpp2sky;
@@ -57,8 +58,9 @@ int main() {
   current_span->startSpan();
 
   httplib::Client cli("remote", 8082);
-  httplib::Headers headers = {{"sw8", current_segment->createSW8HeaderValue(
-                                          current_span, "remote:8082")}};
+  httplib::Headers headers = {
+      {kPropagationHeader.data(),
+       current_segment->createSW8HeaderValue(current_span, "remote:8082")}};
   auto res = cli.Get("/ping", headers);
 
   current_span->endSpan(now());

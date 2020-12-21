@@ -20,6 +20,7 @@ cc_library(
     "tracer.h",
     "segment_context.h",
     "propagation.h",
+    "well_known_names.h"
   ],
   deps = [
     "@com_github_grpc_grpc//:grpc++",
