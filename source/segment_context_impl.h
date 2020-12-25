@@ -33,6 +33,18 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
 #pragma region Getters
   bool samplingStatus() const override { return do_sample_; }
   int32_t spanId() const override { return span_id_; }
+  int32_t parentSpanId() const override { return parent_span_id_; }
+  int64_t startTime() const override { return start_time_; }
+  int64_t endTime() const override { return end_time_; }
+  const std::string& peer() const override { return peer_; }
+  SpanType spanType() const override { return type_; }
+  SpanLayer spanLayer() const override { return layer_; }
+  bool errorStatus() const override { return is_error_; }
+  bool skipAnalysis() const override { return skip_analysis_; }
+  int32_t componentId() const override { return component_id_; }
+  const std::unordered_map<std::string, std::string>& tags() const override { return tags_; }
+  const std::vector<Log>& logs() const override { return logs_; }
+  bool finished() const override { return finished_; }
   std::string operationName() const override { return operation_name_; }
 #pragma endregion
 
@@ -74,7 +86,6 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   void addLog(const std::string& key, const std::string& value,
               bool set_time) override;
   void setComponentId(int32_t component_id) override;
-  bool finished() override { return finished_; }
   void setSamplingStatus(bool do_sample) override {
     assert(!finished_);
     do_sample_ = do_sample;

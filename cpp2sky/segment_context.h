@@ -17,6 +17,8 @@
 #include <list>
 #include <memory>
 #include <string_view>
+#include <unordered_map>
+#include <vector>
 
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
@@ -43,6 +45,61 @@ class CurrentSegmentSpan {
    * Get span ID.
    */
   virtual int32_t spanId() const = 0;
+
+  /**
+   * Get parent span ID.
+   */
+  virtual int32_t parentSpanId() const = 0;
+
+  /**
+   * Get start time.
+   */
+  virtual int64_t startTime() const = 0;
+
+  /**
+   * Get end time.
+   */
+  virtual int64_t endTime() const = 0;
+
+  /**
+   * Get peer address.
+   */
+  virtual const std::string& peer() const = 0;
+
+  /**
+   * Get span type.
+   */
+  virtual SpanType spanType() const = 0;
+
+  /**
+   * Get span layer.
+   */
+  virtual SpanLayer spanLayer() const = 0;
+
+  /**
+   * Get error occurred or not.
+   */
+  virtual bool errorStatus() const = 0;
+
+  /**
+   * Enable to skip analysis or not.
+   */
+  virtual bool skipAnalysis() const = 0;
+
+  /**
+   * Get component ID.
+   */
+  virtual int32_t componentId() const = 0;
+
+  /**
+   * Get tags.
+   */
+  virtual const std::unordered_map<std::string, std::string>& tags() const = 0;
+
+  /**
+   * Get logs.
+   */
+  virtual const std::vector<Log>& logs() const = 0;
 
   /**
    * Get operation name.
@@ -137,7 +194,7 @@ class CurrentSegmentSpan {
   /**
    * This span had finished or not.
    */
-  virtual bool finished() = 0;
+  virtual bool finished() const = 0;
 
   /**
    * Change sampling status. If true, it will be sampled.
