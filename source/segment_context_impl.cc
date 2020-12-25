@@ -132,7 +132,8 @@ SegmentContextImpl::SegmentContextImpl(
       trace_segment_id_(random.uuid()),
       service_(service_name),
       service_instance_(instance_name),
-      is_root_(false) {}
+      is_root_(false),
+      sample_(parent_span_context_->sample()) {}
 
 SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
@@ -143,7 +144,8 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
       trace_segment_id_(random.uuid()),
       service_(service_name),
       service_instance_(instance_name),
-      is_root_(false) {}
+      is_root_(false),
+      sample_(parent_span_context_->sample()) {}
 
 void SegmentContextImpl::disableSampling() {
   if (is_root_) {
