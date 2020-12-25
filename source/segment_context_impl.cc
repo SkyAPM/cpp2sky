@@ -263,21 +263,16 @@ SegmentContextPtr SegmentContextFactoryImpl::create(
 }
 
 SegmentContextPtr SegmentContextFactoryImpl::create(
-    SpanContextPtr span_context, bool default_sampling_status) {
-  auto context = std::make_unique<SegmentContextImpl>(
-      service_name_, instance_name_, span_context, random_generator_);
-  context->setDefaultSamplingStatus(default_sampling_status);
-  return context;
+    SpanContextPtr span_context) {
+  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
+                                              span_context, random_generator_);
 }
 
 SegmentContextPtr SegmentContextFactoryImpl::create(
-    SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context,
-    bool default_sampling_status) {
-  auto context = std::make_unique<SegmentContextImpl>(
-      service_name_, instance_name_, span_context, ext_span_context,
-      random_generator_);
-  context->setDefaultSamplingStatus(default_sampling_status);
-  return context;
+    SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
+  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
+                                              span_context, ext_span_context,
+                                              random_generator_);
 }
 
 }  // namespace cpp2sky

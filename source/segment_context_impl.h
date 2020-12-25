@@ -192,11 +192,9 @@ class SegmentContextFactoryImpl : public SegmentContextFactory {
 
   // SegmentContextFactory
   SegmentContextPtr create(bool default_sampling_status) override;
+  SegmentContextPtr create(SpanContextPtr span_context) override;
   SegmentContextPtr create(SpanContextPtr span_context,
-                           bool default_sampling_status) override;
-  SegmentContextPtr create(SpanContextPtr span_context,
-                           SpanContextExtensionPtr ext_span_context,
-                           bool default_sampling_status) override;
+                           SpanContextExtensionPtr ext_span_context) override;
 
  private:
   std::string service_name_;
