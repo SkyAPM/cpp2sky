@@ -127,6 +127,11 @@ class CurrentSegmentSpan {
    * Set component ID.
    */
   virtual void setComponentId(int32_t component_id) = 0;
+
+  /**
+   * This span had finished or not.
+   */
+  virtual bool finished() = 0;
 };
 
 using CurrentSegmentSpanPtr = std::shared_ptr<CurrentSegmentSpan>;
@@ -215,6 +220,11 @@ class SegmentContext {
    * Generate Apache SkyWalking native segment object.
    */
   virtual SegmentObject createSegmentObject() = 0;
+
+  /**
+   * Determine whether to send this segment or not.
+   */
+  virtual bool readyToSend() = 0;
 };
 
 using SegmentContextPtr = std::shared_ptr<SegmentContext>;

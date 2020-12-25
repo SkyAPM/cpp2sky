@@ -37,7 +37,7 @@ TracerImpl::~TracerImpl() {
 }
 
 void TracerImpl::sendSegment(SegmentContextPtr obj) {
-  if (!obj) {
+  if (!obj || !obj->readyToSend()) {
     return;
   }
   client_->sendMessage(obj->createSegmentObject());

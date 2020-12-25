@@ -79,6 +79,7 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
 
 void CurrentSegmentSpanImpl::addLog(const std::string& key,
                                     const std::string& value, bool set_time) {
+  assert(!finished_);
   Log l;
   if (set_time) {
     SystemTimePoint now = SystemTime::now();
@@ -98,13 +99,17 @@ void CurrentSegmentSpanImpl::startSpan(bool set_time) {
 }
 
 void CurrentSegmentSpanImpl::endSpan(bool set_time) {
+  assert(!finished_);
   if (set_time) {
     auto now = SystemTime::now();
     end_time_ = millisecondsFromEpoch(now);
   }
+  finished_ = true;
 }
 
 void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
+  assert(!finished_);
+
   // Component ID is reserved on Skywalking spec.
   // For more details here:
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
@@ -220,6 +225,15 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
   }
 
   return obj;
+}
+
+bool SegmentContextImpl::readyToSend() {
+  for (const auto& span : spans_) {
+    if (!span->finished()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 SegmentContextFactoryImpl::SegmentContextFactoryImpl(const TracerConfig& cfg)

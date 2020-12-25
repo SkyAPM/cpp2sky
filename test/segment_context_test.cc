@@ -64,8 +64,8 @@ TEST_F(SegmentContextTest, BasicTest) {
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
   span->startSpan(false);
-  span->endSpan(false);
   span->setPeer("localhost:9000");
+  span->endSpan(false);
 
   std::string json = R"EOF(
   {
@@ -88,8 +88,8 @@ TEST_F(SegmentContextTest, BasicTest) {
   EXPECT_EQ(sc.spans().size(), 2);
   EXPECT_EQ(span_child->spanId(), 1);
   span_child->startSpan(false);
-  span_child->endSpan(false);
   span_child->setPeer("localhost:9000");
+  span_child->endSpan(false);
 
   std::string json2 = R"EOF(
   {
@@ -120,8 +120,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
   span->startSpan(false);
-  span->endSpan(false);
   span->setPeer("localhost:9000");
+  span->endSpan(false);
 
   std::string json = R"EOF(
   {
@@ -155,13 +155,12 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   EXPECT_EQ(sc.spans().size(), 2);
   EXPECT_EQ(span_child->spanId(), 1);
   span_child->startSpan(false);
-  span_child->endSpan(false);
   span_child->setPeer("localhost:9000");
   span_child->addTag("category", "database");
-
   std::string log_key = "service_0";
   std::string log_value = "error";
   span_child->addLog(log_key, log_value, false);
+  span_child->endSpan(false);
 
   std::string json2 = R"EOF(
   {
@@ -212,8 +211,8 @@ TEST_F(SegmentContextTest, SW8CreateTest) {
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
   span->startSpan(false);
-  span->endSpan(false);
   span->setOperationName("/ping");
+  span->endSpan(false);
 
   std::string target_address("10.0.0.1:443");
   std::string expect_sw8(

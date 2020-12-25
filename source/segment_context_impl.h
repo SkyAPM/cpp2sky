@@ -36,19 +36,26 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
 #pragma endregion
 
 #pragma region Setters
-  void setParentSpanId(int32_t span_id) override { parent_span_id_ = span_id; }
+  void setParentSpanId(int32_t span_id) override {
+    assert(!finished_);
+    parent_span_id_ = span_id;
+  }
   void startSpan(bool set_time) override;
   void endSpan(bool set_time) override;
   void setOperationName(const std::string& operation_name) override {
+    assert(!finished_);
     operation_name_ = operation_name;
   }
   void setOperationName(std::string&& operation_name) override {
+    assert(!finished_);
     operation_name_ = std::move(operation_name);
   }
   void setPeer(const std::string& remote_address) override {
+    assert(!finished_);
     peer_ = remote_address;
   }
   void setPeer(std::string&& remote_address) override {
+    assert(!finished_);
     peer_ = std::move(remote_address);
   }
   void setSpanType(SpanType type) override { type_ = type; }
@@ -56,14 +63,18 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   void errorOccured() override { is_error_ = true; }
   void skipAnalysis() override { skip_analysis_ = true; }
   void addTag(const std::string& key, const std::string& value) override {
+    assert(!finished_);
+
     tags_.emplace(key, value);
   }
   void addTag(std::string&& key, std::string&& value) override {
+    assert(!finished_);
     tags_.emplace(std::move(key), std::move(value));
   }
   void addLog(const std::string& key, const std::string& value,
               bool set_time) override;
   void setComponentId(int32_t component_id) override;
+  bool finished() override { return finished_; }
 #pragma endregion
 
  private:
@@ -87,6 +98,7 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   bool skip_analysis_ = false;
 
   SegmentContext& parent_segment_context_;
+  bool finished_ = false;
 };
 
 class SegmentContextImpl : public SegmentContext {
@@ -144,6 +156,8 @@ class SegmentContextImpl : public SegmentContext {
   std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
                                    std::string&& target_address) override;
   SegmentObject createSegmentObject() override;
+
+  bool readyToSend() override;
 
  private:
   std::string encodeSpan(CurrentSegmentSpanPtr parent_span,
