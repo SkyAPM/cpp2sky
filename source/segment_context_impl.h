@@ -31,6 +31,7 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   SpanObject createSpanObject() override;
 
 #pragma region Getters
+  bool samplingStatus() const override { return do_sample_; }
   int32_t spanId() const override { return span_id_; }
   std::string operationName() const override { return operation_name_; }
 #pragma endregion
@@ -64,7 +65,6 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   void skipAnalysis() override { skip_analysis_ = true; }
   void addTag(const std::string& key, const std::string& value) override {
     assert(!finished_);
-
     tags_.emplace(key, value);
   }
   void addTag(std::string&& key, std::string&& value) override {
@@ -75,6 +75,10 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
               bool set_time) override;
   void setComponentId(int32_t component_id) override;
   bool finished() override { return finished_; }
+  void setSamplingStatus(bool do_sample) override {
+    assert(!finished_);
+    do_sample_ = do_sample;
+  }
 #pragma endregion
 
  private:
@@ -96,8 +100,8 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   std::unordered_map<std::string, std::string> tags_;
   std::vector<Log> logs_;
   bool skip_analysis_ = false;
-
   SegmentContext& parent_segment_context_;
+  bool do_sample_ = true;
   bool finished_ = false;
 };
 
@@ -117,11 +121,11 @@ class SegmentContextImpl : public SegmentContext {
                      RandomGenerator& random);
 
 #pragma region Setters
-  void disableSampling() override;
+  void setDefaultSamplingStatus(bool do_sample) override;
 #pragma endregion
 
 #pragma region Getters
-  bool samplingStatus() const override { return sample_; }
+  bool defaultSamplingStatus() const override { return do_sample_default_; }
   const std::string& traceId() const override { return trace_id_; }
   const std::string& traceSegmentId() const override {
     return trace_segment_id_;
@@ -179,7 +183,7 @@ class SegmentContextImpl : public SegmentContext {
   // Sampling flag. It will send to OAP if propagated span context doesn't have
   // sampleing flag. When this context is root. It is configurable whether
   // sample or not.
-  bool sample_ = true;
+  bool do_sample_default_ = true;
 };
 
 class SegmentContextFactoryImpl : public SegmentContextFactory {

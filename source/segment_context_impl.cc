@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include "cpp2sky/exception.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/utils/base64.h"
 #include "source/utils/random_generator.h"
@@ -25,7 +26,9 @@ namespace cpp2sky {
 
 CurrentSegmentSpanImpl::CurrentSegmentSpanImpl(
     int32_t span_id, SegmentContext& parent_segment_context)
-    : span_id_(span_id), parent_segment_context_(parent_segment_context) {}
+    : span_id_(span_id),
+      parent_segment_context_(parent_segment_context),
+      do_sample_(parent_segment_context.defaultSamplingStatus()) {}
 
 SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   SpanObject obj;
@@ -138,7 +141,7 @@ SegmentContextImpl::SegmentContextImpl(
       service_(service_name),
       service_instance_(instance_name),
       is_root_(false),
-      sample_(parent_span_context_->sample()) {}
+      do_sample_default_(parent_span_context_->sample()) {}
 
 SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
@@ -150,12 +153,14 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
       service_(service_name),
       service_instance_(instance_name),
       is_root_(false),
-      sample_(parent_span_context_->sample()) {}
+      do_sample_default_(parent_span_context_->sample()) {}
 
-void SegmentContextImpl::disableSampling() {
-  if (is_root_) {
-    sample_ = false;
+void SegmentContextImpl::setDefaultSamplingStatus(bool do_sample) {
+  if (!is_root_) {
+    throw TracerException(
+        "Failed to change sampling status because it is a root segment");
   }
+  do_sample_default_ = do_sample;
 }
 
 CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
@@ -195,12 +200,13 @@ std::string SegmentContextImpl::createSW8HeaderValue(
 
 std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
                                            const std::string& target_address) {
+  assert(parent_span);
   std::string header_value;
 
   auto parent_spanid = std::to_string(parent_span->spanId());
   auto endpoint = spans_.front()->operationName();
 
-  header_value += sample_ ? "1-" : "0-";
+  header_value += parent_span->samplingStatus() ? "1-" : "0-";
   header_value += Base64::encode(trace_id_) + "-";
   header_value += Base64::encode(trace_segment_id_) + "-";
   header_value += parent_spanid + "-";
@@ -228,11 +234,8 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
 }
 
 bool SegmentContextImpl::readyToSend() {
-  if (!sample_) {
-    return false;
-  }
   for (const auto& span : spans_) {
-    if (!span->finished()) {
+    if (span->samplingStatus() && !span->finished()) {
       return false;
     }
   }

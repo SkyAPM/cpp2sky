@@ -34,6 +34,12 @@ class CurrentSegmentSpan {
   virtual SpanObject createSpanObject() = 0;
 
   /**
+   * Get sampling status. If true, spans belongs to this segment will be sent to
+   * OAP.
+   */
+  virtual bool samplingStatus() const = 0;
+
+  /**
    * Get span ID.
    */
   virtual int32_t spanId() const = 0;
@@ -132,6 +138,11 @@ class CurrentSegmentSpan {
    * This span had finished or not.
    */
   virtual bool finished() = 0;
+
+  /**
+   * Change sampling status. If true, it will be sampled.
+   */
+  virtual void setSamplingStatus(bool do_sample) = 0;
 };
 
 using CurrentSegmentSpanPtr = std::shared_ptr<CurrentSegmentSpan>;
@@ -141,17 +152,17 @@ class SegmentContext {
   virtual ~SegmentContext() = default;
 
   /**
-   * Change sampling flag to false. When this value is true, belonging spans
+   * Change sampling flag. When this value is true, belonging spans
    * will be sent to OAP. This value is inconfigurable when self segment context
    * is not root because it will be specified by propagated flag.
    */
-  virtual void disableSampling() = 0;
+  virtual void setDefaultSamplingStatus(bool do_sample) = 0;
 
   /**
-   * Get sampling status. If true, spans belongs to this segment will be sent to
-   * OAP.
+   * Get default sampling status it will be determined when span creation.
+   * If true, spans belongs to this segment will be sent to OAP.
    */
-  virtual bool samplingStatus() const = 0;
+  virtual bool defaultSamplingStatus() const = 0;
 
   /**
    * Get trace ID. This value must be unique globally.
