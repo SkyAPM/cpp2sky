@@ -17,7 +17,6 @@
 #include <list>
 #include <memory>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 #include "cpp2sky/config.pb.h"
@@ -94,7 +93,8 @@ class CurrentSegmentSpan {
   /**
    * Get tags.
    */
-  virtual const std::unordered_map<std::string, std::string>& tags() const = 0;
+  virtual const std::vector<std::pair<std::string, std::string>>& tags()
+      const = 0;
 
   /**
    * Get logs.

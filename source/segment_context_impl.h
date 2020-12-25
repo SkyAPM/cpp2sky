@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <map>
 
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
@@ -42,7 +42,10 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   bool errorStatus() const override { return is_error_; }
   bool skipAnalysis() const override { return skip_analysis_; }
   int32_t componentId() const override { return component_id_; }
-  const std::unordered_map<std::string, std::string>& tags() const override { return tags_; }
+  const std::vector<std::pair<std::string, std::string>>& tags()
+      const override {
+    return tags_;
+  }
   const std::vector<Log>& logs() const override { return logs_; }
   bool finished() const override { return finished_; }
   std::string operationName() const override { return operation_name_; }
@@ -77,11 +80,11 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   void skipAnalysis() override { skip_analysis_ = true; }
   void addTag(const std::string& key, const std::string& value) override {
     assert(!finished_);
-    tags_.emplace(key, value);
+    tags_.emplace_back(key, value);
   }
   void addTag(std::string&& key, std::string&& value) override {
     assert(!finished_);
-    tags_.emplace(std::move(key), std::move(value));
+    tags_.emplace_back(std::move(key), std::move(value));
   }
   void addLog(const std::string& key, const std::string& value,
               bool set_time) override;
@@ -108,7 +111,7 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
   int32_t component_id_ = 9000;
   bool is_error_ = false;
-  std::unordered_map<std::string, std::string> tags_;
+  std::vector<std::pair<std::string, std::string>> tags_;
   std::vector<Log> logs_;
   bool skip_analysis_ = false;
   SegmentContext& parent_segment_context_;
