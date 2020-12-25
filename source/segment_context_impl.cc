@@ -254,22 +254,30 @@ bool SegmentContextImpl::readyToSend() {
 SegmentContextFactoryImpl::SegmentContextFactoryImpl(const TracerConfig& cfg)
     : service_name_(cfg.service_name()), instance_name_(cfg.instance_name()) {}
 
-SegmentContextPtr SegmentContextFactoryImpl::create() {
-  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
-                                              random_generator_);
+SegmentContextPtr SegmentContextFactoryImpl::create(
+    bool default_sampling_status) {
+  auto context = std::make_unique<SegmentContextImpl>(
+      service_name_, instance_name_, random_generator_);
+  context->setDefaultSamplingStatus(default_sampling_status);
+  return context;
 }
 
 SegmentContextPtr SegmentContextFactoryImpl::create(
-    SpanContextPtr span_context) {
-  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
-                                              span_context, random_generator_);
+    SpanContextPtr span_context, bool default_sampling_status) {
+  auto context = std::make_unique<SegmentContextImpl>(
+      service_name_, instance_name_, span_context, random_generator_);
+  context->setDefaultSamplingStatus(default_sampling_status);
+  return context;
 }
 
 SegmentContextPtr SegmentContextFactoryImpl::create(
-    SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
-  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
-                                              span_context, ext_span_context,
-                                              random_generator_);
+    SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context,
+    bool default_sampling_status) {
+  auto context = std::make_unique<SegmentContextImpl>(
+      service_name_, instance_name_, span_context, ext_span_context,
+      random_generator_);
+  context->setDefaultSamplingStatus(default_sampling_status);
+  return context;
 }
 
 }  // namespace cpp2sky

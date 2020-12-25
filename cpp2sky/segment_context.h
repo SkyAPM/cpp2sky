@@ -247,19 +247,20 @@ class SegmentContextFactory {
   /**
    * Create segment context that doesn't have propagated info.
    */
-  virtual SegmentContextPtr create() = 0;
+  virtual SegmentContextPtr create(bool default_sampling_status = true) = 0;
 
   /**
    * Create segment context with propagated span context.
    */
-  virtual SegmentContextPtr create(SpanContextPtr span_context) = 0;
+  virtual SegmentContextPtr create(SpanContextPtr span_context,
+                                   bool default_sampling_status = true) = 0;
 
   /**
    * Create segment context with propagated span context and extensions.
    */
-  virtual SegmentContextPtr create(
-      SpanContextPtr span_context,
-      SpanContextExtensionPtr ext_span_context) = 0;
+  virtual SegmentContextPtr create(SpanContextPtr span_context,
+                                   SpanContextExtensionPtr ext_span_context,
+                                   bool default_sampling_status = true) = 0;
 };
 
 using SegmentContextFactoryPtr = std::unique_ptr<SegmentContextFactory>;
