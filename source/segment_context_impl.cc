@@ -170,6 +170,9 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
   if (parent_span != nullptr) {
     current_span->setParentSpanId(parent_span->spanId());
     current_span->setSpanType(SpanType::Exit);
+    // If parent span exists, override default segment sampling status with
+    // parent span one.
+    current_span->setSamplingStatus(parent_span->samplingStatus());
   } else {
     current_span->setParentSpanId(-1);
     current_span->setSpanType(SpanType::Entry);
