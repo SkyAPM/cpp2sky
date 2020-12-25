@@ -228,6 +228,9 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
 }
 
 bool SegmentContextImpl::readyToSend() {
+  if (!sample_) {
+    return false;
+  }
   for (const auto& span : spans_) {
     if (!span->finished()) {
       return false;
