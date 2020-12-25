@@ -141,7 +141,7 @@ class CurrentSegmentSpan {
 
   /**
    * Change sampling status. If true, it will be sampled.
-   */
+   */ 
   virtual void setSamplingStatus(bool do_sample) = 0;
 };
 
@@ -159,7 +159,7 @@ class SegmentContext {
   virtual void setDefaultSamplingStatus(bool do_sample) = 0;
 
   /**
-   * Get default sampling status it will be determined when span creation.
+   * Get default sampling status it will be determined when span creation. 
    * If true, spans belongs to this segment will be sent to OAP.
    */
   virtual bool defaultSamplingStatus() const = 0;

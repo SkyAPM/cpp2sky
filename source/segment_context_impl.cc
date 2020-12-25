@@ -234,12 +234,16 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
 }
 
 bool SegmentContextImpl::readyToSend() {
+  size_t sendable_span_count = 0;
   for (const auto& span : spans_) {
     if (span->samplingStatus() && !span->finished()) {
       return false;
     }
+    if (span->samplingStatus() && span->finished()) {
+      ++sendable_span_count;
+    }
   }
-  return true;
+  return sendable_span_count > 0;
 }
 
 SegmentContextFactoryImpl::SegmentContextFactoryImpl(const TracerConfig& cfg)
