@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include "cpp2sky/time.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/utils/base64.h"
 #include "source/utils/random_generator.h"
@@ -23,7 +24,7 @@
 namespace cpp2sky {
 
 CurrentSegmentSpanImpl::CurrentSegmentSpanImpl(
-    int32_t span_id, SegmentContext* parent_segment_context)
+    int32_t span_id, SegmentContext& parent_segment_context)
     : span_id_(span_id), parent_segment_context_(parent_segment_context) {}
 
 SpanObject CurrentSegmentSpanImpl::createSpanObject() {
@@ -40,7 +41,7 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   obj.set_iserror(is_error_);
   obj.set_peer(peer_);
 
-  auto parent_span = parent_segment_context_->parentSpanContext();
+  auto parent_span = parent_segment_context_.parentSpanContext();
   // Inject request parent to the current segment.
   if (parent_span != nullptr) {
     auto* entry = obj.mutable_refs()->Add();
@@ -67,8 +68,8 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
     *entry = log;
   }
 
-  if (parent_segment_context_->parentSpanContextExtension() != nullptr) {
-    if (parent_segment_context_->parentSpanContextExtension()->tracingMode() ==
+  if (parent_segment_context_.parentSpanContextExtension() != nullptr) {
+    if (parent_segment_context_.parentSpanContextExtension()->tracingMode() ==
         TracingMode::Skip) {
       obj.set_skipanalysis(true);
     }
@@ -76,14 +77,55 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   return obj;
 }
 
-void CurrentSegmentSpanImpl::addLog(int64_t time, std::string& key,
-                                    std::string& value) {
+void CurrentSegmentSpanImpl::addLog(const std::string& key,
+                                    const std::string& value, bool set_time) {
+  assert(!finished_);
   Log l;
-  l.set_time(time);
+  if (set_time) {
+    // SystemTimePoint now = SystemTime::now();
+    // l.set_time(millisecondsFromEpoch(now));
+  }
   auto* entry = l.add_data();
   entry->set_key(key);
   entry->set_value(value);
   logs_.emplace_back(l);
+}
+
+void CurrentSegmentSpanImpl::startSpan() {
+  auto now = TimePoint<SystemTime>();
+  startSpan(now);
+}
+
+void CurrentSegmentSpanImpl::startSpan(TimePoint<SystemTime> current_time) {
+  start_time_ = current_time.fetch();
+}
+
+void CurrentSegmentSpanImpl::startSpan(TimePoint<SteadyTime> current_time) {
+  start_time_ = current_time.fetch();
+}
+
+void CurrentSegmentSpanImpl::endSpan() {
+  assert(!finished_);
+  auto now = TimePoint<SystemTime>();
+  endSpan(now);
+  finished_ = true;
+}
+
+void CurrentSegmentSpanImpl::endSpan(TimePoint<SystemTime> current_time) {
+  end_time_ = current_time.fetch();
+}
+
+void CurrentSegmentSpanImpl::endSpan(TimePoint<SteadyTime> current_time) {
+  end_time_ = current_time.fetch();
+}
+
+void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
+  assert(!finished_);
+
+  // Component ID is reserved on Skywalking spec.
+  // For more details here:
+  // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
+  component_id_ = component_id;
 }
 
 SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
@@ -118,7 +160,7 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
 CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
     CurrentSegmentSpanPtr parent_span) {
   auto current_span =
-      std::make_shared<CurrentSegmentSpanImpl>(spans_.size(), this);
+      std::make_shared<CurrentSegmentSpanImpl>(spans_.size(), *this);
   if (parent_span != nullptr) {
     current_span->setParentSpanId(parent_span->spanId());
     current_span->setSpanType(SpanType::Exit);

@@ -32,8 +32,8 @@ TracerImpl::TracerImpl(TracerConfig& config,
 
 TracerImpl::~TracerImpl() {
   client_.reset();
-  th_.join();
   cq_.Shutdown();
+  th_.join();
 }
 
 void TracerImpl::sendSegment(SegmentContextPtr obj) {
