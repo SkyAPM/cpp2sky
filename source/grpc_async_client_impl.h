@@ -55,8 +55,8 @@ class GrpcAsyncSegmentReporterClient final
     : public AsyncClient<TracerRequestType, TracerResponseType> {
  public:
   GrpcAsyncSegmentReporterClient(
-            const std::string& address, const std::string& token,
-            grpc::CompletionQueue* cq,
+      const std::string& address, const std::string& token,
+      grpc::CompletionQueue* cq,
       AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
       std::shared_ptr<grpc::ChannelCredentials> cred);
   ~GrpcAsyncSegmentReporterClient();

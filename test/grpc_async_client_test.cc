@@ -35,7 +35,8 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
     config_.set_token(token_);
 
     client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
-        config_, &cq_, factory_, grpc::InsecureChannelCredentials());
+        config_.address(), config_.token(), &cq_, factory_,
+        grpc::InsecureChannelCredentials());
   }
 
  protected:

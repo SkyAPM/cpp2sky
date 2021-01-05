@@ -229,7 +229,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
 }
 
 TEST_F(SegmentContextTest, SW8CreateTest) {
-  SegmentContextImpl sc(config_, span_ctx_, span_ext_ctx_, random_);
+  SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
+                        span_ctx_, span_ext_ctx_, random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 

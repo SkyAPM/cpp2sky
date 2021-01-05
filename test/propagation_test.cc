@@ -17,8 +17,8 @@
 
 #include <string_view>
 
-#include "source/propagation_impl.h"
 #include "cpp2sky/exception.h"
+#include "source/propagation_impl.h"
 
 namespace cpp2sky {
 

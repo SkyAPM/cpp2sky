@@ -44,8 +44,8 @@ TracerStubImpl::createWriter(grpc::ClientContext* ctx,
 }
 
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
-          const std::string& address, const std::string& token,
-     grpc::CompletionQueue* cq,
+    const std::string& address, const std::string& token,
+    grpc::CompletionQueue* cq,
     AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
     std::shared_ptr<grpc::ChannelCredentials> cred)
     : token_(token),
