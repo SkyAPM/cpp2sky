@@ -20,6 +20,7 @@
 
 #include "cpp2sky/config.h"
 #include "cpp2sky/propagation.h"
+#include "cpp2sky/time.h"
 #include "language-agent/Tracing.pb.h"
 
 namespace cpp2sky {
@@ -34,9 +35,71 @@ class CurrentSegmentSpan {
   virtual SpanObject createSpanObject() = 0;
 
   /**
+   * Get sampling status. If true, spans belongs to this segment will be sent to
+   * OAP.
+   */
+  virtual bool samplingStatus() const = 0;
+
+  /**
    * Get span ID.
    */
   virtual int32_t spanId() const = 0;
+
+  /**
+   * Get parent span ID.
+   */
+  virtual int32_t parentSpanId() const = 0;
+
+  /**
+   * Get start time.
+   */
+  virtual int64_t startTime() const = 0;
+
+  /**
+   * Get end time.
+   */
+  virtual int64_t endTime() const = 0;
+
+  /**
+   * Get peer address.
+   */
+  virtual const std::string& peer() const = 0;
+
+  /**
+   * Get span type.
+   */
+  virtual SpanType spanType() const = 0;
+
+  /**
+   * Get span layer.
+   */
+  virtual SpanLayer spanLayer() const = 0;
+
+  /**
+   * Get error occurred or not.
+   */
+  virtual bool errorStatus() const = 0;
+
+  /**
+   * Enable to skip analysis or not.
+   */
+  virtual bool skipAnalysis() const = 0;
+
+  /**
+   * Get component ID.
+   */
+  virtual int32_t componentId() const = 0;
+
+  /**
+   * Get tags.
+   */
+  virtual const std::vector<std::pair<std::string, std::string>>& tags()
+      const = 0;
+
+  /**
+   * Get logs.
+   */
+  virtual const std::vector<Log>& logs() const = 0;
 
   /**
    * Get operation name.
@@ -51,17 +114,21 @@ class CurrentSegmentSpan {
   /**
    * Set start time to calculate execution time.
    */
-  virtual void setStartTime(int64_t start_time) = 0;
+  virtual void startSpan() = 0;
+  virtual void startSpan(TimePoint<SystemTime> current_time) = 0;
+  virtual void startSpan(TimePoint<SteadyTime> current_time) = 0;
 
   /**
    * Set end time to calculate execution time.
    */
-  virtual void setEndTime(int64_t end_time) = 0;
+  virtual void endSpan() = 0;
+  virtual void endSpan(TimePoint<SystemTime> current_time) = 0;
+  virtual void endSpan(TimePoint<SteadyTime> current_time) = 0;
 
   /**
    * Set operation name for this span (lvalue)
    */
-  virtual void setOperationName(std::string& operation_name) = 0;
+  virtual void setOperationName(const std::string& operation_name) = 0;
 
   /**
    * Set operation name for this span (rvalue)
@@ -71,7 +138,7 @@ class CurrentSegmentSpan {
   /**
    * Set peer address for this span (lvalue)
    */
-  virtual void setPeer(std::string& remote_address) = 0;
+  virtual void setPeer(const std::string& remote_address) = 0;
 
   /**
    * Set peer address for this span (rvalue)
@@ -104,7 +171,7 @@ class CurrentSegmentSpan {
   /**
    * Set tag to current span. (lvalue)
    */
-  virtual void addTag(std::string& key, std::string& value) = 0;
+  virtual void addTag(const std::string& key, const std::string& value) = 0;
 
   /**
    * Set tag to current span. (rvalue)
@@ -113,8 +180,26 @@ class CurrentSegmentSpan {
 
   /**
    * Add log related with current span.
+   * @param set_time To determine whether to set actual time or not.
+   * This value is introduced for unit-test.
    */
-  virtual void addLog(int64_t time, std::string& key, std::string& value) = 0;
+  virtual void addLog(const std::string& key, const std::string& value,
+                      bool set_time = true) = 0;
+
+  /**
+   * Set component ID.
+   */
+  virtual void setComponentId(int32_t component_id) = 0;
+
+  /**
+   * This span had finished or not.
+   */
+  virtual bool finished() const = 0;
+
+  /**
+   * Change sampling status. If true, it will be sampled.
+   */
+  virtual void setSamplingStatus(bool do_sample) = 0;
 };
 
 using CurrentSegmentSpanPtr = std::shared_ptr<CurrentSegmentSpan>;

@@ -49,6 +49,12 @@ cc_library(
 )
 
 cc_library(
+  name = "time_interface",
+  hdrs = ["time.h"],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
   name = "cpp2sky_interface",
   hdrs = [
     "tracer.h",
@@ -61,4 +67,4 @@ cc_library(
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
   ],
   visibility = ["//visibility:public"],
-) 
+)

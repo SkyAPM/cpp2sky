@@ -26,40 +26,77 @@ namespace cpp2sky {
 class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
  public:
   CurrentSegmentSpanImpl(int32_t span_id,
-                         SegmentContext* parent_segment_context);
+                         SegmentContext& parent_segment_context);
 
   SpanObject createSpanObject() override;
 
 #pragma region Getters
+  bool samplingStatus() const override { return do_sample_; }
   int32_t spanId() const override { return span_id_; }
+  int32_t parentSpanId() const override { return parent_span_id_; }
+  int64_t startTime() const override { return start_time_; }
+  int64_t endTime() const override { return end_time_; }
+  const std::string& peer() const override { return peer_; }
+  SpanType spanType() const override { return type_; }
+  SpanLayer spanLayer() const override { return layer_; }
+  bool errorStatus() const override { return is_error_; }
+  bool skipAnalysis() const override { return skip_analysis_; }
+  int32_t componentId() const override { return component_id_; }
+  const std::vector<std::pair<std::string, std::string>>& tags()
+      const override {
+    return tags_;
+  }
+  const std::vector<Log>& logs() const override { return logs_; }
+  bool finished() const override { return finished_; }
   std::string operationName() const override { return operation_name_; }
 #pragma endregion
 
 #pragma region Setters
-  void setParentSpanId(int32_t span_id) override { parent_span_id_ = span_id; }
-  void setStartTime(int64_t start_time) override { start_time_ = start_time; }
-  void setEndTime(int64_t end_time) override { end_time_ = end_time; }
-  void setOperationName(std::string& operation_name) override {
+  void setParentSpanId(int32_t span_id) override {
+    assert(!finished_);
+    parent_span_id_ = span_id;
+  }
+  void startSpan() override;
+  void startSpan(TimePoint<SystemTime> current_time) override;
+  void startSpan(TimePoint<SteadyTime> current_time) override;
+  void endSpan() override;
+  void endSpan(TimePoint<SystemTime> current_time) override;
+  void endSpan(TimePoint<SteadyTime> current_time) override;
+  void setOperationName(const std::string& operation_name) override {
+    assert(!finished_);
     operation_name_ = operation_name;
   }
   void setOperationName(std::string&& operation_name) override {
+    assert(!finished_);
     operation_name_ = std::move(operation_name);
   }
-  void setPeer(std::string& remote_address) override { peer_ = remote_address; }
+  void setPeer(const std::string& remote_address) override {
+    assert(!finished_);
+    peer_ = remote_address;
+  }
   void setPeer(std::string&& remote_address) override {
+    assert(!finished_);
     peer_ = std::move(remote_address);
   }
   void setSpanType(SpanType type) override { type_ = type; }
   void setSpanLayer(SpanLayer layer) override { layer_ = layer; }
   void errorOccured() override { is_error_ = true; }
   void skipAnalysis() override { skip_analysis_ = true; }
-  void addTag(std::string& key, std::string& value) override {
-    tags_.emplace(key, value);
+  void addTag(const std::string& key, const std::string& value) override {
+    assert(!finished_);
+    tags_.emplace_back(key, value);
   }
   void addTag(std::string&& key, std::string&& value) override {
-    tags_.emplace(std::move(key), std::move(value));
+    assert(!finished_);
+    tags_.emplace_back(std::move(key), std::move(value));
   }
-  void addLog(int64_t time, std::string& key, std::string& value) override;
+  void addLog(const std::string& key, const std::string& value,
+              bool set_time) override;
+  void setComponentId(int32_t component_id) override;
+  void setSamplingStatus(bool do_sample) override {
+    assert(!finished_);
+    do_sample_ = do_sample;
+  }
 #pragma endregion
 
  private:
@@ -67,8 +104,8 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   // https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto
   int32_t span_id_;
   int32_t parent_span_id_;
-  int64_t start_time_;
-  int64_t end_time_;
+  int64_t start_time_ = 0;
+  int64_t end_time_ = 0;
   std::string operation_name_;
   std::string peer_;
   SpanType type_;
@@ -78,11 +115,12 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
   int32_t component_id_ = 9000;
   bool is_error_ = false;
-  std::unordered_map<std::string, std::string> tags_;
+  std::vector<std::pair<std::string, std::string>> tags_;
   std::vector<Log> logs_;
   bool skip_analysis_ = false;
-
-  SegmentContext* parent_segment_context_;
+  SegmentContext& parent_segment_context_;
+  bool do_sample_ = true;
+  bool finished_ = false;
 };
 
 class SegmentContextImpl : public SegmentContext {
