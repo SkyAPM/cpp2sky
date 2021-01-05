@@ -125,9 +125,7 @@ void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
   // Component ID is reserved on Skywalking spec.
   // For more details here:
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
-  if (9000 <= component_id && component_id < 10000) {
-    component_id_ = component_id;
-  }
+  component_id_ = component_id;
 }
 
 SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
