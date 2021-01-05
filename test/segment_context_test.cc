@@ -60,16 +60,22 @@ TEST_F(SegmentContextTest, BasicTest) {
   auto span = sc.createCurrentSegmentRootSpan();
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
-  span->startSpan(false);
+
+  auto t1 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(100)));
+  auto t2 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(200)));
+
+  span->startSpan(t1);
   span->setPeer("localhost:9000");
-  span->endSpan(false);
+  span->endSpan(t2);
 
   std::string json = R"EOF(
   {
     "spanId": "0",
     "parentSpanId": "-1",
-    "startTime": "0",
-    "endTime": "0",
+    "startTime": "100",
+    "endTime": "200",
     "peer": "localhost:9000",
     "spanType": "Entry",
     "spanLayer": "Http",
@@ -85,16 +91,21 @@ TEST_F(SegmentContextTest, BasicTest) {
   EXPECT_EQ(sc.spans().size(), 2);
   EXPECT_EQ(span_child->spanId(), 1);
 
-  span_child->startSpan(false);
+  t1 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(100)));
+  t2 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(200)));
+
+  span_child->startSpan(t1);
   span_child->setPeer("localhost:9000");
-  span_child->endSpan(false);
+  span_child->endSpan(t2);
 
   std::string json2 = R"EOF(
   {
     "spanId": "1",
     "parentSpanId": "0",
-    "startTime": "0",
-    "endTime": "0",
+    "startTime": "100",
+    "endTime": "200",
     "peer": "localhost:9000",
     "spanType": "Exit",
     "spanLayer": "Http",
@@ -116,16 +127,22 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   auto span = sc.createCurrentSegmentRootSpan();
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
-  span->startSpan(false);
+
+  auto t1 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(100)));
+  auto t2 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(200)));
+
+  span->startSpan(t1);
   span->setPeer("localhost:9000");
-  span->endSpan(false);
+  span->endSpan(t2);
 
   std::string json = R"EOF(
   {
     "spanId": "0",
     "parentSpanId": "-1",
-    "startTime": "0",
-    "endTime": "0",
+    "startTime": "100",
+    "endTime": "200",
     "refs": {
       "refType": "CrossProcess",
       "traceId": "1",
@@ -151,7 +168,13 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   auto span_child = sc.createCurrentSegmentSpan(std::move(span));
   EXPECT_EQ(sc.spans().size(), 2);
   EXPECT_EQ(span_child->spanId(), 1);
-  span_child->startSpan(false);
+
+  t1 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(100)));
+  t2 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(200)));
+
+  span_child->startSpan(t1);
 
   span_child->setPeer("localhost:9000");
   span_child->addTag("category", "database");
@@ -159,14 +182,15 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   std::string log_key = "service_0";
   std::string log_value = "error";
   span_child->addLog(log_key, log_value, false);
-  span_child->endSpan(false);
+
+  span_child->endSpan(t2);
 
   std::string json2 = R"EOF(
   {
     "spanId": "1",
     "parentSpanId": "0",
-    "startTime": "0",
-    "endTime": "0",
+    "startTime": "100",
+    "endTime": "200",
     "refs": {
       "refType": "CrossProcess",
       "traceId": "1",
@@ -208,9 +232,9 @@ TEST_F(SegmentContextTest, SW8CreateTest) {
   auto span = sc.createCurrentSegmentRootSpan();
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
-  span->startSpan(false);
+  span->startSpan();
   span->setOperationName("/ping");
-  span->endSpan(false);
+  span->endSpan();
 
   std::string target_address("10.0.0.1:443");
   std::string expect_sw8(

@@ -23,6 +23,7 @@ cc_library(
     "//cpp2sky:segment_context_interface",
     "//cpp2sky:propagation_interface",
     "//cpp2sky:tracer_interface",
+    "//cpp2sky:time_interface",
     "//source/utils:util_lib",
   ],
   visibility = ["//visibility:public"],

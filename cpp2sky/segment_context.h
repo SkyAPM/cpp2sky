@@ -20,6 +20,7 @@
 
 #include "cpp2sky/config.h"
 #include "cpp2sky/propagation.h"
+#include "cpp2sky/time.h"
 #include "language-agent/Tracing.pb.h"
 
 namespace cpp2sky {
@@ -112,17 +113,17 @@ class CurrentSegmentSpan {
 
   /**
    * Set start time to calculate execution time.
-   * @param set_time To determine whether to set actual time or not.
-   * This value is introduced for unit-test.
    */
-  virtual void startSpan(bool set_time = true) = 0;
+  virtual void startSpan() = 0;
+  virtual void startSpan(TimePoint<SystemTime> current_time) = 0;
+  virtual void startSpan(TimePoint<SteadyTime> current_time) = 0;
 
   /**
    * Set end time to calculate execution time.
-   * @param set_time To determine whether to set actual time or not.
-   * This value is introduced for unit-test.
    */
-  virtual void endSpan(bool set_time = true) = 0;
+  virtual void endSpan() = 0;
+  virtual void endSpan(TimePoint<SystemTime> current_time) = 0;
+  virtual void endSpan(TimePoint<SteadyTime> current_time) = 0;
 
   /**
    * Set operation name for this span (lvalue)

@@ -7,7 +7,6 @@ cc_library(
     "exception.h",
     "random_generator.h",
     "grpc_status.h",
-    "time.h",
     "circular_buffer.h",
   ],
   deps = [
