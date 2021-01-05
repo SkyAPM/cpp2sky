@@ -45,15 +45,15 @@ int main() {
   auto current_span = current_segment->createCurrentSegmentRootSpan();
 
   // 4. Set info
+  current_span->startSpan();
   current_span->setOperationName("/ping");
-  current_span->setStartTime(now());
 
   httplib::Client cli("remote", 8082);
   httplib::Headers headers = {{"sw8", current_segment->createSW8HeaderValue(
                                           current_span, "remote:8082")}};
   auto res = cli.Get("/ping", headers);
 
-  current_span->setEndTime(now());
+  current_span->endSpan();
 
   // 5. Send span data
   tracer->sendSegment(std::move(current_segment));

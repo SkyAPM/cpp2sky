@@ -48,9 +48,9 @@ int main() {
     auto current_span = current_segment->createCurrentSegmentRootSpan();
 
     // 4. Set info
+    current_span->startSpan();
     current_span->setOperationName("/ping");
-    current_span->setStartTime(now());
-    current_span->setEndTime(now());
+    current_span->endSpan();
 
     // 5. Send span data
     tracer->sendSegment(std::move(current_segment));
