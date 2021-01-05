@@ -48,13 +48,14 @@ class SegmentContextTest : public testing::Test {
   NiceMock<MockRandomGenerator> random_;
   std::string service_name_ = "mesh";
   std::string instance_name_ = "service_0";
-  SegmentConfig config_;
+  TracerConfig config_;
   SpanContextPtr span_ctx_;
   SpanContextExtensionPtr span_ext_ctx_;
 };
 
 TEST_F(SegmentContextTest, BasicTest) {
-  SegmentContextImpl sc(config_, random_);
+  SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
+                        random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
@@ -109,7 +110,8 @@ TEST_F(SegmentContextTest, BasicTest) {
 }
 
 TEST_F(SegmentContextTest, ChildSegmentContext) {
-  SegmentContextImpl sc(config_, span_ctx_, span_ext_ctx_, random_);
+  SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
+                        span_ctx_, span_ext_ctx_, random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 

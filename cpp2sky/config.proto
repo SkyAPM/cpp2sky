@@ -1,29 +1,28 @@
 syntax = "proto3";
 
-message SegmentConfig {
-  // Service name
-  string service_name = 1;
-
-  // Instance name
-  string instance_name = 2;
-}
+package cpp2sky;
 
 enum Protocol {
   GRPC = 0;
   REST = 1;
 }
 
-message ClientConfig {
-  // OAP address.
-  string address = 1;
-
-  // OAP token.
-  string token = 2;
-}
-
 message TracerConfig {
   // Tracer protocol.
-  Protocol protocol = 3;
+  Protocol protocol = 1;
 
-  ClientConfig client_config = 4;
+  // Service name
+  string service_name = 2;
+
+  // Instance name
+  string instance_name = 3;
+
+  // OAP address.
+  string address = 4;
+
+  // OAP token.
+  string token = 5;
+
+  // The size of buffer it stores pending messages.
+  uint32 delayed_buffer_size = 6;
 }

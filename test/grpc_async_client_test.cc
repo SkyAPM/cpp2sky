@@ -39,7 +39,7 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
   }
 
  protected:
-  ClientConfig config_;
+  TracerConfig config_;
   grpc::CompletionQueue cq_;
   std::string address_{"localhost:50051"};
   std::string token_{"token"};

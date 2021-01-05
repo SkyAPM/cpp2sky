@@ -18,7 +18,7 @@
 #include <string_view>
 
 #include "source/utils/base64.h"
-#include "source/utils/exception.h"
+#include "cpp2sky/exception.h"
 
 namespace cpp2sky {
 

@@ -22,41 +22,34 @@
 
 using namespace cpp2sky;
 
-SegmentConfig seg_config;
-
-uint64_t now() {
-  using namespace std::chrono;
-  return duration_cast<milliseconds>(system_clock::now().time_since_epoch())
-      .count();
-}
+TracerConfig config;
 
 void init() {
-  seg_config.set_instance_name("node_0");
-  seg_config.set_service_name("");
+  config.set_instance_name("node_0");
+  config.set_service_name("");
+  config.set_address("0.0.0.0:11800");
 }
 
 int main() {
   init();
 
-  TracerConfig tracer_config;
-  auto* client_config = tracer_config.mutable_client_config();
-  client_config->set_address("0.0.0.0:11800");
-
   httplib::Server svr;
   // 1. Create tracer object to send span data to OAP.
-  auto tracer = createInsecureGrpcTracer(tracer_config);
+  auto tracer = createInsecureGrpcTracer(config);
+
+  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
     // 2. Create segment context
-    auto current_segment = createSegmentContext(seg_config);
+    auto current_segment = factory->create();
 
     // 3. Initialize span data to track root workload on current service.
     auto current_span = current_segment->createCurrentSegmentRootSpan();
 
     // 4. Set info
     current_span->setOperationName("/ping");
-    current_span->setStartTime(now());
-    current_span->setEndTime(now());
+    current_span->startSpan();
+    current_span->endSpan();
 
     // 5. Send span data
     tracer->sendSegment(std::move(current_segment));
