@@ -14,7 +14,7 @@
 
 #include "source/tracer_impl.h"
 
-#include "source/utils/exception.h"
+#include "cpp2sky/exception.h"
 
 namespace cpp2sky {
 
@@ -22,8 +22,12 @@ TracerImpl::TracerImpl(TracerConfig& config,
                        std::shared_ptr<grpc::ChannelCredentials> cred,
                        GrpcAsyncSegmentReporterStreamFactory& factory)
     : th_([this] { this->run(); }) {
-  client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
-      &cq_, factory, cred, config.address(), config.token());
+  if (config.protocol() == Protocol::GRPC) {
+    client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
+        config.address(), config.token(), &cq_, factory, cred);
+  } else {
+    throw TracerException("REST is not supported.");
+  }
 }
 
 TracerImpl::~TracerImpl() {

@@ -1,3 +1,4 @@
+
 // Copyright 2020 SkyAPM
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +18,18 @@
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/segment_context.h"
 #include "cpp2sky/tracer.h"
+#include "cpp2sky/well_known_names.h"
 #include "httplib.h"
 
 using namespace cpp2sky;
 
-static const std::string service_name = "consumer";
-static const std::string instance_name = "node_0";
-static const std::string address = "collector:19876";
+TracerConfig config;
 
-SegmentConfig seg_config(service_name, instance_name);
-TracerConfig tracer_config(address);
+void init() {
+  config.set_instance_name("node_0");
+  config.set_service_name("consumer");
+  config.set_address("collector:19876");
+}
 
 void handlePong(Tracer* tracer, SegmentContext* scp,
                 const httplib::Request& req, httplib::Response& response) {
@@ -37,14 +40,18 @@ void handlePong(Tracer* tracer, SegmentContext* scp,
 }
 
 int main() {
+  init();
+
   httplib::Server svr;
-  auto tracer = createInsecureGrpcTracer(tracer_config);
+  auto tracer = createInsecureGrpcTracer(config);
+
+  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
 
   svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
-    if (req.has_header("sw8")) {
-      auto parent = req.get_header_value("sw8");
+    if (req.has_header(kPropagationHeader.data())) {
+      auto parent = req.get_header_value(kPropagationHeader.data());
       auto parent_span = createSpanContext(parent);
-      auto current_segment = createSegmentContext(seg_config, parent_span);
+      auto current_segment = factory->create(parent_span);
       handlePong(tracer.get(), current_segment.get(), req, res);
       tracer->sendSegment(std::move(current_segment));
     }

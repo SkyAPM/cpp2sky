@@ -21,6 +21,7 @@
 #include <mutex>
 #include <queue>
 
+#include "cpp2sky/config.pb.h"
 #include "cpp2sky/internal/async_client.h"
 #include "language-agent/Tracing.grpc.pb.h"
 #include "language-agent/Tracing.pb.h"
@@ -54,10 +55,10 @@ class GrpcAsyncSegmentReporterClient final
     : public AsyncClient<TracerRequestType, TracerResponseType> {
  public:
   GrpcAsyncSegmentReporterClient(
+      const std::string& address, const std::string& token,
       grpc::CompletionQueue* cq,
       AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
-      std::shared_ptr<grpc::ChannelCredentials> cred, std::string address,
-      std::string token);
+      std::shared_ptr<grpc::ChannelCredentials> cred);
   ~GrpcAsyncSegmentReporterClient();
 
   // AsyncClient

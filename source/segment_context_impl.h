@@ -16,7 +16,7 @@
 
 #include <unordered_map>
 
-#include "cpp2sky/config.h"
+#include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/segment_context.h"
 #include "source/utils/random_generator.h"
@@ -126,10 +126,15 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
 class SegmentContextImpl : public SegmentContext {
  public:
   // This constructor is called when there is no parent SpanContext.
-  SegmentContextImpl(SegmentConfig& config, RandomGenerator& random);
-  SegmentContextImpl(SegmentConfig& config, SpanContextPtr parent_span_context,
+  SegmentContextImpl(const std::string& service_name,
+                     const std::string& instance_name, RandomGenerator& random);
+  SegmentContextImpl(const std::string& service_name,
+                     const std::string& instance_name,
+                     SpanContextPtr parent_span_context,
                      RandomGenerator& random);
-  SegmentContextImpl(SegmentConfig& config, SpanContextPtr parent_span_context,
+  SegmentContextImpl(const std::string& service_name,
+                     const std::string& instance_name,
+                     SpanContextPtr parent_span_context,
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
@@ -179,24 +184,24 @@ class SegmentContextImpl : public SegmentContext {
   std::string service_instance_;
 };
 
-SegmentContextPtr createSegmentContext(SegmentConfig& config,
-                                       SpanContextPtr span_ctx,
-                                       SpanContextExtensionPtr span_ctx_ext) {
-  auto random_generator = RandomGeneratorImpl();
-  return std::make_unique<SegmentContextImpl>(config, span_ctx, span_ctx_ext,
-                                              random_generator);
-}
+class SegmentContextFactoryImpl : public SegmentContextFactory {
+ public:
+  SegmentContextFactoryImpl(const TracerConfig& cfg);
 
-SegmentContextPtr createSegmentContext(SegmentConfig& config,
-                                       SpanContextPtr span_ctx) {
-  auto random_generator = RandomGeneratorImpl();
-  return std::make_unique<SegmentContextImpl>(config, span_ctx,
-                                              random_generator);
-}
+  // SegmentContextFactory
+  SegmentContextPtr create() override;
+  SegmentContextPtr create(SpanContextPtr span_context) override;
+  SegmentContextPtr create(SpanContextPtr span_context,
+                           SpanContextExtensionPtr ext_span_context) override;
 
-SegmentContextPtr createSegmentContext(SegmentConfig& config) {
-  auto random_generator = RandomGeneratorImpl();
-  return std::make_unique<SegmentContextImpl>(config, random_generator);
+ private:
+  std::string service_name_;
+  std::string instance_name_;
+  RandomGeneratorImpl random_generator_;
+};
+
+SegmentContextFactoryPtr createSegmentContextFactory(const TracerConfig& cfg) {
+  return std::make_unique<SegmentContextFactoryImpl>(cfg);
 }
 
 }  // namespace cpp2sky

@@ -128,31 +128,34 @@ void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
   component_id_ = component_id;
 }
 
-SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
+SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
+                                       const std::string& instance_name,
                                        RandomGenerator& random)
     : trace_id_(random.uuid()),
       trace_segment_id_(random.uuid()),
-      service_(config.serviceName()),
-      service_instance_(config.instanceName()) {}
+      service_(service_name),
+      service_instance_(instance_name) {}
 
 SegmentContextImpl::SegmentContextImpl(
-    SegmentConfig& config, SpanContextPtr parent_span_context,
+    const std::string& service_name, const std::string& instance_name,
+    SpanContextPtr parent_span_context,
     SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       parent_ext_span_context_(std::move(parent_ext_span_context)),
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
-      service_(config.serviceName()),
-      service_instance_(config.instanceName()) {}
+      service_(service_name),
+      service_instance_(instance_name) {}
 
-SegmentContextImpl::SegmentContextImpl(SegmentConfig& config,
+SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
+                                       const std::string& instance_name,
                                        SpanContextPtr parent_span_context,
                                        RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
-      service_(config.serviceName()),
-      service_instance_(config.instanceName()) {}
+      service_(service_name),
+      service_instance_(instance_name) {}
 
 CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
     CurrentSegmentSpanPtr parent_span) {
@@ -217,6 +220,28 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
   }
 
   return obj;
+}
+
+SegmentContextFactoryImpl::SegmentContextFactoryImpl(const TracerConfig& cfg)
+    : service_name_(cfg.service_name()), instance_name_(cfg.instance_name()) {}
+
+SegmentContextPtr SegmentContextFactoryImpl::create() {
+  auto context = std::make_unique<SegmentContextImpl>(
+      service_name_, instance_name_, random_generator_);
+  return context;
+}
+
+SegmentContextPtr SegmentContextFactoryImpl::create(
+    SpanContextPtr span_context) {
+  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
+                                              span_context, random_generator_);
+}
+
+SegmentContextPtr SegmentContextFactoryImpl::create(
+    SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
+  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
+                                              span_context, ext_span_context,
+                                              random_generator_);
 }
 
 }  // namespace cpp2sky

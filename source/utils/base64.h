@@ -30,7 +30,7 @@ class Base64 {
   static std::string encode(const char* input, uint64_t length) {
     return encode(input, length, true);
   }
-  static std::string encode(std::string& input) {
+  static std::string encode(const std::string& input) {
     return encode(input.c_str(), strlen(input.c_str()));
   }
   static std::string decodeWithoutPadding(std::string_view input);

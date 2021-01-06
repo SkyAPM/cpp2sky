@@ -37,7 +37,9 @@ static constexpr std::string_view sample_ctx =
 class SegmentContextTest : public testing::Test {
  public:
   SegmentContextTest() {
-    config_ = std::make_unique<SegmentConfig>(service_name_, instance_name_);
+    config_.set_service_name(service_name_);
+    config_.set_instance_name(instance_name_);
+
     span_ctx_ = std::make_shared<SpanContextImpl>(sample_ctx);
     span_ext_ctx_ = std::make_shared<SpanContextExtensionImpl>("1");
   }
@@ -46,13 +48,14 @@ class SegmentContextTest : public testing::Test {
   NiceMock<MockRandomGenerator> random_;
   std::string service_name_ = "mesh";
   std::string instance_name_ = "service_0";
-  std::unique_ptr<SegmentConfig> config_;
+  TracerConfig config_;
   SpanContextPtr span_ctx_;
   SpanContextExtensionPtr span_ext_ctx_;
 };
 
 TEST_F(SegmentContextTest, BasicTest) {
-  SegmentContextImpl sc(*config_.get(), random_);
+  SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
+                        random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
@@ -119,7 +122,8 @@ TEST_F(SegmentContextTest, BasicTest) {
 }
 
 TEST_F(SegmentContextTest, ChildSegmentContext) {
-  SegmentContextImpl sc(*config_.get(), span_ctx_, span_ext_ctx_, random_);
+  SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
+                        span_ctx_, span_ext_ctx_, random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
@@ -225,7 +229,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
 }
 
 TEST_F(SegmentContextTest, SW8CreateTest) {
-  SegmentContextImpl sc(*config_.get(), span_ctx_, span_ext_ctx_, random_);
+  SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
+                        span_ctx_, span_ext_ctx_, random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 

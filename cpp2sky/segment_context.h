@@ -18,7 +18,7 @@
 #include <memory>
 #include <string_view>
 
-#include "cpp2sky/config.h"
+#include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/time.h"
 #include "language-agent/Tracing.pb.h"
@@ -276,15 +276,32 @@ class SegmentContext {
   virtual SegmentObject createSegmentObject() = 0;
 };
 
-using SegmentContextPtr = std::unique_ptr<SegmentContext>;
+using SegmentContextPtr = std::shared_ptr<SegmentContext>;
 
-SegmentContextPtr createSegmentContext(SegmentConfig& config,
-                                       SpanContextPtr span_ctx,
-                                       SpanContextExtensionPtr span_ctx_ext);
+class SegmentContextFactory {
+ public:
+  virtual ~SegmentContextFactory() = default;
 
-SegmentContextPtr createSegmentContext(SegmentConfig& config,
-                                       SpanContextPtr span_ctx);
+  /**
+   * Create segment context that doesn't have propagated info.
+   */
+  virtual SegmentContextPtr create() = 0;
 
-SegmentContextPtr createSegmentContext(SegmentConfig& config);
+  /**
+   * Create segment context with propagated span context.
+   */
+  virtual SegmentContextPtr create(SpanContextPtr span_context) = 0;
+
+  /**
+   * Create segment context with propagated span context and extensions.
+   */
+  virtual SegmentContextPtr create(
+      SpanContextPtr span_context,
+      SpanContextExtensionPtr ext_span_context) = 0;
+};
+
+using SegmentContextFactoryPtr = std::unique_ptr<SegmentContextFactory>;
+
+SegmentContextFactoryPtr createSegmentContextFactory(const TracerConfig& cfg);
 
 }  // namespace cpp2sky

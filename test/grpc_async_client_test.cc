@@ -30,11 +30,17 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
   GrpcAsyncSegmentReporterClientTest() {
     EXPECT_CALL(factory_, create(_, _));
     EXPECT_CALL(*stream_, startStream());
+
+    config_.set_address(address_);
+    config_.set_token(token_);
+
     client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
-        &cq_, factory_, grpc::InsecureChannelCredentials(), address_, token_);
+        config_.address(), config_.token(), &cq_, factory_,
+        grpc::InsecureChannelCredentials());
   }
 
  protected:
+  TracerConfig config_;
   grpc::CompletionQueue cq_;
   std::string address_{"localhost:50051"};
   std::string token_{"token"};

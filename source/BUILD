@@ -18,12 +18,27 @@ cc_library(
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
     "@com_github_grpc_grpc//:grpc++",
-    "//cpp2sky:config_interface",
-    "//cpp2sky:async_client_interface",
-    "//cpp2sky:segment_context_interface",
-    "//cpp2sky:propagation_interface",
-    "//cpp2sky:tracer_interface",
-    "//cpp2sky:time_interface",
+    "//cpp2sky:cpp2sky_interface",
+    "//cpp2sky:cpp2sky_internal_interface",
+    "//source/utils:util_lib",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+cc_library(
+  name = "cpp2sky_data_lib",
+  hdrs  =[
+    "propagation_impl.h",
+    "segment_context_impl.h",
+  ],
+  srcs = [
+    "propagation_impl.cc",
+    "segment_context_impl.cc",
+  ],
+  deps = [
+    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
+    "//cpp2sky:config_cc_proto",
+    "//cpp2sky:cpp2sky_interface",
     "//source/utils:util_lib",
   ],
   visibility = ["//visibility:public"],

@@ -18,7 +18,7 @@
 #include <string_view>
 #include <thread>
 
-#include "source/utils/exception.h"
+#include "cpp2sky/exception.h"
 #include "utils/grpc_status.h"
 
 #define DEFAULT_CONNECTION_ACTIVE_RETRY_TIMES 5
@@ -44,10 +44,10 @@ TracerStubImpl::createWriter(grpc::ClientContext* ctx,
 }
 
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
+    const std::string& address, const std::string& token,
     grpc::CompletionQueue* cq,
     AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
-    std::shared_ptr<grpc::ChannelCredentials> cred, std::string address,
-    std::string token)
+    std::shared_ptr<grpc::ChannelCredentials> cred)
     : token_(token),
       factory_(factory),
       cq_(cq),

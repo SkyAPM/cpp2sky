@@ -14,25 +14,11 @@
 
 #pragma once
 
-#include <memory>
-
-#include "cpp2sky/config.pb.h"
-#include "cpp2sky/segment_context.h"
+#include <string_view>
 
 namespace cpp2sky {
 
-class Tracer {
- public:
-  virtual ~Tracer() = default;
-
-  /**
-   * Send SegmentContext to the collector.
-   */
-  virtual void sendSegment(SegmentContextPtr obj) = 0;
-};
-
-using TracerPtr = std::unique_ptr<Tracer>;
-
-TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
+static constexpr std::string_view kPropagationHeader = "sw8";
+static constexpr std::string_view kPropagationExtensionHeader = "sw8-x";
 
 }  // namespace cpp2sky
