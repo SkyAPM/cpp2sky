@@ -22,6 +22,7 @@ cc_library(
     "propagation.h",
     "well_known_names.h",
     "exception.h",
+    "time.h",
   ],
   deps = [
     "@com_github_grpc_grpc//:grpc++",

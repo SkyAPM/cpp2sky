@@ -17,6 +17,7 @@
 #include <string>
 
 #include "cpp2sky/exception.h"
+#include "cpp2sky/time.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/utils/base64.h"
 #include "source/utils/random_generator.h"
@@ -85,8 +86,9 @@ void CurrentSegmentSpanImpl::addLog(const std::string& key,
   assert(!finished_);
   Log l;
   if (set_time) {
-    SystemTimePoint now = SystemTime::now();
-    l.set_time(millisecondsFromEpoch(now));
+    // TODO: (implement)
+    // SystemTimePoint now = SystemTime::now();
+    // l.set_time(millisecondsFromEpoch(now));
   }
   auto* entry = l.add_data();
   entry->set_key(key);
@@ -94,20 +96,32 @@ void CurrentSegmentSpanImpl::addLog(const std::string& key,
   logs_.emplace_back(l);
 }
 
-void CurrentSegmentSpanImpl::startSpan(bool set_time) {
-  if (set_time) {
-    auto now = SystemTime::now();
-    start_time_ = millisecondsFromEpoch(now);
-  }
+void CurrentSegmentSpanImpl::startSpan() {
+  auto now = TimePoint<SystemTime>();
+  startSpan(now);
 }
 
-void CurrentSegmentSpanImpl::endSpan(bool set_time) {
+void CurrentSegmentSpanImpl::startSpan(TimePoint<SystemTime> current_time) {
+  start_time_ = current_time.fetch();
+}
+
+void CurrentSegmentSpanImpl::startSpan(TimePoint<SteadyTime> current_time) {
+  start_time_ = current_time.fetch();
+}
+
+void CurrentSegmentSpanImpl::endSpan() {
   assert(!finished_);
-  if (set_time) {
-    auto now = SystemTime::now();
-    end_time_ = millisecondsFromEpoch(now);
-  }
+  auto now = TimePoint<SystemTime>();
+  endSpan(now);
   finished_ = true;
+}
+
+void CurrentSegmentSpanImpl::endSpan(TimePoint<SystemTime> current_time) {
+  end_time_ = current_time.fetch();
+}
+
+void CurrentSegmentSpanImpl::endSpan(TimePoint<SteadyTime> current_time) {
+  end_time_ = current_time.fetch();
 }
 
 void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
@@ -116,9 +130,7 @@ void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
   // Component ID is reserved on Skywalking spec.
   // For more details here:
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
-  if (9000 <= component_id && component_id < 10000) {
-    component_id_ = component_id;
-  }
+  component_id_ = component_id;
 }
 
 SegmentContextImpl::SegmentContextImpl(const std::string& service_name,

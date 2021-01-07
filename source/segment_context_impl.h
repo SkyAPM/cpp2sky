@@ -56,8 +56,12 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
     assert(!finished_);
     parent_span_id_ = span_id;
   }
-  void startSpan(bool set_time) override;
-  void endSpan(bool set_time) override;
+  void startSpan() override;
+  void startSpan(TimePoint<SystemTime> current_time) override;
+  void startSpan(TimePoint<SteadyTime> current_time) override;
+  void endSpan() override;
+  void endSpan(TimePoint<SystemTime> current_time) override;
+  void endSpan(TimePoint<SteadyTime> current_time) override;
   void setOperationName(const std::string& operation_name) override {
     assert(!finished_);
     operation_name_ = operation_name;

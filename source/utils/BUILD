@@ -4,7 +4,6 @@ cc_library(
   name = "util_lib",
   hdrs = [
     "base64.h",
-    "time.h",
     "random_generator.h",
     "grpc_status.h",
     "circular_buffer.h",
