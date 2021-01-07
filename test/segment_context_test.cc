@@ -249,6 +249,15 @@ TEST_F(SegmentContextTest, SegmentContextFactoryTest) {
   EXPECT_FALSE(span->samplingStatus());
   span->setSamplingStatus(true);
   EXPECT_TRUE(span->samplingStatus());
+
+  auto span2 = default_sample_segment->createCurrentSegmentSpan(span);
+  // Check to reflect parent span's sampling status
+  EXPECT_TRUE(span2->samplingStatus());
+
+  span2->setSamplingStatus(false);
+  auto span3 = default_sample_segment->createCurrentSegmentSpan(span2);
+  // Check to reflect parent span's sampling status
+  EXPECT_FALSE(span3->samplingStatus());
 }
 
 TEST_F(SegmentContextTest, SW8CreateTest) {
