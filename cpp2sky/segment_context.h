@@ -169,22 +169,18 @@ class CurrentSegmentSpan {
   virtual void skipAnalysis() = 0;
 
   /**
-   * Set tag to current span. (lvalue)
+   * Set tag to current span.
    */
-  virtual void addTag(const std::string& key, const std::string& value) = 0;
-
-  /**
-   * Set tag to current span. (rvalue)
-   */
-  virtual void addTag(std::string&& key, std::string&& value) = 0;
+  virtual void addTag(std::string key, std::string value) = 0;
 
   /**
    * Add log related with current span.
-   * @param set_time To determine whether to set actual time or not.
-   * This value is introduced for unit-test.
    */
-  virtual void addLog(const std::string& key, const std::string& value,
-                      bool set_time = true) = 0;
+  virtual void addLog(std::string key, std::string value) = 0;
+  virtual void addLog(std::string key, std::string value,
+                      TimePoint<SystemTime> current_time) = 0;
+  virtual void addLog(std::string key, std::string value,
+                      TimePoint<SteadyTime> current_time) = 0;
 
   /**
    * Set component ID.
@@ -207,6 +203,19 @@ using CurrentSegmentSpanPtr = std::shared_ptr<CurrentSegmentSpan>;
 class SegmentContext {
  public:
   virtual ~SegmentContext() = default;
+
+  /**
+   * Change sampling flag. When this value is true, belonging spans
+   * will be sent to OAP. This value is inconfigurable when self segment context
+   * is not root because it will be specified by propagated flag.
+   */
+  virtual void setDefaultSamplingStatus(bool do_sample) = 0;
+
+  /**
+   * Get default sampling status it will be determined when span creation.
+   * If true, spans belongs to this segment will be sent to OAP.
+   */
+  virtual bool defaultSamplingStatus() const = 0;
 
   /**
    * Get trace ID. This value must be unique globally.
@@ -259,16 +268,17 @@ class SegmentContext {
    * Generate sw8 value to send SegmentRef.
    * @param parent Parent span that belongs to current segment.
    * @param target_address Target address to send request. For more detail:
-   * @param sample If false, it means this trace shouldn't need to be sampled
-   * and send to backend.
    * https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L97-L101
    */
+  virtual std::string createSW8HeaderValue(
+      CurrentSegmentSpanPtr parent, const std::string& target_address) = 0;
   virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                           std::string& target_address,
-                                           bool sample = true) = 0;
-  virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                           std::string&& target_address,
-                                           bool sample = true) = 0;
+                                           std::string&& target_address) = 0;
+  // If you don't specify parent span, stored to current segment, it will be
+  // selected newest span as parent span.
+  virtual std::string createSW8HeaderValue(
+      const std::string& target_address) = 0;
+  virtual std::string createSW8HeaderValue(std::string&& target_address) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object.
@@ -285,7 +295,7 @@ class SegmentContextFactory {
   /**
    * Create segment context that doesn't have propagated info.
    */
-  virtual SegmentContextPtr create() = 0;
+  virtual SegmentContextPtr create(bool default_sampling_status = true) = 0;
 
   /**
    * Create segment context with propagated span context.

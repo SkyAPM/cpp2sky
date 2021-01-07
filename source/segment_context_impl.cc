@@ -16,6 +16,7 @@
 
 #include <string>
 
+#include "cpp2sky/exception.h"
 #include "cpp2sky/time.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/utils/base64.h"
@@ -25,7 +26,9 @@ namespace cpp2sky {
 
 CurrentSegmentSpanImpl::CurrentSegmentSpanImpl(
     int32_t span_id, SegmentContext& parent_segment_context)
-    : span_id_(span_id), parent_segment_context_(parent_segment_context) {}
+    : span_id_(span_id),
+      parent_segment_context_(parent_segment_context),
+      do_sample_(parent_segment_context.defaultSamplingStatus()) {}
 
 SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   SpanObject obj;
@@ -77,14 +80,28 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   return obj;
 }
 
-void CurrentSegmentSpanImpl::addLog(const std::string& key,
-                                    const std::string& value, bool set_time) {
+void CurrentSegmentSpanImpl::addLog(std::string key, std::string value) {
+  assert(!finished_);
+  auto now = TimePoint<SystemTime>();
+  addLog(key, value, now);
+}
+
+void CurrentSegmentSpanImpl::addLog(std::string key, std::string value,
+                                    TimePoint<SystemTime> current_time) {
   assert(!finished_);
   Log l;
-  if (set_time) {
-    // SystemTimePoint now = SystemTime::now();
-    // l.set_time(millisecondsFromEpoch(now));
-  }
+  l.set_time(current_time.fetch());
+  auto* entry = l.add_data();
+  entry->set_key(key);
+  entry->set_value(value);
+  logs_.emplace_back(l);
+}
+
+void CurrentSegmentSpanImpl::addLog(std::string key, std::string value,
+                                    TimePoint<SteadyTime> current_time) {
+  assert(!finished_);
+  Log l;
+  l.set_time(current_time.fetch());
   auto* entry = l.add_data();
   entry->set_key(key);
   entry->set_value(value);
@@ -134,7 +151,8 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
     : trace_id_(random.uuid()),
       trace_segment_id_(random.uuid()),
       service_(service_name),
-      service_instance_(instance_name) {}
+      service_instance_(instance_name),
+      is_root_(true) {}
 
 SegmentContextImpl::SegmentContextImpl(
     const std::string& service_name, const std::string& instance_name,
@@ -145,7 +163,9 @@ SegmentContextImpl::SegmentContextImpl(
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
       service_(service_name),
-      service_instance_(instance_name) {}
+      service_instance_(instance_name),
+      is_root_(false),
+      do_sample_default_(parent_span_context_->sample()) {}
 
 SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
@@ -155,7 +175,17 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
       service_(service_name),
-      service_instance_(instance_name) {}
+      service_instance_(instance_name),
+      is_root_(false),
+      do_sample_default_(parent_span_context_->sample()) {}
+
+void SegmentContextImpl::setDefaultSamplingStatus(bool do_sample) {
+  if (!is_root_) {
+    throw TracerException(
+        "Failed to change sampling status because it is a root segment");
+  }
+  do_sample_default_ = do_sample;
+}
 
 CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
     CurrentSegmentSpanPtr parent_span) {
@@ -164,6 +194,9 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
   if (parent_span != nullptr) {
     current_span->setParentSpanId(parent_span->spanId());
     current_span->setSpanType(SpanType::Exit);
+    // If parent span exists, override default segment sampling status with
+    // parent span one.
+    current_span->setSamplingStatus(parent_span->samplingStatus());
   } else {
     current_span->setParentSpanId(-1);
     current_span->setSpanType(SpanType::Entry);
@@ -180,16 +213,32 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
 }
 
 std::string SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, std::string& target_address,
-    bool sample) {
-  std::string header_value;
+    CurrentSegmentSpanPtr parent_span, const std::string& target_address) {
   if (parent_span == nullptr) {
-    return header_value;
+    if (spans_.empty()) {
+      throw TracerException(
+          "Can't create propagation header because current segment has no "
+          "valid span.");
+    }
+    return encodeSpan(spans_.back(), target_address);
   }
+  return encodeSpan(parent_span, target_address);
+}
+
+std::string SegmentContextImpl::createSW8HeaderValue(
+    CurrentSegmentSpanPtr parent_span, std::string&& target_address) {
+  return createSW8HeaderValue(parent_span, target_address);
+}
+
+std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
+                                           const std::string& target_address) {
+  assert(parent_span);
+  std::string header_value;
+
   auto parent_spanid = std::to_string(parent_span->spanId());
   auto endpoint = spans_.front()->operationName();
 
-  header_value += sample ? "1-" : "0-";
+  header_value += parent_span->samplingStatus() ? "1-" : "0-";
   header_value += Base64::encode(trace_id_) + "-";
   header_value += Base64::encode(trace_segment_id_) + "-";
   header_value += parent_spanid + "-";
@@ -199,12 +248,6 @@ std::string SegmentContextImpl::createSW8HeaderValue(
   header_value += Base64::encode(target_address);
 
   return header_value;
-}
-
-std::string SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, std::string&& target_address,
-    bool sample) {
-  return createSW8HeaderValue(parent_span, target_address, sample);
 }
 
 SegmentObject SegmentContextImpl::createSegmentObject() {
@@ -225,9 +268,11 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
 SegmentContextFactoryImpl::SegmentContextFactoryImpl(const TracerConfig& cfg)
     : service_name_(cfg.service_name()), instance_name_(cfg.instance_name()) {}
 
-SegmentContextPtr SegmentContextFactoryImpl::create() {
+SegmentContextPtr SegmentContextFactoryImpl::create(
+    bool default_sampling_status) {
   auto context = std::make_unique<SegmentContextImpl>(
       service_name_, instance_name_, random_generator_);
+  context->setDefaultSamplingStatus(default_sampling_status);
   return context;
 }
 

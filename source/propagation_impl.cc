@@ -61,7 +61,7 @@ SpanContextImpl::SpanContextImpl(std::string_view header_value) {
         "Invalid span context format. sample field must be 0 or 1.");
   }
 
-  must_send_ = fields[0] == "1" ? true : false;
+  sample_ = fields[0] == "1" ? true : false;
   trace_id_ = Base64::decodeWithoutPadding(std::string_view(fields[1]));
   trace_segment_id_ = Base64::decodeWithoutPadding(std::string_view(fields[2]));
   span_id_ = std::stoi(fields[3]);

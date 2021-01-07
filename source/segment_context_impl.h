@@ -14,8 +14,6 @@
 
 #pragma once
 
-#include <unordered_map>
-
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/segment_context.h"
@@ -82,16 +80,15 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   void setSpanLayer(SpanLayer layer) override { layer_ = layer; }
   void errorOccured() override { is_error_ = true; }
   void skipAnalysis() override { skip_analysis_ = true; }
-  void addTag(const std::string& key, const std::string& value) override {
+  void addTag(std::string key, std::string value) override {
     assert(!finished_);
     tags_.emplace_back(key, value);
   }
-  void addTag(std::string&& key, std::string&& value) override {
-    assert(!finished_);
-    tags_.emplace_back(std::move(key), std::move(value));
-  }
-  void addLog(const std::string& key, const std::string& value,
-              bool set_time) override;
+  void addLog(std::string key, std::string value) override;
+  void addLog(std::string key, std::string value,
+              TimePoint<SystemTime> current_time) override;
+  void addLog(std::string key, std::string value,
+              TimePoint<SteadyTime> current_time) override;
   void setComponentId(int32_t component_id) override;
   void setSamplingStatus(bool do_sample) override {
     assert(!finished_);
@@ -138,7 +135,12 @@ class SegmentContextImpl : public SegmentContext {
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
+#pragma region Setters
+  void setDefaultSamplingStatus(bool do_sample) override;
+#pragma endregion
+
 #pragma region Getters
+  bool defaultSamplingStatus() const override { return do_sample_default_; }
   const std::string& traceId() const override { return trace_id_; }
   const std::string& traceSegmentId() const override {
     return trace_segment_id_;
@@ -162,15 +164,22 @@ class SegmentContextImpl : public SegmentContext {
       CurrentSegmentSpanPtr parent_span) override;
 
   CurrentSegmentSpanPtr createCurrentSegmentRootSpan() override;
+  std::string createSW8HeaderValue(const std::string& target_address) override {
+    return createSW8HeaderValue(nullptr, target_address);
+  }
+  std::string createSW8HeaderValue(std::string&& target_address) override {
+    return createSW8HeaderValue(nullptr, target_address);
+  }
   std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent_span,
-                                   std::string& target_address,
-                                   bool sample) override;
+                                   const std::string& target_address) override;
   std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                   std::string&& target_address,
-                                   bool sample = true) override;
+                                   std::string&& target_address) override;
   SegmentObject createSegmentObject() override;
 
  private:
+  std::string encodeSpan(CurrentSegmentSpanPtr parent_span,
+                         const std::string& target_address);
+
   SpanContextPtr parent_span_context_;
   SpanContextExtensionPtr parent_ext_span_context_;
 
@@ -182,6 +191,12 @@ class SegmentContextImpl : public SegmentContext {
   std::string trace_segment_id_;
   std::string service_;
   std::string service_instance_;
+
+  bool is_root_ = false;
+  // Sampling flag. It will send to OAP if propagated span context doesn't have
+  // sampleing flag. When this context is root. It is configurable whether
+  // sample or not.
+  bool do_sample_default_ = true;
 };
 
 class SegmentContextFactoryImpl : public SegmentContextFactory {
@@ -189,7 +204,7 @@ class SegmentContextFactoryImpl : public SegmentContextFactory {
   SegmentContextFactoryImpl(const TracerConfig& cfg);
 
   // SegmentContextFactory
-  SegmentContextPtr create() override;
+  SegmentContextPtr create(bool default_sampling_status) override;
   SegmentContextPtr create(SpanContextPtr span_context) override;
   SegmentContextPtr create(SpanContextPtr span_context,
                            SpanContextExtensionPtr ext_span_context) override;
