@@ -174,22 +174,18 @@ class CurrentSegmentSpan {
   virtual void skipAnalysis() = 0;
 
   /**
-   * Set tag to current span. (lvalue)
+   * Set tag to current span.
    */
-  virtual void addTag(const std::string& key, const std::string& value) = 0;
-
-  /**
-   * Set tag to current span. (rvalue)
-   */
-  virtual void addTag(std::string&& key, std::string&& value) = 0;
+  virtual void addTag(std::string key, std::string value) = 0;
 
   /**
    * Add log related with current span.
-   * @param set_time To determine whether to set actual time or not.
-   * This value is introduced for unit-test.
    */
-  virtual void addLog(const std::string& key, const std::string& value,
-                      bool set_time = true) = 0;
+  virtual void addLog(std::string key, std::string value) = 0;
+  virtual void addLog(std::string key, std::string value,
+                      TimePoint<SystemTime> current_time) = 0;
+  virtual void addLog(std::string key, std::string value,
+                      TimePoint<SteadyTime> current_time) = 0;
 
   /**
    * Set component ID.

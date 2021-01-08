@@ -14,8 +14,6 @@
 
 #pragma once
 
-#include <map>
-
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/segment_context.h"
@@ -82,16 +80,15 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   void setSpanLayer(SpanLayer layer) override { layer_ = layer; }
   void errorOccured() override { is_error_ = true; }
   void skipAnalysis() override { skip_analysis_ = true; }
-  void addTag(const std::string& key, const std::string& value) override {
+  void addTag(std::string key, std::string value) override {
     assert(!finished_);
     tags_.emplace_back(key, value);
   }
-  void addTag(std::string&& key, std::string&& value) override {
-    assert(!finished_);
-    tags_.emplace_back(std::move(key), std::move(value));
-  }
-  void addLog(const std::string& key, const std::string& value,
-              bool set_time) override;
+  void addLog(std::string key, std::string value) override;
+  void addLog(std::string key, std::string value,
+              TimePoint<SystemTime> current_time) override;
+  void addLog(std::string key, std::string value,
+              TimePoint<SteadyTime> current_time) override;
   void setComponentId(int32_t component_id) override;
   void setSamplingStatus(bool do_sample) override {
     assert(!finished_);

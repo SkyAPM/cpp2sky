@@ -81,15 +81,36 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   return obj;
 }
 
-void CurrentSegmentSpanImpl::addLog(const std::string& key,
-                                    const std::string& value, bool set_time) {
+void CurrentSegmentSpanImpl::addLog(std::string key, std::string value) {
+  assert(!finished_);
+  auto now = TimePoint<SystemTime>();
+  addLog(key, value, now);
+}
+
+void CurrentSegmentSpanImpl::addLog(std::string key, std::string value,
+                                    TimePoint<SystemTime> current_time) {
   assert(!finished_);
   Log l;
+<<<<<<< HEAD
   if (set_time) {
     // TODO: (implement)
     // SystemTimePoint now = SystemTime::now();
     // l.set_time(millisecondsFromEpoch(now));
   }
+=======
+  l.set_time(current_time.fetch());
+  auto* entry = l.add_data();
+  entry->set_key(key);
+  entry->set_value(value);
+  logs_.emplace_back(l);
+}
+
+void CurrentSegmentSpanImpl::addLog(std::string key, std::string value,
+                                    TimePoint<SteadyTime> current_time) {
+  assert(!finished_);
+  Log l;
+  l.set_time(current_time.fetch());
+>>>>>>> ec6aa3f57c707e7ee9743f2cb3ea248ffc938dbd
   auto* entry = l.add_data();
   entry->set_key(key);
   entry->set_value(value);

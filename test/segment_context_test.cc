@@ -184,7 +184,10 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   span_child->addTag("category", "database");
   std::string log_key = "service_0";
   std::string log_value = "error";
-  span_child->addLog(log_key, log_value, false);
+
+  auto t3 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(300)));
+  span_child->addLog(log_key, log_value, t3);
 
   span_child->endSpan(t2);
 
@@ -214,6 +217,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
       "value": "database"
     },
     "logs": {
+      "time": "300",
       "data": {
         "key": "service_0",
         "value": "error"
@@ -225,6 +229,34 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   JsonStringToMessage(json2, &expected_obj2);
   EXPECT_EQ(expected_obj2.DebugString(),
             span_child->createSpanObject().DebugString());
+}
+
+TEST_F(SegmentContextTest, SegmentContextFactoryTest) {
+  SegmentContextFactoryImpl factory(config_);
+  SegmentContextPtr default_sample_segment = factory.create(true);
+  EXPECT_TRUE(default_sample_segment->defaultSamplingStatus());
+
+  auto span = default_sample_segment->createCurrentSegmentRootSpan();
+  EXPECT_EQ(default_sample_segment->spans().size(), 1);
+  EXPECT_EQ(span->spanId(), 0);
+
+  EXPECT_TRUE(span->samplingStatus());
+  span->setSamplingStatus(false);
+  EXPECT_FALSE(span->samplingStatus());
+
+  default_sample_segment->setDefaultSamplingStatus(false);
+  EXPECT_FALSE(span->samplingStatus());
+  span->setSamplingStatus(true);
+  EXPECT_TRUE(span->samplingStatus());
+
+  auto span2 = default_sample_segment->createCurrentSegmentSpan(span);
+  // Check to reflect parent span's sampling status
+  EXPECT_TRUE(span2->samplingStatus());
+
+  span2->setSamplingStatus(false);
+  auto span3 = default_sample_segment->createCurrentSegmentSpan(span2);
+  // Check to reflect parent span's sampling status
+  EXPECT_FALSE(span3->samplingStatus());
 }
 
 TEST_F(SegmentContextTest, SW8CreateTest) {
