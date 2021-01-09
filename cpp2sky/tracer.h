@@ -33,6 +33,6 @@ class Tracer {
 
 using TracerPtr = std::unique_ptr<Tracer>;
 
-TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
+TracerPtr createInsecureGrpcTracer(const TracerConfig& cfg);
 
 }  // namespace cpp2sky

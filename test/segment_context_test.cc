@@ -86,6 +86,7 @@ TEST_F(SegmentContextTest, BasicTest) {
     "spanLayer": "Http",
     "componentId": "9000",
     "operationName": "sample1",
+    "skipAnalysis": "false",
   }
   )EOF";
   SpanObject expected_obj;
@@ -302,6 +303,34 @@ TEST_F(SegmentContextTest, SW8CreateTest) {
       "1-MQ==-dXVpZA==-0-bWVzaA==-c2VydmljZV8w-c2FtcGxlMQ==-MTAuMC4wLjE6NDQz");
 
   EXPECT_EQ(expect_sw8, sc.createSW8HeaderValue(span, target_address));
+}
+
+TEST_F(SegmentContextTest, ReadyToSendTest) {
+  auto sc = factory_->create();
+
+  // No parent span
+  auto span = sc->createCurrentSegmentRootSpan();
+  EXPECT_EQ(sc->spans().size(), 1);
+  EXPECT_EQ(span->spanId(), 0);
+
+  auto t1 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(100)));
+  auto t2 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(200)));
+
+  span->startSpan("sample1", t1);
+  span->setPeer("localhost:9000");
+  span->endSpan(t2);
+
+  EXPECT_TRUE(sc->readyToSend());
+
+  auto span2 = sc->createCurrentSegmentSpan(span);
+  auto t3 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(300)));
+
+  span->startSpan("sample1", t3);
+
+  EXPECT_FALSE(sc->readyToSend());
 }
 
 }  // namespace cpp2sky

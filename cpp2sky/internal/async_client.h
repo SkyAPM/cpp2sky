@@ -87,7 +87,6 @@ enum class Operation : uint8_t {
   Connected = 1,
   Idle = 2,
   WriteDone = 3,
-  Finished = 4,
 };
 
 template <class RequestType, class ResponseType>
@@ -116,7 +115,7 @@ class AsyncStream {
   /**
    * Handle incoming event related to this stream.
    */
-  virtual bool handleOperation(Operation incoming_op) = 0;
+  virtual void handleOperation(Operation incoming_op) = 0;
 };
 
 template <class RequestType>

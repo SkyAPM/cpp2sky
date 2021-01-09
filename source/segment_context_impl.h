@@ -161,6 +161,7 @@ class SegmentContextImpl : public SegmentContext {
   SegmentObject createSegmentObject() override;
   void setSkipAnalysis() override { should_skip_analysis_ = true; }
   bool skipAnalysis() override { return should_skip_analysis_; }
+  bool readyToSend() override;
 
  private:
   std::string encodeSpan(CurrentSegmentSpanPtr parent_span,
