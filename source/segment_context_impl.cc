@@ -41,6 +41,7 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   obj.set_componentid(component_id_);
   obj.set_iserror(is_error_);
   obj.set_peer(peer_);
+  obj.set_skipanalysis(skip_analysis_);
 
   auto parent_span = parent_segment_context_.parentSpanContext();
   // Inject request parent to the current segment.
@@ -69,12 +70,6 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
     *entry = log;
   }
 
-  if (parent_segment_context_.parentSpanContextExtension() != nullptr) {
-    if (parent_segment_context_.parentSpanContextExtension()->tracingMode() ==
-        TracingMode::Skip) {
-      obj.set_skipanalysis(true);
-    }
-  }
   return obj;
 }
 
@@ -106,16 +101,20 @@ void CurrentSegmentSpanImpl::addLog(std::string key, std::string value,
   logs_.emplace_back(l);
 }
 
-void CurrentSegmentSpanImpl::startSpan() {
+void CurrentSegmentSpanImpl::startSpan(std::string operation_name) {
   auto now = TimePoint<SystemTime>();
-  startSpan(now);
+  startSpan(operation_name, now);
 }
 
-void CurrentSegmentSpanImpl::startSpan(TimePoint<SystemTime> current_time) {
+void CurrentSegmentSpanImpl::startSpan(std::string operation_name,
+                                       TimePoint<SystemTime> current_time) {
+  operation_name_ = operation_name;
   start_time_ = current_time.fetch();
 }
 
-void CurrentSegmentSpanImpl::startSpan(TimePoint<SteadyTime> current_time) {
+void CurrentSegmentSpanImpl::startSpan(std::string operation_name,
+                                       TimePoint<SteadyTime> current_time) {
+  operation_name_ = operation_name;
   start_time_ = current_time.fetch();
 }
 
@@ -185,6 +184,10 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
   }
   // It supports only HTTP request tracing.
   current_span->setSpanLayer(SpanLayer::Http);
+  if (should_skip_analysis_) {
+    current_span->setSkipAnalysis();
+  }
+
   spans_.push_back(current_span);
   return current_span;
 }
@@ -252,9 +255,8 @@ SegmentContextFactoryImpl::SegmentContextFactoryImpl(const TracerConfig& cfg)
     : service_name_(cfg.service_name()), instance_name_(cfg.instance_name()) {}
 
 SegmentContextPtr SegmentContextFactoryImpl::create() {
-  auto context = std::make_unique<SegmentContextImpl>(
-      service_name_, instance_name_, random_generator_);
-  return context;
+  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
+                                              random_generator_);
 }
 
 SegmentContextPtr SegmentContextFactoryImpl::create(
@@ -265,9 +267,13 @@ SegmentContextPtr SegmentContextFactoryImpl::create(
 
 SegmentContextPtr SegmentContextFactoryImpl::create(
     SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
-  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
-                                              span_context, ext_span_context,
-                                              random_generator_);
+  auto context = std::make_unique<SegmentContextImpl>(
+      service_name_, instance_name_, span_context, ext_span_context,
+      random_generator_);
+  if (ext_span_context->tracingMode() == TracingMode::Skip) {
+    context->setSkipAnalysis();
+  }
+  return context;
 }
 
 }  // namespace cpp2sky

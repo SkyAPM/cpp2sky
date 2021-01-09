@@ -108,9 +108,11 @@ class CurrentSegmentSpan {
   /**
    * Set start time to calculate execution time.
    */
-  virtual void startSpan() = 0;
-  virtual void startSpan(TimePoint<SystemTime> current_time) = 0;
-  virtual void startSpan(TimePoint<SteadyTime> current_time) = 0;
+  virtual void startSpan(std::string operation_name) = 0;
+  virtual void startSpan(std::string operation_name,
+                         TimePoint<SystemTime> current_time) = 0;
+  virtual void startSpan(std::string operation_name,
+                         TimePoint<SteadyTime> current_time) = 0;
 
   /**
    * Set end time to calculate execution time.
@@ -118,16 +120,6 @@ class CurrentSegmentSpan {
   virtual void endSpan() = 0;
   virtual void endSpan(TimePoint<SystemTime> current_time) = 0;
   virtual void endSpan(TimePoint<SteadyTime> current_time) = 0;
-
-  /**
-   * Set operation name for this span (lvalue)
-   */
-  virtual void setOperationName(const std::string& operation_name) = 0;
-
-  /**
-   * Set operation name for this span (rvalue)
-   */
-  virtual void setOperationName(std::string&& operation_name) = 0;
 
   /**
    * Set peer address for this span (lvalue)
@@ -154,13 +146,13 @@ class CurrentSegmentSpan {
   /**
    * If error had caused on this span, This should be called.
    */
-  virtual void errorOccured() = 0;
+  virtual void setErrorStatus() = 0;
 
   /**
    * Determine whether to skip the analysis of this span. If we'd like to skip
    * analysis, this should be called.
    */
-  virtual void skipAnalysis() = 0;
+  virtual void setSkipAnalysis() = 0;
 
   /**
    * Set tag to current span.
@@ -260,6 +252,16 @@ class SegmentContext {
    * Generate Apache SkyWalking native segment object.
    */
   virtual SegmentObject createSegmentObject() = 0;
+
+  /**
+   * If called, all spans belongs to this segment will be skipped analysis.
+   */
+  virtual void setSkipAnalysis() = 0;
+
+  /**
+   * Whether belonging span can be skipped analysis or not.
+   */
+  virtual bool skipAnalysis() = 0;
 };
 
 using SegmentContextPtr = std::shared_ptr<SegmentContext>;

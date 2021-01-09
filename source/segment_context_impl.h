@@ -53,20 +53,14 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
     assert(!finished_);
     parent_span_id_ = span_id;
   }
-  void startSpan() override;
-  void startSpan(TimePoint<SystemTime> current_time) override;
-  void startSpan(TimePoint<SteadyTime> current_time) override;
+  void startSpan(std::string operation_name) override;
+  void startSpan(std::string operation_name,
+                 TimePoint<SystemTime> current_time) override;
+  void startSpan(std::string operation_name,
+                 TimePoint<SteadyTime> current_time) override;
   void endSpan() override;
   void endSpan(TimePoint<SystemTime> current_time) override;
   void endSpan(TimePoint<SteadyTime> current_time) override;
-  void setOperationName(const std::string& operation_name) override {
-    assert(!finished_);
-    operation_name_ = operation_name;
-  }
-  void setOperationName(std::string&& operation_name) override {
-    assert(!finished_);
-    operation_name_ = std::move(operation_name);
-  }
   void setPeer(const std::string& remote_address) override {
     assert(!finished_);
     peer_ = remote_address;
@@ -77,8 +71,8 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   }
   void setSpanType(SpanType type) override { type_ = type; }
   void setSpanLayer(SpanLayer layer) override { layer_ = layer; }
-  void errorOccured() override { is_error_ = true; }
-  void skipAnalysis() override { skip_analysis_ = true; }
+  void setErrorStatus() override { is_error_ = true; }
+  void setSkipAnalysis() override { skip_analysis_ = true; }
   void addTag(std::string key, std::string value) override {
     assert(!finished_);
     tags_.emplace_back(key, value);
@@ -110,8 +104,9 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   std::vector<std::pair<std::string, std::string>> tags_;
   std::vector<Log> logs_;
   bool skip_analysis_ = false;
-  SegmentContext& parent_segment_context_;
   bool finished_ = false;
+
+  SegmentContext& parent_segment_context_;
 };
 
 class SegmentContextImpl : public SegmentContext {
@@ -164,6 +159,8 @@ class SegmentContextImpl : public SegmentContext {
   std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
                                    std::string&& target_address) override;
   SegmentObject createSegmentObject() override;
+  void setSkipAnalysis() override { should_skip_analysis_ = true; }
+  bool skipAnalysis() override { return should_skip_analysis_; }
 
  private:
   std::string encodeSpan(CurrentSegmentSpanPtr parent_span,
@@ -180,6 +177,8 @@ class SegmentContextImpl : public SegmentContext {
   std::string trace_segment_id_;
   std::string service_;
   std::string service_instance_;
+
+  bool should_skip_analysis_ = false;
 };
 
 class SegmentContextFactoryImpl : public SegmentContextFactory {

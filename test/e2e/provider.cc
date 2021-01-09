@@ -34,9 +34,8 @@ void requestPong(Tracer* tracer, SegmentContext* scp,
                  CurrentSegmentSpanPtr parent_span) {
   std::string target_address = "consumer:8080";
   auto current_span = scp->createCurrentSegmentSpan(parent_span);
-  current_span->startSpan();
+  current_span->startSpan("/pong");
   current_span->setPeer(target_address);
-  current_span->setOperationName("/pong");
 
   httplib::Client cli("consumer", 8080);
   httplib::Headers headers = {
@@ -51,9 +50,8 @@ void requestUsers(Tracer* tracer, SegmentContext* scp,
                   CurrentSegmentSpanPtr parent_span) {
   std::string target_address = "interm:8082";
   auto current_span = scp->createCurrentSegmentSpan(parent_span);
-  current_span->startSpan();
+  current_span->startSpan("/users");
   current_span->setPeer(target_address);
-  current_span->setOperationName("/users");
 
   httplib::Client cli("interm", 8082);
   httplib::Headers headers = {
@@ -67,8 +65,7 @@ void requestUsers(Tracer* tracer, SegmentContext* scp,
 void handlePing(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
                 httplib::Response& response) {
   auto current_span = scp->createCurrentSegmentRootSpan();
-  current_span->startSpan();
-  current_span->setOperationName("/ping");
+  current_span->startSpan("/ping");
   requestPong(tracer, scp, current_span);
   current_span->endSpan();
 }
@@ -76,8 +73,7 @@ void handlePing(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
 void handlePing2(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
                  httplib::Response& response) {
   auto current_span = scp->createCurrentSegmentRootSpan();
-  current_span->startSpan();
-  current_span->setOperationName("/ping2");
+  current_span->startSpan("/ping2");
   requestUsers(tracer, scp, current_span);
   current_span->endSpan();
 }
