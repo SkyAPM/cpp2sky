@@ -29,7 +29,6 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   SpanObject createSpanObject() override;
 
 #pragma region Getters
-  bool samplingStatus() const override { return do_sample_; }
   int32_t spanId() const override { return span_id_; }
   int32_t parentSpanId() const override { return parent_span_id_; }
   int64_t startTime() const override { return start_time_; }
@@ -90,10 +89,6 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   void addLog(std::string key, std::string value,
               TimePoint<SteadyTime> current_time) override;
   void setComponentId(int32_t component_id) override;
-  void setSamplingStatus(bool do_sample) override {
-    assert(!finished_);
-    do_sample_ = do_sample;
-  }
 #pragma endregion
 
  private:
@@ -116,7 +111,6 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   std::vector<Log> logs_;
   bool skip_analysis_ = false;
   SegmentContext& parent_segment_context_;
-  bool do_sample_ = true;
   bool finished_ = false;
 };
 
@@ -135,12 +129,7 @@ class SegmentContextImpl : public SegmentContext {
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
-#pragma region Setters
-  void setDefaultSamplingStatus(bool do_sample) override;
-#pragma endregion
-
 #pragma region Getters
-  bool defaultSamplingStatus() const override { return do_sample_default_; }
   const std::string& traceId() const override { return trace_id_; }
   const std::string& traceSegmentId() const override {
     return trace_segment_id_;
@@ -191,12 +180,6 @@ class SegmentContextImpl : public SegmentContext {
   std::string trace_segment_id_;
   std::string service_;
   std::string service_instance_;
-
-  bool is_root_ = false;
-  // Sampling flag. It will send to OAP if propagated span context doesn't have
-  // sampleing flag. When this context is root. It is configurable whether
-  // sample or not.
-  bool do_sample_default_ = true;
 };
 
 class SegmentContextFactoryImpl : public SegmentContextFactory {
@@ -204,7 +187,7 @@ class SegmentContextFactoryImpl : public SegmentContextFactory {
   SegmentContextFactoryImpl(const TracerConfig& cfg);
 
   // SegmentContextFactory
-  SegmentContextPtr create(bool default_sampling_status) override;
+  SegmentContextPtr create() override;
   SegmentContextPtr create(SpanContextPtr span_context) override;
   SegmentContextPtr create(SpanContextPtr span_context,
                            SpanContextExtensionPtr ext_span_context) override;

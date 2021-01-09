@@ -232,34 +232,6 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
             span_child->createSpanObject().DebugString());
 }
 
-TEST_F(SegmentContextTest, SegmentContextFactoryTest) {
-  SegmentContextFactoryImpl factory(config_);
-  SegmentContextPtr default_sample_segment = factory.create(true);
-  EXPECT_TRUE(default_sample_segment->defaultSamplingStatus());
-
-  auto span = default_sample_segment->createCurrentSegmentRootSpan();
-  EXPECT_EQ(default_sample_segment->spans().size(), 1);
-  EXPECT_EQ(span->spanId(), 0);
-
-  EXPECT_TRUE(span->samplingStatus());
-  span->setSamplingStatus(false);
-  EXPECT_FALSE(span->samplingStatus());
-
-  default_sample_segment->setDefaultSamplingStatus(false);
-  EXPECT_FALSE(span->samplingStatus());
-  span->setSamplingStatus(true);
-  EXPECT_TRUE(span->samplingStatus());
-
-  auto span2 = default_sample_segment->createCurrentSegmentSpan(span);
-  // Check to reflect parent span's sampling status
-  EXPECT_TRUE(span2->samplingStatus());
-
-  span2->setSamplingStatus(false);
-  auto span3 = default_sample_segment->createCurrentSegmentSpan(span2);
-  // Check to reflect parent span's sampling status
-  EXPECT_FALSE(span3->samplingStatus());
-}
-
 TEST_F(SegmentContextTest, SW8CreateTest) {
   SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
                         span_ctx_, span_ext_ctx_, random_);

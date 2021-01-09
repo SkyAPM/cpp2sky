@@ -26,9 +26,7 @@ namespace cpp2sky {
 
 CurrentSegmentSpanImpl::CurrentSegmentSpanImpl(
     int32_t span_id, SegmentContext& parent_segment_context)
-    : span_id_(span_id),
-      parent_segment_context_(parent_segment_context),
-      do_sample_(parent_segment_context.defaultSamplingStatus()) {}
+    : span_id_(span_id), parent_segment_context_(parent_segment_context) {}
 
 SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   SpanObject obj;
@@ -151,8 +149,7 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
     : trace_id_(random.uuid()),
       trace_segment_id_(random.uuid()),
       service_(service_name),
-      service_instance_(instance_name),
-      is_root_(true) {}
+      service_instance_(instance_name) {}
 
 SegmentContextImpl::SegmentContextImpl(
     const std::string& service_name, const std::string& instance_name,
@@ -163,9 +160,7 @@ SegmentContextImpl::SegmentContextImpl(
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
       service_(service_name),
-      service_instance_(instance_name),
-      is_root_(false),
-      do_sample_default_(parent_span_context_->sample()) {}
+      service_instance_(instance_name) {}
 
 SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
@@ -175,17 +170,7 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
       service_(service_name),
-      service_instance_(instance_name),
-      is_root_(false),
-      do_sample_default_(parent_span_context_->sample()) {}
-
-void SegmentContextImpl::setDefaultSamplingStatus(bool do_sample) {
-  if (!is_root_) {
-    throw TracerException(
-        "Failed to change sampling status because it is a root segment");
-  }
-  do_sample_default_ = do_sample;
-}
+      service_instance_(instance_name) {}
 
 CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
     CurrentSegmentSpanPtr parent_span) {
@@ -194,9 +179,6 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
   if (parent_span != nullptr) {
     current_span->setParentSpanId(parent_span->spanId());
     current_span->setSpanType(SpanType::Exit);
-    // If parent span exists, override default segment sampling status with
-    // parent span one.
-    current_span->setSamplingStatus(parent_span->samplingStatus());
   } else {
     current_span->setParentSpanId(-1);
     current_span->setSpanType(SpanType::Entry);
@@ -238,7 +220,8 @@ std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
   auto parent_spanid = std::to_string(parent_span->spanId());
   auto endpoint = spans_.front()->operationName();
 
-  header_value += parent_span->samplingStatus() ? "1-" : "0-";
+  // always send to OAP
+  header_value += "1-";
   header_value += Base64::encode(trace_id_) + "-";
   header_value += Base64::encode(trace_segment_id_) + "-";
   header_value += parent_spanid + "-";
@@ -268,11 +251,9 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
 SegmentContextFactoryImpl::SegmentContextFactoryImpl(const TracerConfig& cfg)
     : service_name_(cfg.service_name()), instance_name_(cfg.instance_name()) {}
 
-SegmentContextPtr SegmentContextFactoryImpl::create(
-    bool default_sampling_status) {
+SegmentContextPtr SegmentContextFactoryImpl::create() {
   auto context = std::make_unique<SegmentContextImpl>(
       service_name_, instance_name_, random_generator_);
-  context->setDefaultSamplingStatus(default_sampling_status);
   return context;
 }
 
