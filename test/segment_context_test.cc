@@ -42,6 +42,8 @@ class SegmentContextTest : public testing::Test {
 
     span_ctx_ = std::make_shared<SpanContextImpl>(sample_ctx);
     span_ext_ctx_ = std::make_shared<SpanContextExtensionImpl>("1");
+
+    factory_ = createSegmentContextFactory(config_);
   }
 
  protected:
@@ -51,17 +53,17 @@ class SegmentContextTest : public testing::Test {
   TracerConfig config_;
   SpanContextPtr span_ctx_;
   SpanContextExtensionPtr span_ext_ctx_;
+  std::unique_ptr<SegmentContextFactory> factory_;
 };
 
 TEST_F(SegmentContextTest, BasicTest) {
-  SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
-                        random_);
-  EXPECT_EQ(sc.service(), "mesh");
-  EXPECT_EQ(sc.serviceInstance(), "service_0");
+  auto sc = factory_->create();
+  EXPECT_EQ(sc->service(), "mesh");
+  EXPECT_EQ(sc->serviceInstance(), "service_0");
 
   // No parent span
-  auto span = sc.createCurrentSegmentRootSpan();
-  EXPECT_EQ(sc.spans().size(), 1);
+  auto span = sc->createCurrentSegmentRootSpan();
+  EXPECT_EQ(sc->spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
 
   auto t1 = TimePoint<SystemTime>(
@@ -69,7 +71,7 @@ TEST_F(SegmentContextTest, BasicTest) {
   auto t2 = TimePoint<SystemTime>(
       SystemTime(std::chrono::duration<int, std::milli>(200)));
 
-  span->startSpan(t1);
+  span->startSpan("sample1", t1);
   span->setPeer("localhost:9000");
   span->endSpan(t2);
 
@@ -82,7 +84,8 @@ TEST_F(SegmentContextTest, BasicTest) {
     "peer": "localhost:9000",
     "spanType": "Entry",
     "spanLayer": "Http",
-    "componentId": "9000"
+    "componentId": "9000",
+    "operationName": "sample1",
   }
   )EOF";
   SpanObject expected_obj;
@@ -90,8 +93,8 @@ TEST_F(SegmentContextTest, BasicTest) {
   EXPECT_EQ(expected_obj.DebugString(), span->createSpanObject().DebugString());
 
   // With parent span
-  auto span_child = sc.createCurrentSegmentSpan(std::move(span));
-  EXPECT_EQ(sc.spans().size(), 2);
+  auto span_child = sc->createCurrentSegmentSpan(std::move(span));
+  EXPECT_EQ(sc->spans().size(), 2);
   EXPECT_EQ(span_child->spanId(), 1);
 
   t1 = TimePoint<SystemTime>(
@@ -99,7 +102,7 @@ TEST_F(SegmentContextTest, BasicTest) {
   t2 = TimePoint<SystemTime>(
       SystemTime(std::chrono::duration<int, std::milli>(200)));
 
-  span_child->startSpan(t1);
+  span_child->startSpan("sample1", t1);
   span_child->setPeer("localhost:9000");
   span_child->endSpan(t2);
 
@@ -112,7 +115,9 @@ TEST_F(SegmentContextTest, BasicTest) {
     "peer": "localhost:9000",
     "spanType": "Exit",
     "spanLayer": "Http",
-    "componentId": "9000"
+    "componentId": "9000",
+    "operationName": "sample1",
+    "skipAnalysis": "false",
   }
   )EOF";
   SpanObject expected_obj2;
@@ -122,14 +127,13 @@ TEST_F(SegmentContextTest, BasicTest) {
 }
 
 TEST_F(SegmentContextTest, ChildSegmentContext) {
-  SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
-                        span_ctx_, span_ext_ctx_, random_);
-  EXPECT_EQ(sc.service(), "mesh");
-  EXPECT_EQ(sc.serviceInstance(), "service_0");
+  auto sc = factory_->create(span_ctx_);
+  EXPECT_EQ(sc->service(), "mesh");
+  EXPECT_EQ(sc->serviceInstance(), "service_0");
 
   // No parent span
-  auto span = sc.createCurrentSegmentRootSpan();
-  EXPECT_EQ(sc.spans().size(), 1);
+  auto span = sc->createCurrentSegmentRootSpan();
+  EXPECT_EQ(sc->spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
 
   auto t1 = TimePoint<SystemTime>(
@@ -137,7 +141,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   auto t2 = TimePoint<SystemTime>(
       SystemTime(std::chrono::duration<int, std::milli>(200)));
 
-  span->startSpan(t1);
+  span->startSpan("sample1", t1);
   span->setPeer("localhost:9000");
   span->endSpan(t2);
 
@@ -161,7 +165,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "spanType": "Entry",
     "spanLayer": "Http",
     "componentId": "9000",
-    "skipAnalysis": "true"
+    "skipAnalysis": "false",
+    "operationName": "sample1",
   }
   )EOF";
   SpanObject expected_obj;
@@ -169,8 +174,8 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   EXPECT_EQ(expected_obj.DebugString(), span->createSpanObject().DebugString());
 
   // With parent span
-  auto span_child = sc.createCurrentSegmentSpan(std::move(span));
-  EXPECT_EQ(sc.spans().size(), 2);
+  auto span_child = sc->createCurrentSegmentSpan(std::move(span));
+  EXPECT_EQ(sc->spans().size(), 2);
   EXPECT_EQ(span_child->spanId(), 1);
 
   t1 = TimePoint<SystemTime>(
@@ -178,14 +183,17 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   t2 = TimePoint<SystemTime>(
       SystemTime(std::chrono::duration<int, std::milli>(200)));
 
-  span_child->startSpan(t1);
+  span_child->startSpan("sample1", t1);
 
   span_child->setPeer("localhost:9000");
   span_child->addTag("category", "database");
 
   std::string log_key = "service_0";
   std::string log_value = "error";
-  span_child->addLog(log_key, log_value, false);
+
+  auto t3 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(300)));
+  span_child->addLog(log_key, log_value, t3);
 
   span_child->endSpan(t2);
 
@@ -209,23 +217,72 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "spanType": "Exit",
     "spanLayer": "Http",
     "componentId": "9000",
-    "skipAnalysis": "true",
+    "skipAnalysis": "false",
     "tags": {
       "key": "category",
       "value": "database"
     },
     "logs": {
+      "time": "300",
       "data": {
         "key": "service_0",
         "value": "error"
       }
-    }
+    },
+    "operationName": "sample1",
   }
   )EOF";
   SpanObject expected_obj2;
   JsonStringToMessage(json2, &expected_obj2);
   EXPECT_EQ(expected_obj2.DebugString(),
             span_child->createSpanObject().DebugString());
+}
+
+TEST_F(SegmentContextTest, SkipAnalysisSegment) {
+  auto sc = factory_->create(span_ctx_, span_ext_ctx_);
+  EXPECT_TRUE(sc->skipAnalysis());
+
+  // No parent span
+  auto span = sc->createCurrentSegmentRootSpan();
+  EXPECT_EQ(sc->spans().size(), 1);
+  EXPECT_EQ(span->spanId(), 0);
+
+  auto t1 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(100)));
+  auto t2 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(200)));
+
+  span->startSpan("sample1", t1);
+  span->setPeer("localhost:9000");
+  span->endSpan(t2);
+
+  std::string json = R"EOF(
+  {
+    "spanId": "0",
+    "parentSpanId": "-1",
+    "startTime": "100",
+    "endTime": "200",
+    "peer": "localhost:9000",
+    "spanType": "Entry",
+    "spanLayer": "Http",
+    "componentId": "9000",
+    "operationName": "sample1",
+    "skipAnalysis": "true",
+    "refs": {
+      "refType": "CrossProcess",
+      "traceId": "1",
+      "parentTraceSegmentId": "5",
+      "parentSpanId": 3,
+      "parentService": "mesh",
+      "parentServiceInstance": "instance",
+      "parentEndpoint": "/api/v1/health",
+      "networkAddressUsedAtPeer": "example.com:8080"
+    }
+  }
+  )EOF";
+  SpanObject expected_obj;
+  JsonStringToMessage(json, &expected_obj);
+  EXPECT_EQ(expected_obj.DebugString(), span->createSpanObject().DebugString());
 }
 
 TEST_F(SegmentContextTest, SW8CreateTest) {
@@ -237,15 +294,14 @@ TEST_F(SegmentContextTest, SW8CreateTest) {
   auto span = sc.createCurrentSegmentRootSpan();
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
-  span->startSpan();
-  span->setOperationName("/ping");
+  span->startSpan("sample1");
   span->endSpan();
 
   std::string target_address("10.0.0.1:443");
   std::string expect_sw8(
-      "1-MQ==-dXVpZA==-0-bWVzaA==-c2VydmljZV8w-L3Bpbmc=-MTAuMC4wLjE6NDQz");
+      "1-MQ==-dXVpZA==-0-bWVzaA==-c2VydmljZV8w-c2FtcGxlMQ==-MTAuMC4wLjE6NDQz");
 
-  EXPECT_EQ(expect_sw8, sc.createSW8HeaderValue(span, target_address, true));
+  EXPECT_EQ(expect_sw8, sc.createSW8HeaderValue(span, target_address));
 }
 
 }  // namespace cpp2sky

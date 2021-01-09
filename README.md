@@ -107,8 +107,7 @@ to avoid undefined behavior.
 SegmentContextPtr current_segment = createSegmentContext(config);
 CurrentSegmentSpanPtr current_span = current_segment->createCurrentSegmentRootSpan();
 
-current_span->startSpan();
-current_span->setOperationName("sample_workload");
+current_span->startSpan("sample_workload");
 current_span->endSpan();
 
 tracer->sendSegment(std::move(current_segment));

@@ -35,12 +35,6 @@ class CurrentSegmentSpan {
   virtual SpanObject createSpanObject() = 0;
 
   /**
-   * Get sampling status. If true, spans belongs to this segment will be sent to
-   * OAP.
-   */
-  virtual bool samplingStatus() const = 0;
-
-  /**
    * Get span ID.
    */
   virtual int32_t spanId() const = 0;
@@ -114,9 +108,11 @@ class CurrentSegmentSpan {
   /**
    * Set start time to calculate execution time.
    */
-  virtual void startSpan() = 0;
-  virtual void startSpan(TimePoint<SystemTime> current_time) = 0;
-  virtual void startSpan(TimePoint<SteadyTime> current_time) = 0;
+  virtual void startSpan(std::string operation_name) = 0;
+  virtual void startSpan(std::string operation_name,
+                         TimePoint<SystemTime> current_time) = 0;
+  virtual void startSpan(std::string operation_name,
+                         TimePoint<SteadyTime> current_time) = 0;
 
   /**
    * Set end time to calculate execution time.
@@ -124,16 +120,6 @@ class CurrentSegmentSpan {
   virtual void endSpan() = 0;
   virtual void endSpan(TimePoint<SystemTime> current_time) = 0;
   virtual void endSpan(TimePoint<SteadyTime> current_time) = 0;
-
-  /**
-   * Set operation name for this span (lvalue)
-   */
-  virtual void setOperationName(const std::string& operation_name) = 0;
-
-  /**
-   * Set operation name for this span (rvalue)
-   */
-  virtual void setOperationName(std::string&& operation_name) = 0;
 
   /**
    * Set peer address for this span (lvalue)
@@ -160,31 +146,27 @@ class CurrentSegmentSpan {
   /**
    * If error had caused on this span, This should be called.
    */
-  virtual void errorOccured() = 0;
+  virtual void setErrorStatus() = 0;
 
   /**
    * Determine whether to skip the analysis of this span. If we'd like to skip
    * analysis, this should be called.
    */
-  virtual void skipAnalysis() = 0;
+  virtual void setSkipAnalysis() = 0;
 
   /**
-   * Set tag to current span. (lvalue)
+   * Set tag to current span.
    */
-  virtual void addTag(const std::string& key, const std::string& value) = 0;
-
-  /**
-   * Set tag to current span. (rvalue)
-   */
-  virtual void addTag(std::string&& key, std::string&& value) = 0;
+  virtual void addTag(std::string key, std::string value) = 0;
 
   /**
    * Add log related with current span.
-   * @param set_time To determine whether to set actual time or not.
-   * This value is introduced for unit-test.
    */
-  virtual void addLog(const std::string& key, const std::string& value,
-                      bool set_time = true) = 0;
+  virtual void addLog(std::string key, std::string value) = 0;
+  virtual void addLog(std::string key, std::string value,
+                      TimePoint<SystemTime> current_time) = 0;
+  virtual void addLog(std::string key, std::string value,
+                      TimePoint<SteadyTime> current_time) = 0;
 
   /**
    * Set component ID.
@@ -195,11 +177,6 @@ class CurrentSegmentSpan {
    * This span had finished or not.
    */
   virtual bool finished() const = 0;
-
-  /**
-   * Change sampling status. If true, it will be sampled.
-   */
-  virtual void setSamplingStatus(bool do_sample) = 0;
 };
 
 using CurrentSegmentSpanPtr = std::shared_ptr<CurrentSegmentSpan>;
@@ -259,21 +236,32 @@ class SegmentContext {
    * Generate sw8 value to send SegmentRef.
    * @param parent Parent span that belongs to current segment.
    * @param target_address Target address to send request. For more detail:
-   * @param sample If false, it means this trace shouldn't need to be sampled
-   * and send to backend.
    * https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L97-L101
    */
+  virtual std::string createSW8HeaderValue(
+      CurrentSegmentSpanPtr parent, const std::string& target_address) = 0;
   virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                           std::string& target_address,
-                                           bool sample = true) = 0;
-  virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                           std::string&& target_address,
-                                           bool sample = true) = 0;
+                                           std::string&& target_address) = 0;
+  // If you don't specify parent span, stored to current segment, it will be
+  // selected newest span as parent span.
+  virtual std::string createSW8HeaderValue(
+      const std::string& target_address) = 0;
+  virtual std::string createSW8HeaderValue(std::string&& target_address) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object.
    */
   virtual SegmentObject createSegmentObject() = 0;
+
+  /**
+   * If called, all spans belongs to this segment will be skipped analysis.
+   */
+  virtual void setSkipAnalysis() = 0;
+
+  /**
+   * Whether belonging span can be skipped analysis or not.
+   */
+  virtual bool skipAnalysis() = 0;
 };
 
 using SegmentContextPtr = std::shared_ptr<SegmentContext>;

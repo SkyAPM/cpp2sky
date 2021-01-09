@@ -45,8 +45,7 @@ int main() {
   auto current_span = current_segment->createCurrentSegmentRootSpan();
 
   // 4. Set info
-  current_span->startSpan();
-  current_span->setOperationName("/ping");
+  current_span->startSpan("/ping");
 
   httplib::Client cli("remote", 8082);
   httplib::Headers headers = {
