@@ -122,15 +122,16 @@ void CurrentSegmentSpanImpl::endSpan() {
   assert(!finished_);
   auto now = TimePoint<SystemTime>();
   endSpan(now);
-  finished_ = true;
 }
 
 void CurrentSegmentSpanImpl::endSpan(TimePoint<SystemTime> current_time) {
   end_time_ = current_time.fetch();
+  finished_ = true;
 }
 
 void CurrentSegmentSpanImpl::endSpan(TimePoint<SteadyTime> current_time) {
   end_time_ = current_time.fetch();
+  finished_ = true;
 }
 
 void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
@@ -249,6 +250,15 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
   }
 
   return obj;
+}
+
+bool SegmentContextImpl::readyToSend() {
+  for (const auto& span : spans_) {
+    if (!span->finished()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 SegmentContextFactoryImpl::SegmentContextFactoryImpl(const TracerConfig& cfg)

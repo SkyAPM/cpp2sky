@@ -262,6 +262,11 @@ class SegmentContext {
    * Whether belonging span can be skipped analysis or not.
    */
   virtual bool skipAnalysis() = 0;
+
+  /**
+   * Determine whether to send this segment or not.
+   */
+  virtual bool readyToSend() = 0;
 };
 
 using SegmentContextPtr = std::shared_ptr<SegmentContext>;
