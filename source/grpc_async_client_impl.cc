@@ -61,12 +61,16 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
   // failed to send message and close stream, then recreate new stream and try
   // to do it. This process will continue forever without sending explicit
   // signal.
+  // TODO(shikugawa): Block to wait drained messages to be clear with createing condition
+  // variable wrapper.
+#ifndef TEST
   if (stream_) {
     std::unique_lock<std::mutex> lck(mux_);
     while (!drained_messages_.empty()) {
       cv_.wait(lck);
     }
   }
+#endif
 
   resetStream();
 }
