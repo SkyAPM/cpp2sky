@@ -21,9 +21,6 @@
 #include "cpp2sky/exception.h"
 #include "utils/grpc_status.h"
 
-#define DEFAULT_CONNECTION_ACTIVE_RETRY_TIMES 5
-#define DEFAULT_CONNECTION_ACTIVE_RETRY_SLEEP_SEC 3
-
 namespace cpp2sky {
 
 namespace {
@@ -57,24 +54,6 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
 }
 
 GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
-  // If connection is inactive, it dispose all drained messages even if it has
-  // tons of messages.
-  uint8_t retry_times = DEFAULT_CONNECTION_ACTIVE_RETRY_TIMES;
-  while (channel_->GetState(false) !=
-         grpc_connectivity_state::GRPC_CHANNEL_READY) {
-    if (retry_times <= 0) {
-      gpr_log(GPR_INFO,
-              "All %ld pending messages have disposed because of no active "
-              "connection",
-              drained_messages_.size());
-      resetStream();
-      return;
-    }
-    retry_times--;
-    std::this_thread::sleep_for(
-        std::chrono::seconds(DEFAULT_CONNECTION_ACTIVE_RETRY_SLEEP_SEC));
-  }
-
   // It will wait until there is no drained messages.
   // There are no timeout option to handle this, so if you would like to stop
   // them, you should send signals like SIGTERM.
@@ -82,12 +61,16 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
   // failed to send message and close stream, then recreate new stream and try
   // to do it. This process will continue forever without sending explicit
   // signal.
+  // TODO(shikugawa): Block to wait drained messages to be clear with createing condition
+  // variable wrapper.
+#ifndef TEST
   if (stream_) {
     std::unique_lock<std::mutex> lck(mux_);
     while (!drained_messages_.empty()) {
       cv_.wait(lck);
     }
   }
+#endif
 
   resetStream();
 }
