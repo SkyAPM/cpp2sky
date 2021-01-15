@@ -113,6 +113,10 @@ current_span->endSpan();
 tracer->sendSegment(std::move(current_segment));
 ```
 
+## Security
+
+If you've found any security issues, please read [Security Reporting Process](https://github.com/SkyAPM/cpp2sky/blob/main/LICENSE) and take described steps.
+
 ## LICENSE
 
 Apache 2.0 License. See [LICENSE](https://github.com/SkyAPM/cpp2sky/blob/main/LICENSE) for more detail.
