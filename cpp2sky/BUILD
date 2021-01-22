@@ -25,7 +25,6 @@ cc_library(
     "time.h",
   ],
   deps = [
-    "@com_github_grpc_grpc//:grpc++",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
     ":config_cc_proto",
   ],

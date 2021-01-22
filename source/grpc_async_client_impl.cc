@@ -19,7 +19,6 @@
 #include <thread>
 
 #include "cpp2sky/exception.h"
-#include "utils/grpc_status.h"
 
 namespace cpp2sky {
 
