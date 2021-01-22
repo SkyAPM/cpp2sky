@@ -7,5 +7,8 @@ cc_library(
     "random_generator.h",
     "circular_buffer.h",
   ],
+  deps = [
+    "//cpp2sky/internal:random_generator_interface",
+  ],
   visibility = ["//visibility:public"],
 )
