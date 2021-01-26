@@ -25,22 +25,6 @@ cc_library(
     "time.h",
   ],
   deps = [
-    "@com_github_grpc_grpc//:grpc++",
-    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
-    ":config_cc_proto",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
-  name = "cpp2sky_internal_interface",
-  hdrs = [
-    "internal/async_client.h",
-    "internal/random_generator.h",
-  ],
-  deps = [
-    "@com_github_grpc_grpc//:grpc++",
-    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
     ":config_cc_proto",
   ],
   visibility = ["//visibility:public"],
