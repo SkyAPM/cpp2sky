@@ -299,10 +299,21 @@ TEST_F(SegmentContextTest, SW8CreateTest) {
   span->endSpan();
 
   std::string target_address("10.0.0.1:443");
-  std::string expect_sw8(
-      "1-MQ==-dXVpZA==-0-bWVzaA==-c2VydmljZV8w-c2FtcGxlMQ==-MTAuMC4wLjE6NDQz");
 
-  EXPECT_EQ(expect_sw8, sc.createSW8HeaderValue(span, target_address));
+  // Entry span should be rejected as propagation context
+  EXPECT_FALSE(sc.createSW8HeaderValue(span, target_address).has_value());
+
+  auto span2 = sc.createCurrentSegmentSpan(span);
+
+  EXPECT_EQ(sc.spans().size(), 2);
+  EXPECT_EQ(span2->spanId(), 1);
+  span2->startSpan("sample2");
+  span2->endSpan();
+
+  std::string expect_sw8(
+      "1-MQ==-dXVpZA==-1-bWVzaA==-c2VydmljZV8w-c2FtcGxlMQ==-MTAuMC4wLjE6NDQz");
+
+  EXPECT_EQ(expect_sw8, *sc.createSW8HeaderValue(span2, target_address));
 }
 
 TEST_F(SegmentContextTest, ReadyToSendTest) {

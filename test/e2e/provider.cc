@@ -38,9 +38,12 @@ void requestPong(Tracer* tracer, SegmentContext* scp,
   current_span->setPeer(target_address);
 
   httplib::Client cli("consumer", 8080);
-  httplib::Headers headers = {
-      {kPropagationHeader.data(),
-       scp->createSW8HeaderValue(current_span, target_address)}};
+  auto context = scp->createSW8HeaderValue(current_span, target_address);
+
+  httplib::Headers headers;
+  if (context.has_value()) {
+    headers = {{kPropagationHeader.data(), *context}};
+  }
   auto res = cli.Get("/pong", headers);
 
   current_span->endSpan();
@@ -54,9 +57,13 @@ void requestUsers(Tracer* tracer, SegmentContext* scp,
   current_span->setPeer(target_address);
 
   httplib::Client cli("interm", 8082);
-  httplib::Headers headers = {
-      {kPropagationHeader.data(),
-       scp->createSW8HeaderValue(current_span, target_address)}};
+  auto context = scp->createSW8HeaderValue(current_span, target_address);
+
+  httplib::Headers headers;
+  if (context.has_value()) {
+    headers = {{kPropagationHeader.data(), *context}};
+  }
+
   auto res = cli.Get("/users", headers);
 
   current_span->endSpan();
