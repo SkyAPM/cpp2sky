@@ -148,16 +148,19 @@ class SegmentContextImpl : public SegmentContext {
       CurrentSegmentSpanPtr parent_span) override;
 
   CurrentSegmentSpanPtr createCurrentSegmentRootSpan() override;
-  std::string createSW8HeaderValue(const std::string& target_address) override {
+  std::optional<std::string> createSW8HeaderValue(
+      const std::string& target_address) override {
     return createSW8HeaderValue(nullptr, target_address);
   }
-  std::string createSW8HeaderValue(std::string&& target_address) override {
+  std::optional<std::string> createSW8HeaderValue(
+      std::string&& target_address) override {
     return createSW8HeaderValue(nullptr, target_address);
   }
-  std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent_span,
-                                   const std::string& target_address) override;
-  std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                   std::string&& target_address) override;
+  std::optional<std::string> createSW8HeaderValue(
+      CurrentSegmentSpanPtr parent_span,
+      const std::string& target_address) override;
+  std::optional<std::string> createSW8HeaderValue(
+      CurrentSegmentSpanPtr parent, std::string&& target_address) override;
   SegmentObject createSegmentObject() override;
   void setSkipAnalysis() override { should_skip_analysis_ = true; }
   bool skipAnalysis() override { return should_skip_analysis_; }

@@ -16,6 +16,7 @@
 
 #include <list>
 #include <memory>
+#include <optional>
 #include <string_view>
 
 #include "cpp2sky/config.pb.h"
@@ -238,15 +239,16 @@ class SegmentContext {
    * @param target_address Target address to send request. For more detail:
    * https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L97-L101
    */
-  virtual std::string createSW8HeaderValue(
+  virtual std::optional<std::string> createSW8HeaderValue(
       CurrentSegmentSpanPtr parent, const std::string& target_address) = 0;
-  virtual std::string createSW8HeaderValue(CurrentSegmentSpanPtr parent,
-                                           std::string&& target_address) = 0;
+  virtual std::optional<std::string> createSW8HeaderValue(
+      CurrentSegmentSpanPtr parent, std::string&& target_address) = 0;
   // If you don't specify parent span, stored to current segment, it will be
   // selected newest span as parent span.
-  virtual std::string createSW8HeaderValue(
+  virtual std::optional<std::string> createSW8HeaderValue(
       const std::string& target_address) = 0;
-  virtual std::string createSW8HeaderValue(std::string&& target_address) = 0;
+  virtual std::optional<std::string> createSW8HeaderValue(
+      std::string&& target_address) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object.

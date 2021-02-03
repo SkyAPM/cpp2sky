@@ -198,20 +198,24 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
   return createCurrentSegmentSpan(nullptr);
 }
 
-std::string SegmentContextImpl::createSW8HeaderValue(
+std::optional<std::string> SegmentContextImpl::createSW8HeaderValue(
     CurrentSegmentSpanPtr parent_span, const std::string& target_address) {
-  if (parent_span == nullptr) {
+  CurrentSegmentSpanPtr target_span = parent_span;
+  if (target_span == nullptr) {
     if (spans_.empty()) {
       throw TracerException(
           "Can't create propagation header because current segment has no "
           "valid span.");
     }
-    return encodeSpan(spans_.back(), target_address);
+    target_span = spans_.back();
   }
-  return encodeSpan(parent_span, target_address);
+  if (target_span->spanType() != SpanType::Exit) {
+    return std::nullopt;
+  }
+  return encodeSpan(target_span, target_address);
 }
 
-std::string SegmentContextImpl::createSW8HeaderValue(
+std::optional<std::string> SegmentContextImpl::createSW8HeaderValue(
     CurrentSegmentSpanPtr parent_span, std::string&& target_address) {
   return createSW8HeaderValue(parent_span, target_address);
 }
