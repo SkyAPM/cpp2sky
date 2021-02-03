@@ -51,8 +51,8 @@ int main() {
 
         httplib::Client cli("consumer", 8080);
         httplib::Headers headers = {
-            {kPropagationHeader.data(),
-            segment_context->createSW8HeaderValue(exit_span.get(), target_address)}};
+            {kPropagationHeader.data(), segment_context->createSW8HeaderValue(
+                                            exit_span.get(), target_address)}};
         auto res = cli.Get("/pong", headers);
       }
     }

@@ -43,9 +43,7 @@ int main() {
     auto parent = req.get_header_value(kPropagationHeader.data());
     auto segment_context = factory->create(createSpanContext(parent));
 
-    {
-      StartEntrySpan entry_span(segment_context, "/pong");
-    }
+    { StartEntrySpan entry_span(segment_context, "/pong"); }
 
     tracer->sendSegment(std::move(segment_context));
   });
