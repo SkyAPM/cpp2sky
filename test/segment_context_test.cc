@@ -62,7 +62,7 @@ TEST_F(SegmentContextTest, BasicTest) {
   EXPECT_EQ(sc->serviceInstance(), "service_0");
 
   // No parent span
-  auto span = sc->createCurrentSegmentRootSpan();
+  auto span = sc->createEntrySpan();
   EXPECT_EQ(sc->spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
 
@@ -94,7 +94,7 @@ TEST_F(SegmentContextTest, BasicTest) {
   EXPECT_EQ(expected_obj.DebugString(), span->createSpanObject().DebugString());
 
   // With parent span
-  auto span_child = sc->createCurrentSegmentSpan(std::move(span));
+  auto span_child = sc->createExitSpan(std::move(span));
   EXPECT_EQ(sc->spans().size(), 2);
   EXPECT_EQ(span_child->spanId(), 1);
 
@@ -133,7 +133,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   EXPECT_EQ(sc->serviceInstance(), "service_0");
 
   // No parent span
-  auto span = sc->createCurrentSegmentRootSpan();
+  auto span = sc->createEntrySpan();
   EXPECT_EQ(sc->spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
 
@@ -175,7 +175,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
   EXPECT_EQ(expected_obj.DebugString(), span->createSpanObject().DebugString());
 
   // With parent span
-  auto span_child = sc->createCurrentSegmentSpan(std::move(span));
+  auto span_child = sc->createExitSpan(std::move(span));
   EXPECT_EQ(sc->spans().size(), 2);
   EXPECT_EQ(span_child->spanId(), 1);
 
@@ -244,7 +244,7 @@ TEST_F(SegmentContextTest, SkipAnalysisSegment) {
   EXPECT_TRUE(sc->skipAnalysis());
 
   // No parent span
-  auto span = sc->createCurrentSegmentRootSpan();
+  auto span = sc->createEntrySpan();
   EXPECT_EQ(sc->spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
 
@@ -292,7 +292,7 @@ TEST_F(SegmentContextTest, SW8CreateTest) {
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
-  auto span = sc.createCurrentSegmentRootSpan();
+  auto span = sc.createEntrySpan();
   EXPECT_EQ(sc.spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
   span->startSpan("sample1");
@@ -309,7 +309,7 @@ TEST_F(SegmentContextTest, ReadyToSendTest) {
   auto sc = factory_->create();
 
   // No parent span
-  auto span = sc->createCurrentSegmentRootSpan();
+  auto span = sc->createEntrySpan();
   EXPECT_EQ(sc->spans().size(), 1);
   EXPECT_EQ(span->spanId(), 0);
 
@@ -324,7 +324,7 @@ TEST_F(SegmentContextTest, ReadyToSendTest) {
 
   EXPECT_TRUE(sc->readyToSend());
 
-  auto span2 = sc->createCurrentSegmentSpan(span);
+  auto span2 = sc->createExitSpan(span);
   auto t3 = TimePoint<SystemTime>(
       SystemTime(std::chrono::duration<int, std::milli>(300)));
 

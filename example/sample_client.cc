@@ -41,21 +41,46 @@ int main() {
   // 2. Create segment context
   auto current_segment = factory->create();
 
-  // 3. Initialize span data to track root workload on current service.
-  auto current_span = current_segment->createCurrentSegmentRootSpan();
+  /**
+   * 3. Create entry span it traces RPC call.
+   * Span lifetime is managed by RAII. So user don't have to call startSpan and
+   * endSpan explicitly. But it provides basic approach that doesn't use RAII.
+   *
+   * example:
+   *
+   * auto current_span = current_segment->createEntrySpan();
+   * current_span->startSpan("sample_op1");
+   *
+   * auto current_span2 = current_segment->createExitSpan();
+   * current_span2->startSpan("sample_op2");
+   *
+   * httplib::Client cli("remote", 8082);
+   * httplib::Headers headers = {
+   *   {kPropagationHeader.data(),
+   *   current_segment->createSW8HeaderValue(current_span, "remote:8082")}};
+   *
+   * auto res = cli.Get("/ping", headers);
+   *
+   * current_span2->endSpan();
+   * current_span->endSpan();
+   *
+   */
+  {
+    StartEntrySpan entry_span(current_segment, "sample_op1");
 
-  // 4. Set info
-  current_span->startSpan("/ping");
+    {
+      StartExitSpan exit_span(current_segment, entry_span.get(), "sample_op2");
 
-  httplib::Client cli("remote", 8082);
-  httplib::Headers headers = {
-      {kPropagationHeader.data(),
-       current_segment->createSW8HeaderValue(current_span, "remote:8082")}};
-  auto res = cli.Get("/ping", headers);
+      httplib::Client cli("remote", 8082);
+      httplib::Headers headers = {
+          {kPropagationHeader.data(), current_segment->createSW8HeaderValue(
+                                          exit_span.get(), "remote:8082")}};
 
-  current_span->endSpan();
+      auto res = cli.Get("/ping", headers);
+    }
+  }
 
-  // 5. Send span data
+  // 4. Send span data
   tracer->sendSegment(std::move(current_segment));
   return 0;
 }

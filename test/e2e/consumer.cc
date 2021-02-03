@@ -31,13 +31,6 @@ void init() {
   config.set_address("collector:19876");
 }
 
-void handlePong(Tracer* tracer, SegmentContext* scp,
-                const httplib::Request& req, httplib::Response& response) {
-  auto span = scp->createCurrentSegmentRootSpan();
-  span->startSpan("/pong");
-  span->endSpan();
-}
-
 int main() {
   init();
 
@@ -47,13 +40,14 @@ int main() {
   SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
 
   svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
-    if (req.has_header(kPropagationHeader.data())) {
-      auto parent = req.get_header_value(kPropagationHeader.data());
-      auto parent_span = createSpanContext(parent);
-      auto current_segment = factory->create(parent_span);
-      handlePong(tracer.get(), current_segment.get(), req, res);
-      tracer->sendSegment(std::move(current_segment));
+    auto parent = req.get_header_value(kPropagationHeader.data());
+    auto segment_context = factory->create(createSpanContext(parent));
+
+    {
+      StartEntrySpan entry_span(segment_context, "/pong");
     }
+
+    tracer->sendSegment(std::move(segment_context));
   });
 
   svr.listen("0.0.0.0", 8080);

@@ -224,13 +224,13 @@ class SegmentContext {
    * Generate a segment span related with this segment context.
    * @param parent_span Parent span which is extracted from caller.
    */
-  virtual CurrentSegmentSpanPtr createCurrentSegmentSpan(
+  virtual CurrentSegmentSpanPtr createExitSpan(
       CurrentSegmentSpanPtr parent_span) = 0;
 
   /**
    * Generate root segment span, called once per workload.
    */
-  virtual CurrentSegmentSpanPtr createCurrentSegmentRootSpan() = 0;
+  virtual CurrentSegmentSpanPtr createEntrySpan() = 0;
 
   /**
    * Generate sw8 value to send SegmentRef.
@@ -270,6 +270,49 @@ class SegmentContext {
 };
 
 using SegmentContextPtr = std::shared_ptr<SegmentContext>;
+
+/**
+ * RAII based span creation. It acquired then create new span with required
+ * properties. The span wiil be closed and set end time when called destructor.
+ */
+class StartEntrySpan {
+ public:
+  StartEntrySpan(SegmentContextPtr segment_context,
+                 std::string_view operation_name)
+      : span_(segment_context->createEntrySpan()) {
+    span_->startSpan(operation_name.data());
+  }
+
+  ~StartEntrySpan() {
+    // Span won't be released because the entity is holded by SegmentContext.
+    span_->endSpan();
+  }
+
+  CurrentSegmentSpanPtr get() { return span_; }
+
+ private:
+  CurrentSegmentSpanPtr span_;
+};
+
+class StartExitSpan {
+ public:
+  StartExitSpan(SegmentContextPtr segment_context,
+                CurrentSegmentSpanPtr parent_span,
+                std::string_view operation_name)
+      : span_(segment_context->createExitSpan(parent_span)) {
+    span_->startSpan(operation_name.data());
+  }
+
+  ~StartExitSpan() {
+    // Span won't be released because the entity is holded by SegmentContext.
+    span_->endSpan();
+  }
+
+  CurrentSegmentSpanPtr get() { return span_; }
+
+ private:
+  CurrentSegmentSpanPtr span_;
+};
 
 class SegmentContextFactory {
  public:

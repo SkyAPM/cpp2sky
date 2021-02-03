@@ -88,14 +88,27 @@ SegmentContextPtr current_segment = createSegmentContext(seg_config);
 First, you must create root span to trace current workload.
 
 ```cpp
-CurrentSegmentSpanPtr current_span = current_segment->createCurrentSegmentRootSpan();
+CurrentSegmentSpanPtr current_span = current_segment->createEntrySpan();
 ```
 
 After that, you can create another span to trace another workload, such as RPC to other services.
 Note that you must have parent span to create secondary span. It will construct parent-child relation when analysis.
 
 ```cpp
-CurrentSegmentSpanPtr current_span = current_segment->createCurrentSegmentSpan(current_span);
+CurrentSegmentSpanPtr current_span = current_segment->createExitSpan(current_span);
+```
+
+Alternative approach is RAII based one. It is used like below,
+
+```cpp
+{
+  StartEntrySpan entry_span(current_segment, "sample_op1");
+  {
+    StartExitSpan exit_span(current_segment, entry_span.get(), "sample_op2");
+
+    // something...
+  }
+}
 ```
 
 #### Send segment to OAP
@@ -105,7 +118,7 @@ to avoid undefined behavior.
 
 ```cpp
 SegmentContextPtr current_segment = createSegmentContext(config);
-CurrentSegmentSpanPtr current_span = current_segment->createCurrentSegmentRootSpan();
+CurrentSegmentSpanPtr current_span = current_segment->createEntrySpan();
 
 current_span->startSpan("sample_workload");
 current_span->endSpan();

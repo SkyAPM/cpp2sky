@@ -172,30 +172,23 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
       service_(service_name),
       service_instance_(instance_name) {}
 
-CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentSpan(
+CurrentSegmentSpanPtr SegmentContextImpl::createExitSpan(
     CurrentSegmentSpanPtr parent_span) {
-  auto current_span =
-      std::make_shared<CurrentSegmentSpanImpl>(spans_.size(), *this);
-  if (parent_span != nullptr) {
-    current_span->setParentSpanId(parent_span->spanId());
-    current_span->setSpanType(SpanType::Exit);
-  } else {
-    current_span->setParentSpanId(-1);
-    current_span->setSpanType(SpanType::Entry);
-  }
-  // It supports only HTTP request tracing.
-  current_span->setSpanLayer(SpanLayer::Http);
-  if (should_skip_analysis_) {
-    current_span->setSkipAnalysis();
-  }
-
-  spans_.push_back(current_span);
+  auto current_span = createSpan();
+  current_span->setParentSpanId(parent_span->spanId());
+  current_span->setSpanType(SpanType::Exit);
   return current_span;
 }
 
-CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
-  assert(spans_.empty());
-  return createCurrentSegmentSpan(nullptr);
+CurrentSegmentSpanPtr SegmentContextImpl::createEntrySpan() {
+  if (!spans_.empty()) {
+    return nullptr;
+  }
+
+  auto current_span = createSpan();
+  current_span->setParentSpanId(-1);
+  current_span->setSpanType(SpanType::Entry);
+  return current_span;
 }
 
 std::string SegmentContextImpl::createSW8HeaderValue(
@@ -235,6 +228,20 @@ std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
   header_value += Base64::encode(target_address);
 
   return header_value;
+}
+
+CurrentSegmentSpanPtr SegmentContextImpl::createSpan() {
+  auto current_span =
+      std::make_shared<CurrentSegmentSpanImpl>(spans_.size(), *this);
+
+  // It supports only HTTP request tracing.
+  current_span->setSpanLayer(SpanLayer::Http);
+  if (should_skip_analysis_) {
+    current_span->setSkipAnalysis();
+  }
+
+  spans_.push_back(current_span);
+  return current_span;
 }
 
 SegmentObject SegmentContextImpl::createSegmentObject() {
