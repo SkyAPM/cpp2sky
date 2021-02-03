@@ -261,21 +261,20 @@ bool SegmentContextImpl::readyToSend() {
   return true;
 }
 
-SegmentContextFactoryImpl::SegmentContextFactoryImpl(const TracerConfig& cfg)
+SegmentContextFactory::SegmentContextFactory(const TracerConfig& cfg)
     : service_name_(cfg.service_name()), instance_name_(cfg.instance_name()) {}
 
-SegmentContextPtr SegmentContextFactoryImpl::create() {
+SegmentContextPtr SegmentContextFactory::create() {
   return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
                                               random_generator_);
 }
 
-SegmentContextPtr SegmentContextFactoryImpl::create(
-    SpanContextPtr span_context) {
+SegmentContextPtr SegmentContextFactory::create(SpanContextPtr span_context) {
   return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
                                               span_context, random_generator_);
 }
 
-SegmentContextPtr SegmentContextFactoryImpl::create(
+SegmentContextPtr SegmentContextFactory::create(
     SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
   auto context = std::make_unique<SegmentContextImpl>(
       service_name_, instance_name_, span_context, ext_span_context,
