@@ -199,7 +199,7 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
 }
 
 std::optional<std::string> SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, const std::string& target_address) {
+    CurrentSegmentSpanPtr parent_span, const std::string_view target_address) {
   CurrentSegmentSpanPtr target_span = parent_span;
   if (target_span == nullptr) {
     if (spans_.empty()) {
@@ -215,13 +215,8 @@ std::optional<std::string> SegmentContextImpl::createSW8HeaderValue(
   return encodeSpan(target_span, target_address);
 }
 
-std::optional<std::string> SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, std::string&& target_address) {
-  return createSW8HeaderValue(parent_span, target_address);
-}
-
 std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
-                                           const std::string& target_address) {
+                                           const std::string_view target_address) {
   assert(parent_span);
   std::string header_value;
 
@@ -236,7 +231,7 @@ std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
   header_value += Base64::encode(service_) + "-";
   header_value += Base64::encode(service_instance_) + "-";
   header_value += Base64::encode(endpoint) + "-";
-  header_value += Base64::encode(target_address);
+  header_value += Base64::encode(target_address.data());
 
   return header_value;
 }

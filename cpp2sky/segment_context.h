@@ -240,15 +240,11 @@ class SegmentContext {
    * https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L97-L101
    */
   virtual std::optional<std::string> createSW8HeaderValue(
-      CurrentSegmentSpanPtr parent, const std::string& target_address) = 0;
-  virtual std::optional<std::string> createSW8HeaderValue(
-      CurrentSegmentSpanPtr parent, std::string&& target_address) = 0;
+      CurrentSegmentSpanPtr parent, const std::string_view target_address) = 0;
   // If you don't specify parent span, stored to current segment, it will be
   // selected newest span as parent span.
   virtual std::optional<std::string> createSW8HeaderValue(
-      const std::string& target_address) = 0;
-  virtual std::optional<std::string> createSW8HeaderValue(
-      std::string&& target_address) = 0;
+      const std::string_view target_address) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object.
