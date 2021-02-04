@@ -37,11 +37,9 @@ int main() {
   // 1. Create tracer object to send span data to OAP.
   auto tracer = createInsecureGrpcTracer(config);
 
-  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
-
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
     // 2. Create segment context
-    auto current_segment = factory->create();
+    auto current_segment = tracer->newSegment();
 
     // 3. Initialize span data to track root workload on current service.
     auto current_span = current_segment->createCurrentSegmentRootSpan();

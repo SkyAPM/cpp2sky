@@ -90,16 +90,15 @@ int main() {
 
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(config);
-  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    auto current_segment = factory->create();
+    auto current_segment = tracer->newSegment();
     handlePing(tracer.get(), current_segment.get(), req, res);
     tracer->sendSegment(std::move(current_segment));
   });
 
   svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
-    auto current_segment = factory->create();
+    auto current_segment = tracer->newSegment();
     handlePing2(tracer.get(), current_segment.get(), req, res);
     tracer->sendSegment(std::move(current_segment));
   });

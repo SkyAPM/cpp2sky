@@ -43,7 +43,7 @@ class SegmentContextTest : public testing::Test {
     span_ctx_ = std::make_shared<SpanContextImpl>(sample_ctx);
     span_ext_ctx_ = std::make_shared<SpanContextExtensionImpl>("1");
 
-    factory_ = createSegmentContextFactory(config_);
+    factory_ = std::make_unique<SegmentContextFactory>(config_);
   }
 
  protected:

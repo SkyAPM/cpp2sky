@@ -18,6 +18,7 @@
 
 #include "cpp2sky/tracer.h"
 #include "source/grpc_async_client_impl.h"
+#include "source/segment_context_impl.h"
 
 namespace cpp2sky {
 
@@ -31,6 +32,9 @@ class TracerImpl : public Tracer {
              GrpcAsyncSegmentReporterStreamFactory& factory);
   ~TracerImpl();
 
+  SegmentContextPtr newSegment() override;
+  SegmentContextPtr newSegment(SpanContextPtr span) override;
+
   void sendSegment(SegmentContextPtr obj) override;
 
  private:
@@ -39,6 +43,7 @@ class TracerImpl : public Tracer {
   AsyncClientPtr<TracerRequestType, TracerResponseType> client_;
   grpc::CompletionQueue cq_;
   std::thread th_;
+  SegmentContextFactory segment_factory_;
 };
 
 static GrpcAsyncSegmentReporterStreamFactory stream_factory;

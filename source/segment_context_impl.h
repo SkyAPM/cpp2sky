@@ -179,24 +179,19 @@ class SegmentContextImpl : public SegmentContext {
   bool should_skip_analysis_ = false;
 };
 
-class SegmentContextFactoryImpl : public SegmentContextFactory {
+class SegmentContextFactory {
  public:
-  SegmentContextFactoryImpl(const TracerConfig& cfg);
+  SegmentContextFactory(const TracerConfig& cfg);
 
-  // SegmentContextFactory
-  SegmentContextPtr create() override;
-  SegmentContextPtr create(SpanContextPtr span_context) override;
+  SegmentContextPtr create();
+  SegmentContextPtr create(SpanContextPtr span_context);
   SegmentContextPtr create(SpanContextPtr span_context,
-                           SpanContextExtensionPtr ext_span_context) override;
+                           SpanContextExtensionPtr ext_span_context);
 
  private:
   std::string service_name_;
   std::string instance_name_;
   RandomGeneratorImpl random_generator_;
 };
-
-SegmentContextFactoryPtr createSegmentContextFactory(const TracerConfig& cfg) {
-  return std::make_unique<SegmentContextFactoryImpl>(cfg);
-}
 
 }  // namespace cpp2sky
