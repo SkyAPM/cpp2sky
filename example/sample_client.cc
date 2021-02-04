@@ -47,9 +47,14 @@ int main() {
   current_span->startSpan("/ping");
 
   httplib::Client cli("remote", 8082);
-  httplib::Headers headers = {
-      {kPropagationHeader.data(),
-       current_segment->createSW8HeaderValue(current_span, "remote:8082")}};
+
+  auto context =
+      current_segment->createSW8HeaderValue(current_span, "remote:8082");
+
+  httplib::Headers headers;
+  if (context.has_value()) {
+    headers = {{kPropagationHeader.data(), *context}};
+  }
   auto res = cli.Get("/ping", headers);
 
   current_span->endSpan();

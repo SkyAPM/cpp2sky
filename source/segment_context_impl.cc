@@ -198,26 +198,25 @@ CurrentSegmentSpanPtr SegmentContextImpl::createCurrentSegmentRootSpan() {
   return createCurrentSegmentSpan(nullptr);
 }
 
-std::string SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, const std::string& target_address) {
-  if (parent_span == nullptr) {
+std::optional<std::string> SegmentContextImpl::createSW8HeaderValue(
+    CurrentSegmentSpanPtr parent_span, const std::string_view target_address) {
+  CurrentSegmentSpanPtr target_span = parent_span;
+  if (target_span == nullptr) {
     if (spans_.empty()) {
       throw TracerException(
           "Can't create propagation header because current segment has no "
           "valid span.");
     }
-    return encodeSpan(spans_.back(), target_address);
+    target_span = spans_.back();
   }
-  return encodeSpan(parent_span, target_address);
-}
-
-std::string SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, std::string&& target_address) {
-  return createSW8HeaderValue(parent_span, target_address);
+  if (target_span->spanType() != SpanType::Exit) {
+    return std::nullopt;
+  }
+  return encodeSpan(target_span, target_address);
 }
 
 std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
-                                           const std::string& target_address) {
+                                           const std::string_view target_address) {
   assert(parent_span);
   std::string header_value;
 
@@ -232,7 +231,7 @@ std::string SegmentContextImpl::encodeSpan(CurrentSegmentSpanPtr parent_span,
   header_value += Base64::encode(service_) + "-";
   header_value += Base64::encode(service_instance_) + "-";
   header_value += Base64::encode(endpoint) + "-";
-  header_value += Base64::encode(target_address);
+  header_value += Base64::encode(target_address.data());
 
   return header_value;
 }
