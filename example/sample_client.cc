@@ -69,18 +69,19 @@ int main() {
     StartEntrySpan entry_span(current_segment, "sample_op1");
 
     {
+      std::string target_address = "remote:8082";
       StartExitSpan exit_span(current_segment, entry_span.get(), "sample_op2");
+      exit_span.get()->setPeer(target_address);
 
       httplib::Client cli("remote", 8082);
       httplib::Headers headers = {
-          {kPropagationHeader.data(), current_segment->createSW8HeaderValue(
-                                          exit_span.get(), "remote:8082")}};
+          {kPropagationHeader.data(), *current_segment->createSW8HeaderValue(
+                                          exit_span.get(), target_address)}};
 
       auto res = cli.Get("/ping", headers);
     }
   }
 
-  // 4. Send span data
   tracer->sendSegment(std::move(current_segment));
   return 0;
 }
