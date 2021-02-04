@@ -30,61 +30,6 @@ void init() {
   config.set_address("collector:19876");
 }
 
-void requestPong(Tracer* tracer, SegmentContext* scp,
-                 CurrentSegmentSpanPtr parent_span) {
-  std::string target_address = "consumer:8080";
-  auto current_span = scp->createCurrentSegmentSpan(parent_span);
-  current_span->startSpan("/pong");
-  current_span->setPeer(target_address);
-
-  httplib::Client cli("consumer", 8080);
-  auto context = scp->createSW8HeaderValue(current_span, target_address);
-
-  httplib::Headers headers;
-  if (context.has_value()) {
-    headers = {{kPropagationHeader.data(), *context}};
-  }
-  auto res = cli.Get("/pong", headers);
-
-  current_span->endSpan();
-}
-
-void requestUsers(Tracer* tracer, SegmentContext* scp,
-                  CurrentSegmentSpanPtr parent_span) {
-  std::string target_address = "interm:8082";
-  auto current_span = scp->createCurrentSegmentSpan(parent_span);
-  current_span->startSpan("/users");
-  current_span->setPeer(target_address);
-
-  httplib::Client cli("interm", 8082);
-  auto context = scp->createSW8HeaderValue(current_span, target_address);
-
-  httplib::Headers headers;
-  if (context.has_value()) {
-    headers = {{kPropagationHeader.data(), *context}};
-  }
-
-  auto res = cli.Get("/users", headers);
-
-  current_span->endSpan();
-}
-
-void handlePing(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
-                httplib::Response& response) {
-  auto current_span = scp->createCurrentSegmentRootSpan();
-  current_span->startSpan("/ping");
-  requestPong(tracer, scp, current_span);
-  current_span->endSpan();
-}
-
-void handlePing2(Tracer* tracer, SegmentContext* scp, const httplib::Request&,
-                 httplib::Response& response) {
-  auto current_span = scp->createCurrentSegmentRootSpan();
-  current_span->startSpan("/ping2");
-  requestUsers(tracer, scp, current_span);
-  current_span->endSpan();
-}
-
 int main() {
   init();
 
@@ -92,15 +37,49 @@ int main() {
   auto tracer = createInsecureGrpcTracer(config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    auto current_segment = tracer->newSegment();
-    handlePing(tracer.get(), current_segment.get(), req, res);
-    tracer->sendSegment(std::move(current_segment));
+    auto segment_context = tracer->newSegment();
+
+    {
+      StartEntrySpan entry_span(segment_context, "/ping");
+
+      {
+        std::string target_address = "consumer:8080";
+
+        StartExitSpan exit_span(segment_context, entry_span.get(), "/pong");
+        exit_span.get()->setPeer(target_address);
+
+        httplib::Client cli("consumer", 8080);
+        httplib::Headers headers = {
+            {kPropagationHeader.data(), *segment_context->createSW8HeaderValue(
+                                            exit_span.get(), target_address)}};
+        auto res = cli.Get("/pong", headers);
+      }
+    }
+
+    tracer->sendSegment(std::move(segment_context));
   });
 
   svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
-    auto current_segment = tracer->newSegment();
-    handlePing2(tracer.get(), current_segment.get(), req, res);
-    tracer->sendSegment(std::move(current_segment));
+    auto segment_context = tracer->newSegment();
+
+    {
+      StartEntrySpan entry_span(segment_context, "/ping2");
+
+      {
+        std::string target_address = "interm:8082";
+
+        StartExitSpan exit_span(segment_context, entry_span.get(), "/users");
+        exit_span.get()->setPeer(target_address);
+
+        httplib::Client cli("interm", 8082);
+        httplib::Headers headers = {
+            {kPropagationHeader.data(), *segment_context->createSW8HeaderValue(
+                                            exit_span.get(), target_address)}};
+        auto res = cli.Get("/users", headers);
+      }
+    }
+
+    tracer->sendSegment(std::move(segment_context));
   });
 
   svr.listen("0.0.0.0", 8081);

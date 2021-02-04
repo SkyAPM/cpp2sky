@@ -144,10 +144,10 @@ class SegmentContextImpl : public SegmentContext {
   }
 #pragma endregion
 
-  CurrentSegmentSpanPtr createCurrentSegmentSpan(
+  CurrentSegmentSpanPtr createExitSpan(
       CurrentSegmentSpanPtr parent_span) override;
 
-  CurrentSegmentSpanPtr createCurrentSegmentRootSpan() override;
+  CurrentSegmentSpanPtr createEntrySpan() override;
   std::optional<std::string> createSW8HeaderValue(
       const std::string_view target_address) override {
     return createSW8HeaderValue(nullptr, target_address);
@@ -163,6 +163,7 @@ class SegmentContextImpl : public SegmentContext {
  private:
   std::string encodeSpan(CurrentSegmentSpanPtr parent_span,
                          const std::string_view target_address);
+  CurrentSegmentSpanPtr createSpan();
 
   SpanContextPtr parent_span_context_;
   SpanContextExtensionPtr parent_ext_span_context_;
