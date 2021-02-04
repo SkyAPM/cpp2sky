@@ -36,13 +36,13 @@ TracerImpl::~TracerImpl() {
   th_.join();
 }
 
-SegmentContextPtr TracerImpl::newSegment() { return segment_factory_.create(); }
+TracingContextPtr TracerImpl::newContext() { return segment_factory_.create(); }
 
-SegmentContextPtr TracerImpl::newSegment(SpanContextPtr span) {
+TracingContextPtr TracerImpl::newContext(SpanContextPtr span) {
   return segment_factory_.create(span);
 }
 
-void TracerImpl::sendSegment(SegmentContextPtr obj) {
+void TracerImpl::report(TracingContextPtr obj) {
   if (!obj || !obj->readyToSend()) {
     return;
   }

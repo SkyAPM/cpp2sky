@@ -15,8 +15,8 @@
 #include <string>
 
 #include "cpp2sky/propagation.h"
-#include "cpp2sky/segment_context.h"
 #include "cpp2sky/tracer.h"
+#include "cpp2sky/tracing_context.h"
 #include "cpp2sky/well_known_names.h"
 #include "httplib.h"
 
@@ -37,49 +37,49 @@ int main() {
   auto tracer = createInsecureGrpcTracer(config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    auto segment_context = tracer->newSegment();
+    auto tracing_context = tracer->newContext();
 
     {
-      StartEntrySpan entry_span(segment_context, "/ping");
+      StartEntrySpan entry_span(tracing_context, "/ping");
 
       {
         std::string target_address = "consumer:8080";
 
-        StartExitSpan exit_span(segment_context, entry_span.get(), "/pong");
+        StartExitSpan exit_span(tracing_context, entry_span.get(), "/pong");
         exit_span.get()->setPeer(target_address);
 
         httplib::Client cli("consumer", 8080);
         httplib::Headers headers = {
-            {kPropagationHeader.data(), *segment_context->createSW8HeaderValue(
+            {kPropagationHeader.data(), *tracing_context->createSW8HeaderValue(
                                             exit_span.get(), target_address)}};
         auto res = cli.Get("/pong", headers);
       }
     }
 
-    tracer->sendSegment(std::move(segment_context));
+    tracer->report(std::move(tracing_context));
   });
 
   svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
-    auto segment_context = tracer->newSegment();
+    auto tracing_context = tracer->newContext();
 
     {
-      StartEntrySpan entry_span(segment_context, "/ping2");
+      StartEntrySpan entry_span(tracing_context, "/ping2");
 
       {
         std::string target_address = "interm:8082";
 
-        StartExitSpan exit_span(segment_context, entry_span.get(), "/users");
+        StartExitSpan exit_span(tracing_context, entry_span.get(), "/users");
         exit_span.get()->setPeer(target_address);
 
         httplib::Client cli("interm", 8082);
         httplib::Headers headers = {
-            {kPropagationHeader.data(), *segment_context->createSW8HeaderValue(
+            {kPropagationHeader.data(), *tracing_context->createSW8HeaderValue(
                                             exit_span.get(), target_address)}};
         auto res = cli.Get("/users", headers);
       }
     }
 
-    tracer->sendSegment(std::move(segment_context));
+    tracer->report(std::move(tracing_context));
   });
 
   svr.listen("0.0.0.0", 8081);

@@ -35,7 +35,7 @@ cc_binary(
 
 #### Config
 
-cpp2sky provides simple configuration for tracer and segment. We can set `service name`, `instance name` to `SegmentConfig` and `token`. `address` to `TracerConfig`.
+cpp2sky provides simple configuration for tracer.
 The detail information is described in [official protobuf definition](https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L57-L67).
 
 ```cpp
@@ -49,8 +49,12 @@ int main() {
   static const std::string oap_addr = "oap:12800";
   static const std::string token = "token";
 
-  SegmentConfig seg_config(service_name, instance_name);
-  TracerConfig tracer_config(oap_addr, token);
+  TracerConfig tracer_config;
+
+  config.set_instance_name(instance_name);
+  config.set_service_name(service_name);
+  config.set_address(oap_addr);
+  config.set_token(token);
 }
 ```
 
@@ -74,37 +78,28 @@ Then, you can create propagated span object by decoding these items.
 SpanContextPtr parent_span = createSpanContext(parent);
 ```
 
-#### Create workload segment
-
-Create segment for current workload.
-
-```cpp
-SegmentConfig seg_config(service_name, instance_name);
-SegmentContextPtr current_segment = createSegmentContext(seg_config);
-```
-
 #### Create span
 
 First, you must create root span to trace current workload.
 
 ```cpp
-CurrentSegmentSpanPtr current_span = current_segment->createEntrySpan();
+TracingSpanPtr tracing_span = tracing_context->createEntrySpan();
 ```
 
 After that, you can create another span to trace another workload, such as RPC to other services.
 Note that you must have parent span to create secondary span. It will construct parent-child relation when analysis.
 
 ```cpp
-CurrentSegmentSpanPtr current_span = current_segment->createExitSpan(current_span);
+TracingSpanPtr current_span = tracing_context->createExitSpan(current_span);
 ```
 
 Alternative approach is RAII based one. It is used like below,
 
 ```cpp
 {
-  StartEntrySpan entry_span(current_segment, "sample_op1");
+  StartEntrySpan entry_span(tracing_context, "sample_op1");
   {
-    StartExitSpan exit_span(current_segment, entry_span.get(), "sample_op2");
+    StartExitSpan exit_span(tracing_context, entry_span.get(), "sample_op2");
 
     // something...
   }
@@ -113,17 +108,17 @@ Alternative approach is RAII based one. It is used like below,
 
 #### Send segment to OAP
 
-Note that SegmentContextPtr is unique pointer. So when you'd like to send data, you must move it and don't refer after sending,
+Note that TracingContext is unique pointer. So when you'd like to send data, you must move it and don't refer after sending,
 to avoid undefined behavior.
 
 ```cpp
-SegmentContextPtr current_segment = createSegmentContext(config);
-CurrentSegmentSpanPtr current_span = current_segment->createEntrySpan();
+TracingContextPtr tracing_context = tracer->newContext();
+TracingSpanPtr tracing_span = tracing_context->createEntrySpan();
 
-current_span->startSpan("sample_workload");
-current_span->endSpan();
+tracing_span->startSpan("sample_workload");
+tracing_span->endSpan();
 
-tracer->sendSegment(std::move(current_segment));
+tracer->report(std::move(tracing_context));
 ```
 
 ## Security

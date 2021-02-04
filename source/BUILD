@@ -4,13 +4,13 @@ cc_library(
   name = "cpp2sky_lib",
   hdrs = [
     "propagation_impl.h",
-    "segment_context_impl.h",
+    "tracing_context_impl.h",
     "grpc_async_client_impl.h",
     "tracer_impl.h",
   ],
   srcs = [
     "propagation_impl.cc",
-    "segment_context_impl.cc",
+    "tracing_context_impl.cc",
     "grpc_async_client_impl.cc",
     "tracer_impl.cc",
   ],
@@ -29,11 +29,11 @@ cc_library(
   name = "cpp2sky_data_lib",
   hdrs  =[
     "propagation_impl.h",
-    "segment_context_impl.h",
+    "tracing_context_impl.h",
   ],
   srcs = [
     "propagation_impl.cc",
-    "segment_context_impl.cc",
+    "tracing_context_impl.cc",
   ],
   deps = [
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
