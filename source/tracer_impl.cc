@@ -21,7 +21,7 @@ namespace cpp2sky {
 TracerImpl::TracerImpl(const TracerConfig& config,
                        std::shared_ptr<grpc::ChannelCredentials> cred,
                        GrpcAsyncSegmentReporterStreamFactory& factory)
-    : th_([this] { this->run(); }) {
+    : th_([this] { this->run(); }), segment_factory_(config) {
   if (config.protocol() == Protocol::GRPC) {
     client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
         config.address(), config.token(), &cq_, factory, cred);
@@ -34,6 +34,12 @@ TracerImpl::~TracerImpl() {
   client_.reset();
   cq_.Shutdown();
   th_.join();
+}
+
+SegmentContextPtr TracerImpl::newSegment() { return segment_factory_.create(); }
+
+SegmentContextPtr TracerImpl::newSegment(SpanContextPtr span) {
+  return segment_factory_.create(span);
 }
 
 void TracerImpl::sendSegment(SegmentContextPtr obj) {

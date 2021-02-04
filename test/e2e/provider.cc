@@ -35,10 +35,9 @@ int main() {
 
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(config);
-  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    auto segment_context = factory->create();
+    auto segment_context = tracer->newSegment();
 
     {
       StartEntrySpan entry_span(segment_context, "/ping");
@@ -61,7 +60,7 @@ int main() {
   });
 
   svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
-    auto segment_context = factory->create();
+    auto segment_context = tracer->newSegment();
 
     {
       StartEntrySpan entry_span(segment_context, "/ping2");

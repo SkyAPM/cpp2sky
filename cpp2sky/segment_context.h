@@ -268,7 +268,6 @@ class SegmentContext {
 };
 
 using SegmentContextPtr = std::shared_ptr<SegmentContext>;
-
 /**
  * RAII based span creation. It acquired then create new span with required
  * properties. The span wiil be closed and set end time when called destructor.
@@ -311,31 +310,5 @@ class StartExitSpan {
  private:
   CurrentSegmentSpanPtr span_;
 };
-
-class SegmentContextFactory {
- public:
-  virtual ~SegmentContextFactory() = default;
-
-  /**
-   * Create segment context that doesn't have propagated info.
-   */
-  virtual SegmentContextPtr create() = 0;
-
-  /**
-   * Create segment context with propagated span context.
-   */
-  virtual SegmentContextPtr create(SpanContextPtr span_context) = 0;
-
-  /**
-   * Create segment context with propagated span context and extensions.
-   */
-  virtual SegmentContextPtr create(
-      SpanContextPtr span_context,
-      SpanContextExtensionPtr ext_span_context) = 0;
-};
-
-using SegmentContextFactoryPtr = std::unique_ptr<SegmentContextFactory>;
-
-SegmentContextFactoryPtr createSegmentContextFactory(const TracerConfig& cfg);
 
 }  // namespace cpp2sky

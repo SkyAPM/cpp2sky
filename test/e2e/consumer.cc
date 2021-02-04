@@ -37,11 +37,9 @@ int main() {
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(config);
 
-  SegmentContextFactoryPtr factory = createSegmentContextFactory(config);
-
   svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
     auto parent = req.get_header_value(kPropagationHeader.data());
-    auto segment_context = factory->create(createSpanContext(parent));
+    auto segment_context = tracer->newSegment(createSpanContext(parent));
 
     { StartEntrySpan entry_span(segment_context, "/pong"); }
 
