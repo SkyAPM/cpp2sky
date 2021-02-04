@@ -80,9 +80,10 @@ SpanContextPtr parent_span = createSpanContext(parent);
 
 #### Create span
 
-First, you must create root span to trace current workload.
+First, you must create tracing context that holds all spans, then crete initial entry span.
 
 ```cpp
+TracingContextPtr tracing_context = tracer->newContext();
 TracingSpanPtr tracing_span = tracing_context->createEntrySpan();
 ```
 
