@@ -23,12 +23,12 @@ namespace cpp2sky {
 using CdsRequest = skywalking::v3::ConfigurationSyncRequest;
 using CdsResponse = skywalking::v3::Command;
 
-class ConfigurationDiscoveryServiceStubImpl final
-    : public ConfigurationDiscoveryServiceStub<CdsRequest, CdsResponse> {
+class ConfigDiscoveryServiceStubImpl final
+    : public ConfigDiscoveryServiceStub<CdsRequest, CdsResponse> {
  public:
-  ConfigurationDiscoveryServiceStubImpl(std::shared_ptr<grpc::Channel> channel);
+  ConfigDiscoveryServiceStubImpl(std::shared_ptr<grpc::Channel> channel);
 
-  // ConfigurationDiscoveryServiceStub
+  // ConfigDiscoveryServiceStub
   std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>> createReader(
       grpc::ClientContext* ctx, CdsRequest* request,
       grpc::CompletionQueue* cq) override;
@@ -37,31 +37,59 @@ class ConfigurationDiscoveryServiceStubImpl final
   std::unique_ptr<skywalking::v3::ConfigurationDiscoveryService> stub_;
 };
 
-using ConfigurationDiscoveryServiceStubPtr =
-    std::unique_ptr<ConfigurationDiscoveryServiceStub<CdsRequest, CdsResponse>>;
+using ConfigDiscoveryServiceStubPtr =
+    std::unique_ptr<ConfigDiscoveryServiceStub<CdsRequest, CdsResponse>>;
 
-class GrpcAsyncConfigurationDiscoveryServiceClient {
+class GrpcAsyncConfigDiscoveryServiceStream;
+
+using GrpcAsyncConfigDiscoveryServiceStreamPtr =
+    std::unique_ptr<GrpcAsyncConfigDiscoveryServiceStream>;
+
+class GrpcAsyncConfigDiscoveryServiceClient {
  public:
-  explicit GrpcAsyncConfigurationDiscoveryServiceClient(
+  GrpcAsyncConfigDiscoveryServiceClient(
       const std::string& address, grpc::CompletionQueue* cq,
-      AsyncStreamFactory<CdsRequest, CdsResponse>& factory,
       std::shared_ptr<grpc::ChannelCredentials> cred);
 
-  ~GrpcAsyncConfigurationDiscoveryServiceClient();
-
-  void sendMessage(CdsRequest& request);
+  void sendMessage(CdsRequest request);
 
  private:
+  void resetStream() {
+    if (stream_) {
+      gpr_log(GPR_INFO, "Stream %p had destroyed.", stream_.get());
+      stream_.reset();
+    }
+  }
+
   std::string token_;
   std::string address_;
-  AsyncStreamFactory<CdsRequest, CdsResponse>& factory_;
-  ConfigurationDiscoveryServiceStubPtr stub_;
+  ConfigDiscoveryServiceStubPtr stub_;
   grpc::CompletionQueue* cq_;
   std::shared_ptr<grpc::Channel> channel_;
+
+  GrpcAsyncConfigDiscoveryServiceStreamPtr stream_;
 };
 
-class GrpcAsyncConfigurationDiscoveryServiceStream {
-  
+struct TaggedStream2 {
+  Operation2 operation;
+  GrpcAsyncConfigDiscoveryServiceStream* stream;
+};
+
+class GrpcAsyncConfigDiscoveryServiceStream {
+ public:
+  GrpcAsyncConfigDiscoveryServiceStream(
+      GrpcAsyncConfigDiscoveryServiceClient& parent);
+
+  void sendMessage(CdsRequest request);
+
+ private:
+  GrpcAsyncConfigDiscoveryServiceClient& client_;
+  CdsResponse commands_;
+  grpc::ClientContext ctx_;
+  Operation2 state_{Operation::Initialized};
+
+  TaggedStream2 initialized_{Operation2::Initialized, this};
+  TaggedStream2 write_done_{Operation2::WriteDone, this};
 };
 
 }  // namespace cpp2sky

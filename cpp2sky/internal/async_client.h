@@ -41,9 +41,9 @@ template <class RequestType, class ResponseType>
 using TracerStubPtr = std::unique_ptr<TracerStub<RequestType, ResponseType>>;
 
 template <class RequestType, class ResponseType>
-class ConfigurationDiscoveryServiceStub {
+class ConfigDiscoveryServiceStub {
  public:
-  virtual ~ConfigurationDiscoveryServiceStub() = default;
+  virtual ~ConfigDiscoveryServiceStub() = default;
 
   /**
    * Initialize response reader for unary RPC.
@@ -100,6 +100,12 @@ enum class Operation : uint8_t {
   Connected = 1,
   Idle = 2,
   WriteDone = 3,
+};
+
+// TODO: fix
+enum class Operation2 : uint8_t {
+  Initialized = 0,
+  WriteDone = 1,
 };
 
 template <class RequestType, class ResponseType>

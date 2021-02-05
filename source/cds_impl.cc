@@ -16,28 +16,35 @@
 
 namespace cpp2sky {
 
-ConfigurationDiscoveryServiceStubImpl::ConfigurationDiscoveryServiceStubImpl(
+ConfigDiscoveryServiceStubImpl::ConfigDiscoveryServiceStubImpl(
     std::shared_ptr<grpc::Channel> channel)
     : stub_(skywalking::v3::ConfigurationDiscoveryService::NewStub(channel)) {}
 
 std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>>
-ConfigurationDiscoveryServiceStubImpl::createReader(grpc::ClientContext* ctx,
-                                                    CdsRequest* request,
-                                                    grpc::CompletionQueue* cq) {
+ConfigDiscoveryServiceStubImpl::createReader(grpc::ClientContext* ctx,
+                                             CdsRequest* request,
+                                             grpc::CompletionQueue* cq) {
   return stub_->PrepareAsyncfetchConfigurations(ctx, *request, cq);
 }
 
-GrpcAsyncConfigurationDiscoveryServiceClient::
-    GrpcAsyncConfigurationDiscoveryServiceClient(
-        const std::string& address, grpc::CompletionQueue* cq,
-        AsyncStreamFactory<CdsRequest, CdsResponse>& factory,
-        std::shared_ptr<grpc::ChannelCredentials> cred)
-    : factory_(factory),
-      cq_(cq),
-      channel_(grpc::CreateChannel(address, cred)) {
-  stub_ = std::make_unique<ConfigurationDiscoveryServiceStubImpl>(channel_);
+GrpcAsyncConfigDiscoveryServiceClient::GrpcAsyncConfigDiscoveryServiceClient(
+    const std::string& address, grpc::CompletionQueue* cq,
+    AsyncStreamFactory<CdsRequest, CdsResponse>& factory,
+    std::shared_ptr<grpc::ChannelCredentials> cred)
+    : factory_(factory), cq_(cq), channel_(grpc::CreateChannel(address, cred)) {
+  stub_ = std::make_unique<ConfigDiscoveryServiceStubImpl>(channel_);
 }
 
+void GrpcAsyncConfigDiscoveryServiceClient::sendMessage(CdsRequest request) {
+  resetStream();
 
+  stream_ = std::make_unique<GrpcAsyncConfigDiscoveryServiceStream>(*this);
+  stream_->sendMessage(request);
+}
+
+GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
+  GrpcAsyncConfigDiscoveryServiceClient& parent) : client_(parent) {}
+
+void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request)
 
 }  // namespace cpp2sky
