@@ -41,6 +41,19 @@ template <class RequestType, class ResponseType>
 using TracerStubPtr = std::unique_ptr<TracerStub<RequestType, ResponseType>>;
 
 template <class RequestType, class ResponseType>
+class ConfigurationDiscoveryServiceStub {
+ public:
+  virtual ~ConfigurationDiscoveryServiceStub() = default;
+
+  /**
+   * Initialize response reader for server-side streaming.
+   */
+  virtual std::unique_ptr<grpc::ClientAsyncReader<ResponseType>> createReader(
+      grpc::ClientContext* ctx, RequestType* request, grpc::CompletionQueue* cq,
+      void* tag) = 0;
+};
+
+template <class RequestType, class ResponseType>
 class AsyncClient {
  public:
   virtual ~AsyncClient() = default;

@@ -30,8 +30,6 @@
 #define DRAIN_BUFFER_SIZE 1024
 #define PENDING_MESSAGE_BUFFER_SIZE 1024
 
-#define TEST
-
 namespace cpp2sky {
 
 using TracerRequestType = skywalking::v3::SegmentObject;
