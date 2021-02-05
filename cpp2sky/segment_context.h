@@ -33,7 +33,7 @@ class CurrentSegmentSpan {
   /**
    * Generate Apache SkyWalking native span object from current segment span.
    */
-  virtual SpanObject createSpanObject() = 0;
+  virtual skywalking::v3::SpanObject createSpanObject() = 0;
 
   /**
    * Get span ID.
@@ -63,12 +63,12 @@ class CurrentSegmentSpan {
   /**
    * Get span type.
    */
-  virtual SpanType spanType() const = 0;
+  virtual skywalking::v3::SpanType spanType() const = 0;
 
   /**
    * Get span layer.
    */
-  virtual SpanLayer spanLayer() const = 0;
+  virtual skywalking::v3::SpanLayer spanLayer() const = 0;
 
   /**
    * Get error occurred or not.
@@ -94,7 +94,7 @@ class CurrentSegmentSpan {
   /**
    * Get logs.
    */
-  virtual const std::vector<Log>& logs() const = 0;
+  virtual const std::vector<skywalking::v3::Log>& logs() const = 0;
 
   /**
    * Get operation name.
@@ -137,12 +137,12 @@ class CurrentSegmentSpan {
    * have parent span, like root node of span tree. Exit span has opposite
    * meaning, like leaf node of span tree.
    */
-  virtual void setSpanType(SpanType type) = 0;
+  virtual void setSpanType(skywalking::v3::SpanType type) = 0;
 
   /**
    * Set span layer. It supports only HTTP request tracing currently.
    */
-  virtual void setSpanLayer(SpanLayer layer) = 0;
+  virtual void setSpanLayer(skywalking::v3::SpanLayer layer) = 0;
 
   /**
    * If error had caused on this span, This should be called.
@@ -249,7 +249,7 @@ class SegmentContext {
   /**
    * Generate Apache SkyWalking native segment object.
    */
-  virtual SegmentObject createSegmentObject() = 0;
+  virtual skywalking::v3::SegmentObject createSegmentObject() = 0;
 
   /**
    * If called, all spans belongs to this segment will be skipped analysis.

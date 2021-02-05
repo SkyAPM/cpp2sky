@@ -52,7 +52,7 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
 };
 
 TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
-  SegmentObject fake_message;
+  skywalking::v3::SegmentObject fake_message;
   EXPECT_CALL(*stream_, sendMessage(_));
   client_->sendMessage(fake_message);
 }
@@ -60,7 +60,7 @@ TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
 TEST_F(GrpcAsyncSegmentReporterClientTest, MessageDrainTest) {
   std::queue<TracerRequestType> fake_pending_messages;
   for (int i = 0; i < 3; ++i) {
-    fake_pending_messages.emplace(SegmentObject());
+    fake_pending_messages.emplace(skywalking::v3::SegmentObject());
   }
   while (fake_pending_messages.size() != 0) {
     auto msg = fake_pending_messages.front();

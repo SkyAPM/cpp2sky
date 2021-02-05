@@ -89,7 +89,7 @@ TEST_F(SegmentContextTest, BasicTest) {
     "skipAnalysis": "false",
   }
   )EOF";
-  SpanObject expected_obj;
+  skywalking::v3::SpanObject expected_obj;
   JsonStringToMessage(json, &expected_obj);
   EXPECT_EQ(expected_obj.DebugString(), span->createSpanObject().DebugString());
 
@@ -121,7 +121,7 @@ TEST_F(SegmentContextTest, BasicTest) {
     "skipAnalysis": "false",
   }
   )EOF";
-  SpanObject expected_obj2;
+  skywalking::v3::SpanObject expected_obj2;
   JsonStringToMessage(json2, &expected_obj2);
   EXPECT_EQ(expected_obj2.DebugString(),
             span_child->createSpanObject().DebugString());
@@ -170,7 +170,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "operationName": "sample1",
   }
   )EOF";
-  SpanObject expected_obj;
+  skywalking::v3::SpanObject expected_obj;
   JsonStringToMessage(json, &expected_obj);
   EXPECT_EQ(expected_obj.DebugString(), span->createSpanObject().DebugString());
 
@@ -233,7 +233,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
     "operationName": "sample1",
   }
   )EOF";
-  SpanObject expected_obj2;
+  skywalking::v3::SpanObject expected_obj2;
   JsonStringToMessage(json2, &expected_obj2);
   EXPECT_EQ(expected_obj2.DebugString(),
             span_child->createSpanObject().DebugString());
@@ -281,7 +281,7 @@ TEST_F(SegmentContextTest, SkipAnalysisSegment) {
     }
   }
   )EOF";
-  SpanObject expected_obj;
+  skywalking::v3::SpanObject expected_obj;
   JsonStringToMessage(json, &expected_obj);
   EXPECT_EQ(expected_obj.DebugString(), span->createSpanObject().DebugString());
 }

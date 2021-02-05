@@ -26,7 +26,7 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   CurrentSegmentSpanImpl(int32_t span_id,
                          SegmentContext& parent_segment_context);
 
-  SpanObject createSpanObject() override;
+  skywalking::v3::SpanObject createSpanObject() override;
 
 #pragma region Getters
   int32_t spanId() const override { return span_id_; }
@@ -34,8 +34,8 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   int64_t startTime() const override { return start_time_; }
   int64_t endTime() const override { return end_time_; }
   const std::string& peer() const override { return peer_; }
-  SpanType spanType() const override { return type_; }
-  SpanLayer spanLayer() const override { return layer_; }
+  skywalking::v3::SpanType spanType() const override { return type_; }
+  skywalking::v3::SpanLayer spanLayer() const override { return layer_; }
   bool errorStatus() const override { return is_error_; }
   bool skipAnalysis() const override { return skip_analysis_; }
   int32_t componentId() const override { return component_id_; }
@@ -43,7 +43,9 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
       const override {
     return tags_;
   }
-  const std::vector<Log>& logs() const override { return logs_; }
+  const std::vector<skywalking::v3::Log>& logs() const override {
+    return logs_;
+  }
   bool finished() const override { return finished_; }
   std::string operationName() const override { return operation_name_; }
 #pragma endregion
@@ -69,8 +71,10 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
     assert(!finished_);
     peer_ = std::move(remote_address);
   }
-  void setSpanType(SpanType type) override { type_ = type; }
-  void setSpanLayer(SpanLayer layer) override { layer_ = layer; }
+  void setSpanType(skywalking::v3::SpanType type) override { type_ = type; }
+  void setSpanLayer(skywalking::v3::SpanLayer layer) override {
+    layer_ = layer;
+  }
   void setErrorStatus() override { is_error_ = true; }
   void setSkipAnalysis() override { skip_analysis_ = true; }
   void addTag(std::string key, std::string value) override {
@@ -94,15 +98,15 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   int64_t end_time_ = 0;
   std::string operation_name_;
   std::string peer_;
-  SpanType type_;
-  SpanLayer layer_;
+  skywalking::v3::SpanType type_;
+  skywalking::v3::SpanLayer layer_;
   // ComponentId is predefined by SkyWalking OAP. The range of id is 9000~9999
   // on C++ language SDK. Based on
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
   int32_t component_id_ = 9000;
   bool is_error_ = false;
   std::vector<std::pair<std::string, std::string>> tags_;
-  std::vector<Log> logs_;
+  std::vector<skywalking::v3::Log> logs_;
   bool skip_analysis_ = false;
   bool finished_ = false;
 
@@ -155,7 +159,7 @@ class SegmentContextImpl : public SegmentContext {
   std::optional<std::string> createSW8HeaderValue(
       CurrentSegmentSpanPtr parent_span,
       const std::string_view target_address) override;
-  SegmentObject createSegmentObject() override;
+  skywalking::v3::SegmentObject createSegmentObject() override;
   void setSkipAnalysis() override { should_skip_analysis_ = true; }
   bool skipAnalysis() override { return should_skip_analysis_; }
   bool readyToSend() override;
