@@ -30,19 +30,17 @@
 #define DRAIN_BUFFER_SIZE 1024
 #define PENDING_MESSAGE_BUFFER_SIZE 1024
 
-#define TEST
-
 namespace cpp2sky {
 
 using TracerRequestType = SegmentObject;
 using TracerResponseType = Commands;
 
 class TracerStubImpl final
-    : public TracerStub<TracerRequestType, TracerResponseType> {
+    : public StubWrapper<TracerRequestType, TracerResponseType> {
  public:
   TracerStubImpl(std::shared_ptr<grpc::Channel> channel);
 
-  // TracerStub
+  // StubWrapper
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> createWriter(
       grpc::ClientContext* ctx, TracerResponseType* response,
       grpc::CompletionQueue* cq, void* tag) override;
@@ -58,7 +56,7 @@ class GrpcAsyncSegmentReporterClient final
  public:
   GrpcAsyncSegmentReporterClient(
       const std::string& address, const std::string& token,
-      grpc::CompletionQueue* cq,
+      grpc::CompletionQueue& cq,
       AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
       std::shared_ptr<grpc::ChannelCredentials> cred);
   ~GrpcAsyncSegmentReporterClient();
@@ -66,9 +64,6 @@ class GrpcAsyncSegmentReporterClient final
   // AsyncClient
   void sendMessage(TracerRequestType message) override;
   std::string peerAddress() override { return address_; }
-  std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> createWriter(
-      grpc::ClientContext* ctx, TracerResponseType* response,
-      void* tag) override;
   void drainPendingMessage(TracerRequestType pending_message) override {
     drained_messages_.push(pending_message);
   }
@@ -80,15 +75,15 @@ class GrpcAsyncSegmentReporterClient final
   }
   void startStream() override;
   size_t numOfMessages() override { return drained_messages_.size(); }
+  grpc::CompletionQueue& completionQueue() override { return cq_; }
 
  private:
   std::string token_;
   std::string address_;
   AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory_;
-  TracerStubPtr<TracerRequestType, TracerResponseType> stub_;
-  grpc::CompletionQueue* cq_;
-  std::shared_ptr<grpc::Channel> channel_;
-  AsyncStreamPtr<TracerRequestType> stream_;
+  StubWrapperPtr<TracerRequestType, TracerResponseType> stub_;
+  grpc::CompletionQueue& cq_;
+  AsyncStreamPtr<TracerRequestType, TracerResponseType> stream_;
   CircularBuffer<TracerRequestType> drained_messages_{DRAIN_BUFFER_SIZE};
 
   std::mutex mux_;
@@ -104,15 +99,16 @@ void* toTag(TaggedStream* stream);
 TaggedStream* deTag(void* stream);
 
 class GrpcAsyncSegmentReporterStream final
-    : public AsyncStream<TracerRequestType> {
+    : public AsyncStream<TracerRequestType, TracerResponseType> {
  public:
   GrpcAsyncSegmentReporterStream(
-      AsyncClient<TracerRequestType, TracerResponseType>* client,
-      std::condition_variable& cv);
+      AsyncClient<TracerRequestType, TracerResponseType>& client,
+      std::condition_variable& cv, const std::string& token);
   ~GrpcAsyncSegmentReporterStream() override;
 
   // AsyncStream
-  bool startStream() override;
+  bool startStream(
+      StubWrapperPtr<TracerRequestType, TracerResponseType> stub) override;
   void sendMessage(TracerRequestType message) override;
   void handleOperation(Operation incoming_op) override;
   void undrainMessage(TracerRequestType message) override {
@@ -122,7 +118,7 @@ class GrpcAsyncSegmentReporterStream final
  private:
   bool clearPendingMessages();
 
-  AsyncClient<TracerRequestType, TracerResponseType>* client_;
+  AsyncClient<TracerRequestType, TracerResponseType>& client_;
   TracerResponseType commands_;
   grpc::ClientContext ctx_;
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> request_writer_;
@@ -140,9 +136,9 @@ class GrpcAsyncSegmentReporterStreamFactory final
     : public AsyncStreamFactory<TracerRequestType, TracerResponseType> {
  public:
   // AsyncStreamFactory
-  AsyncStreamPtr<TracerRequestType> create(
-      AsyncClient<TracerRequestType, TracerResponseType>* client,
-      std::condition_variable& cv) override;
+  AsyncStreamPtr<TracerRequestType, TracerResponseType> create(
+      AsyncClient<TracerRequestType, TracerResponseType>& client,
+      std::condition_variable& cv, const std::string& token) override;
 };
 
 }  // namespace cpp2sky

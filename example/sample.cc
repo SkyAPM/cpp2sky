@@ -39,13 +39,14 @@ int main() {
   auto tracer = createInsecureGrpcTracer(config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    std::string context = req.get_header_value(kPropagationHeader.data());
+    // std::string context = req.get_header_value(kPropagationHeader.data());
 
     SegmentContextPtr segment_context;
-    if (!context.empty()) {
-      // 2. Create segment context with propagated information.
-      segment_context = tracer->newSegment(createSpanContext(context));
-    }
+    // if (!context.empty()) {
+    // 2. Create segment context with propagated information.
+    // segment_context = tracer->newSegment(createSpanContext(context));
+    // }
+    segment_context = tracer->newSegment();
 
     {
       // 3. Create entry span.

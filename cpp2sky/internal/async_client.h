@@ -25,9 +25,9 @@ using google::protobuf::Message;
 namespace cpp2sky {
 
 template <class RequestType, class ResponseType>
-class TracerStub {
+class StubWrapper {
  public:
-  virtual ~TracerStub() = default;
+  virtual ~StubWrapper() = default;
 
   /**
    * Initialize request writer.
@@ -38,7 +38,7 @@ class TracerStub {
 };
 
 template <class RequestType, class ResponseType>
-using TracerStubPtr = std::unique_ptr<TracerStub<RequestType, ResponseType>>;
+using StubWrapperPtr = std::shared_ptr<StubWrapper<RequestType, ResponseType>>;
 
 template <class RequestType, class ResponseType>
 class AsyncClient {
@@ -51,13 +51,7 @@ class AsyncClient {
   virtual void sendMessage(RequestType message) = 0;
 
   /**
-   * Get writer.
-   */
-  virtual std::unique_ptr<grpc::ClientAsyncWriter<RequestType>> createWriter(
-      grpc::ClientContext* ctx, ResponseType* response, void* tag) = 0;
-
-  /**
-   * Peer address of current gRPC client..
+   * Peer address of current gRPC client.
    */
   virtual std::string peerAddress() = 0;
 
@@ -80,6 +74,8 @@ class AsyncClient {
    * The number of drained pending messages.
    */
   virtual size_t numOfMessages() = 0;
+
+  virtual grpc::CompletionQueue& completionQueue() = 0;
 };
 
 enum class Operation : uint8_t {
@@ -92,7 +88,7 @@ enum class Operation : uint8_t {
 template <class RequestType, class ResponseType>
 using AsyncClientPtr = std::unique_ptr<AsyncClient<RequestType, ResponseType>>;
 
-template <class RequestType>
+template <class RequestType, class ResponseType>
 class AsyncStream {
  public:
   virtual ~AsyncStream() = default;
@@ -100,7 +96,7 @@ class AsyncStream {
   /**
    * Start stream. It will move the state of stream to Init.
    */
-  virtual bool startStream() = 0;
+  virtual bool startStream(StubWrapperPtr<RequestType, ResponseType> stub) = 0;
 
   /**
    * Send message. It will move the state from Init to Write.
@@ -118,8 +114,8 @@ class AsyncStream {
   virtual void handleOperation(Operation incoming_op) = 0;
 };
 
-template <class RequestType>
-using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType>>;
+template <class RequestType, class ResponseType>
+using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType, ResponseType>>;
 
 template <class RequestType, class ResponseType>
 class AsyncStreamFactory {
@@ -129,9 +125,9 @@ class AsyncStreamFactory {
   /**
    * Create async stream entity
    */
-  virtual AsyncStreamPtr<RequestType> create(
-      AsyncClient<RequestType, ResponseType>* client,
-      std::condition_variable& cv) = 0;
+  virtual AsyncStreamPtr<RequestType, ResponseType> create(
+      AsyncClient<RequestType, ResponseType>& client,
+      std::condition_variable& cv, const std::string& token) = 0;
 };
 
 template <class RequestType, class ResponseType>
