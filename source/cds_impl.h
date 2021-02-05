@@ -15,25 +15,51 @@
 #pragma once
 
 #include "cpp2sky/internal/async_client.h"
-#include "language-agent/ConfigurationDiscoveryService.grpc.pb.h"
 #include "language-agent/ConfigirationDiscoveryService.pb.h"
+#include "language-agent/ConfigurationDiscoveryService.grpc.pb.h"
 
 namespace cpp2sky {
 
 using CdsRequest = skywalking::v3::ConfigurationSyncRequest;
 using CdsResponse = skywalking::v3::Command;
 
-class ConfigurationDiscoveryServiceStubImpl final : public ConfigurationDiscoveryServiceStub<CdsRequest, CdsResponse> {
-public:
+class ConfigurationDiscoveryServiceStubImpl final
+    : public ConfigurationDiscoveryServiceStub<CdsRequest, CdsResponse> {
+ public:
   ConfigurationDiscoveryServiceStubImpl(std::shared_ptr<grpc::Channel> channel);
 
   // ConfigurationDiscoveryServiceStub
-  std::unique_ptr<grpc::ClientAsyncReader<CdsResponse>> createReader(
-      grpc::ClientContext* ctx, CdsRequest* request, grpc::CompletionQueue* cq,
-      void* tag) override;
+  std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>> createReader(
+      grpc::ClientContext* ctx, CdsRequest* request,
+      grpc::CompletionQueue* cq) override;
 
-private:
+ private:
   std::unique_ptr<skywalking::v3::ConfigurationDiscoveryService> stub_;
 };
 
-}
+using ConfigurationDiscoveryServiceStubPtr =
+    std::unique_ptr<ConfigurationDiscoveryServiceStub<CdsRequest, CdsResponse>>;
+
+class GrpcAsyncConfigurationDiscoveryServiceClient {
+ public:
+  explicit GrpcAsyncConfigurationDiscoveryServiceClient(
+      const std::string& address, grpc::CompletionQueue* cq,
+      AsyncStreamFactory<CdsRequest, CdsResponse>& factory,
+      std::shared_ptr<grpc::ChannelCredentials> cred);
+
+  ~GrpcAsyncConfigurationDiscoveryServiceClient();
+
+  void sendMessage(CdsRequest& request);
+
+ private:
+  std::string token_;
+  std::string address_;
+  AsyncStreamFactory<CdsRequest, CdsResponse>& factory_;
+  ConfigurationDiscoveryServiceStubPtr stub_;
+  grpc::CompletionQueue* cq_;
+  std::shared_ptr<grpc::Channel> channel_;
+};
+
+class GrpcAsyncConfigurationDiscoveryServiceStream 
+
+}  // namespace cpp2sky

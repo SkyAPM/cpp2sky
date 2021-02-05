@@ -46,11 +46,11 @@ class ConfigurationDiscoveryServiceStub {
   virtual ~ConfigurationDiscoveryServiceStub() = default;
 
   /**
-   * Initialize response reader for server-side streaming.
+   * Initialize response reader for unary RPC.
    */
-  virtual std::unique_ptr<grpc::ClientAsyncReader<ResponseType>> createReader(
-      grpc::ClientContext* ctx, RequestType* request, grpc::CompletionQueue* cq,
-      void* tag) = 0;
+  virtual std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
+  createReader(grpc::ClientContext* ctx, RequestType* request,
+               grpc::CompletionQueue* cq) = 0;
 };
 
 template <class RequestType, class ResponseType>

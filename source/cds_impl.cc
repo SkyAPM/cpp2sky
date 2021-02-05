@@ -16,13 +16,28 @@
 
 namespace cpp2sky {
 
-ConfigurationDiscoveryServiceStubImpl::ConfigurationDiscoveryServiceStubImpl(std::shared_ptr<grpc::Channel> channel) 
-  : stub_(skywalking::v3::ConfigurationDiscoveryService::NewStub(channel)) {}
+ConfigurationDiscoveryServiceStubImpl::ConfigurationDiscoveryServiceStubImpl(
+    std::shared_ptr<grpc::Channel> channel)
+    : stub_(skywalking::v3::ConfigurationDiscoveryService::NewStub(channel)) {}
 
-std::unique_ptr<grpc::ClientAsyncReader<CdsResponse>> ConfigurationDiscoveryServiceStubImpl::createReader(
-      grpc::ClientContext* ctx, CdsRequest* request, grpc::CompletionQueue* cq,
-      void* tag) {
-  return stub_->AsyncClient()
+std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>>
+ConfigurationDiscoveryServiceStubImpl::createReader(grpc::ClientContext* ctx,
+                                                    CdsRequest* request,
+                                                    grpc::CompletionQueue* cq) {
+  return stub_->PrepareAsyncfetchConfigurations(ctx, *request, cq);
 }
 
+GrpcAsyncConfigurationDiscoveryServiceClient::
+    GrpcAsyncConfigurationDiscoveryServiceClient(
+        const std::string& address, grpc::CompletionQueue* cq,
+        AsyncStreamFactory<CdsRequest, CdsResponse>& factory,
+        std::shared_ptr<grpc::ChannelCredentials> cred)
+    : factory_(factory),
+      cq_(cq),
+      channel_(grpc::CreateChannel(address, cred)) {
+  stub_ = std::make_unique<ConfigurationDiscoveryServiceStubImpl>(channel_);
 }
+
+
+
+}  // namespace cpp2sky
