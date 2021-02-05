@@ -60,6 +60,8 @@ class GrpcAsyncConfigurationDiscoveryServiceClient {
   std::shared_ptr<grpc::Channel> channel_;
 };
 
-class GrpcAsyncConfigurationDiscoveryServiceStream 
+class GrpcAsyncConfigurationDiscoveryServiceStream {
+  
+};
 
 }  // namespace cpp2sky
