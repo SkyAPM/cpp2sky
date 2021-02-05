@@ -75,7 +75,15 @@ class AsyncClient {
    */
   virtual size_t numOfMessages() = 0;
 
+  /**
+   * Completion queue.
+   */
   virtual grpc::CompletionQueue& completionQueue() = 0;
+
+  /**
+   * gRPC Stub
+   */
+  virtual StubWrapper<RequestType, ResponseType>& stub() = 0;
 };
 
 enum class Operation : uint8_t {
@@ -94,19 +102,9 @@ class AsyncStream {
   virtual ~AsyncStream() = default;
 
   /**
-   * Start stream. It will move the state of stream to Init.
-   */
-  virtual bool startStream(StubWrapperPtr<RequestType, ResponseType> stub) = 0;
-
-  /**
    * Send message. It will move the state from Init to Write.
    */
   virtual void sendMessage(RequestType message) = 0;
-
-  /**
-   * Restore drained message.
-   */
-  virtual void undrainMessage(RequestType message) = 0;
 
   /**
    * Handle incoming event related to this stream.
@@ -127,7 +125,7 @@ class AsyncStreamFactory {
    */
   virtual AsyncStreamPtr<RequestType, ResponseType> create(
       AsyncClient<RequestType, ResponseType>& client,
-      std::condition_variable& cv, const std::string& token) = 0;
+      std::condition_variable& cv) = 0;
 };
 
 template <class RequestType, class ResponseType>

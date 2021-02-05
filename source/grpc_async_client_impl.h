@@ -55,9 +55,8 @@ class GrpcAsyncSegmentReporterClient final
     : public AsyncClient<TracerRequestType, TracerResponseType> {
  public:
   GrpcAsyncSegmentReporterClient(
-      const std::string& address, const std::string& token,
-      grpc::CompletionQueue& cq,
-      AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory,
+      const std::string& address, grpc::CompletionQueue& cq,
+      AsyncStreamFactoryPtr<TracerRequestType, TracerResponseType> factory,
       std::shared_ptr<grpc::ChannelCredentials> cred);
   ~GrpcAsyncSegmentReporterClient();
 
@@ -75,14 +74,16 @@ class GrpcAsyncSegmentReporterClient final
   }
   void startStream() override;
   size_t numOfMessages() override { return drained_messages_.size(); }
+  StubWrapper<TracerRequestType, TracerResponseType>& stub() override {
+    return stub_;
+  }
   grpc::CompletionQueue& completionQueue() override { return cq_; }
 
  private:
-  std::string token_;
   std::string address_;
-  AsyncStreamFactory<TracerRequestType, TracerResponseType>& factory_;
-  StubWrapperPtr<TracerRequestType, TracerResponseType> stub_;
+  AsyncStreamFactoryPtr<TracerRequestType, TracerResponseType> factory_;
   grpc::CompletionQueue& cq_;
+  TracerStubImpl stub_;
   AsyncStreamPtr<TracerRequestType, TracerResponseType> stream_;
   CircularBuffer<TracerRequestType> drained_messages_{DRAIN_BUFFER_SIZE};
 
@@ -107,13 +108,8 @@ class GrpcAsyncSegmentReporterStream final
   ~GrpcAsyncSegmentReporterStream() override;
 
   // AsyncStream
-  bool startStream(
-      StubWrapperPtr<TracerRequestType, TracerResponseType> stub) override;
   void sendMessage(TracerRequestType message) override;
   void handleOperation(Operation incoming_op) override;
-  void undrainMessage(TracerRequestType message) override {
-    pending_messages_.push(message);
-  }
 
  private:
   bool clearPendingMessages();
@@ -135,10 +131,16 @@ class GrpcAsyncSegmentReporterStream final
 class GrpcAsyncSegmentReporterStreamFactory final
     : public AsyncStreamFactory<TracerRequestType, TracerResponseType> {
  public:
+  explicit GrpcAsyncSegmentReporterStreamFactory(const std::string& token)
+      : token_(token) {}
+
   // AsyncStreamFactory
   AsyncStreamPtr<TracerRequestType, TracerResponseType> create(
       AsyncClient<TracerRequestType, TracerResponseType>& client,
-      std::condition_variable& cv, const std::string& token) override;
+      std::condition_variable& cv) override;
+
+ private:
+  std::string token_;
 };
 
 }  // namespace cpp2sky
