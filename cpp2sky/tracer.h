@@ -18,7 +18,7 @@
 
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
-#include "cpp2sky/segment_context.h"
+#include "cpp2sky/tracing_context.h"
 
 namespace cpp2sky {
 
@@ -29,13 +29,13 @@ class Tracer {
   /**
    * Start new segment. It will be called per request, for example.
    */
-  virtual SegmentContextPtr newSegment() = 0;
-  virtual SegmentContextPtr newSegment(SpanContextPtr span) = 0;
+  virtual TracingContextPtr newContext() = 0;
+  virtual TracingContextPtr newContext(SpanContextPtr span) = 0;
 
   /**
    * Send SegmentContext to the collector.
    */
-  virtual void sendSegment(SegmentContextPtr obj) = 0;
+  virtual void report(TracingContextPtr obj) = 0;
 };
 
 using TracerPtr = std::unique_ptr<Tracer>;

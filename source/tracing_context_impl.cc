@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "source/segment_context_impl.h"
+#include "source/tracing_context_impl.h"
 
 #include <string>
 
@@ -24,11 +24,11 @@
 
 namespace cpp2sky {
 
-CurrentSegmentSpanImpl::CurrentSegmentSpanImpl(
-    int32_t span_id, SegmentContext& parent_segment_context)
-    : span_id_(span_id), parent_segment_context_(parent_segment_context) {}
+TracingSpanImpl::TracingSpanImpl(int32_t span_id,
+                                 TracingContext& parent_tracing_context)
+    : span_id_(span_id), parent_tracing_context_(parent_tracing_context) {}
 
-SpanObject CurrentSegmentSpanImpl::createSpanObject() {
+SpanObject TracingSpanImpl::createSpanObject() {
   SpanObject obj;
 
   obj.set_spanid(span_id_);
@@ -43,7 +43,7 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   obj.set_peer(peer_);
   obj.set_skipanalysis(skip_analysis_);
 
-  auto parent_span = parent_segment_context_.parentSpanContext();
+  auto parent_span = parent_tracing_context_.parentSpanContext();
   // Inject request parent to the current segment.
   if (parent_span != nullptr) {
     auto* entry = obj.mutable_refs()->Add();
@@ -73,14 +73,14 @@ SpanObject CurrentSegmentSpanImpl::createSpanObject() {
   return obj;
 }
 
-void CurrentSegmentSpanImpl::addLog(std::string key, std::string value) {
+void TracingSpanImpl::addLog(std::string key, std::string value) {
   assert(!finished_);
   auto now = TimePoint<SystemTime>();
   addLog(key, value, now);
 }
 
-void CurrentSegmentSpanImpl::addLog(std::string key, std::string value,
-                                    TimePoint<SystemTime> current_time) {
+void TracingSpanImpl::addLog(std::string key, std::string value,
+                             TimePoint<SystemTime> current_time) {
   assert(!finished_);
   Log l;
   l.set_time(current_time.fetch());
@@ -90,8 +90,8 @@ void CurrentSegmentSpanImpl::addLog(std::string key, std::string value,
   logs_.emplace_back(l);
 }
 
-void CurrentSegmentSpanImpl::addLog(std::string key, std::string value,
-                                    TimePoint<SteadyTime> current_time) {
+void TracingSpanImpl::addLog(std::string key, std::string value,
+                             TimePoint<SteadyTime> current_time) {
   assert(!finished_);
   Log l;
   l.set_time(current_time.fetch());
@@ -101,40 +101,40 @@ void CurrentSegmentSpanImpl::addLog(std::string key, std::string value,
   logs_.emplace_back(l);
 }
 
-void CurrentSegmentSpanImpl::startSpan(std::string operation_name) {
+void TracingSpanImpl::startSpan(std::string operation_name) {
   auto now = TimePoint<SystemTime>();
   startSpan(operation_name, now);
 }
 
-void CurrentSegmentSpanImpl::startSpan(std::string operation_name,
-                                       TimePoint<SystemTime> current_time) {
+void TracingSpanImpl::startSpan(std::string operation_name,
+                                TimePoint<SystemTime> current_time) {
   operation_name_ = operation_name;
   start_time_ = current_time.fetch();
 }
 
-void CurrentSegmentSpanImpl::startSpan(std::string operation_name,
-                                       TimePoint<SteadyTime> current_time) {
+void TracingSpanImpl::startSpan(std::string operation_name,
+                                TimePoint<SteadyTime> current_time) {
   operation_name_ = operation_name;
   start_time_ = current_time.fetch();
 }
 
-void CurrentSegmentSpanImpl::endSpan() {
+void TracingSpanImpl::endSpan() {
   assert(!finished_);
   auto now = TimePoint<SystemTime>();
   endSpan(now);
 }
 
-void CurrentSegmentSpanImpl::endSpan(TimePoint<SystemTime> current_time) {
+void TracingSpanImpl::endSpan(TimePoint<SystemTime> current_time) {
   end_time_ = current_time.fetch();
   finished_ = true;
 }
 
-void CurrentSegmentSpanImpl::endSpan(TimePoint<SteadyTime> current_time) {
+void TracingSpanImpl::endSpan(TimePoint<SteadyTime> current_time) {
   end_time_ = current_time.fetch();
   finished_ = true;
 }
 
-void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
+void TracingSpanImpl::setComponentId(int32_t component_id) {
   assert(!finished_);
 
   // Component ID is reserved on Skywalking spec.
@@ -143,7 +143,7 @@ void CurrentSegmentSpanImpl::setComponentId(int32_t component_id) {
   component_id_ = component_id;
 }
 
-SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
+TracingContextImpl::TracingContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
                                        RandomGenerator& random)
     : trace_id_(random.uuid()),
@@ -151,7 +151,7 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
       service_(service_name),
       service_instance_(instance_name) {}
 
-SegmentContextImpl::SegmentContextImpl(
+TracingContextImpl::TracingContextImpl(
     const std::string& service_name, const std::string& instance_name,
     SpanContextPtr parent_span_context,
     SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
@@ -162,7 +162,7 @@ SegmentContextImpl::SegmentContextImpl(
       service_(service_name),
       service_instance_(instance_name) {}
 
-SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
+TracingContextImpl::TracingContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
                                        SpanContextPtr parent_span_context,
                                        RandomGenerator& random)
@@ -172,15 +172,14 @@ SegmentContextImpl::SegmentContextImpl(const std::string& service_name,
       service_(service_name),
       service_instance_(instance_name) {}
 
-CurrentSegmentSpanPtr SegmentContextImpl::createExitSpan(
-    CurrentSegmentSpanPtr parent_span) {
+TracingSpanPtr TracingContextImpl::createExitSpan(TracingSpanPtr parent_span) {
   auto current_span = createSpan();
   current_span->setParentSpanId(parent_span->spanId());
   current_span->setSpanType(SpanType::Exit);
   return current_span;
 }
 
-CurrentSegmentSpanPtr SegmentContextImpl::createEntrySpan() {
+TracingSpanPtr TracingContextImpl::createEntrySpan() {
   if (!spans_.empty()) {
     return nullptr;
   }
@@ -191,9 +190,9 @@ CurrentSegmentSpanPtr SegmentContextImpl::createEntrySpan() {
   return current_span;
 }
 
-std::optional<std::string> SegmentContextImpl::createSW8HeaderValue(
-    CurrentSegmentSpanPtr parent_span, const std::string_view target_address) {
-  CurrentSegmentSpanPtr target_span = parent_span;
+std::optional<std::string> TracingContextImpl::createSW8HeaderValue(
+    TracingSpanPtr parent_span, const std::string_view target_address) {
+  TracingSpanPtr target_span = parent_span;
   if (target_span == nullptr) {
     if (spans_.empty()) {
       throw TracerException(
@@ -208,8 +207,8 @@ std::optional<std::string> SegmentContextImpl::createSW8HeaderValue(
   return encodeSpan(target_span, target_address);
 }
 
-std::string SegmentContextImpl::encodeSpan(
-    CurrentSegmentSpanPtr parent_span, const std::string_view target_address) {
+std::string TracingContextImpl::encodeSpan(
+    TracingSpanPtr parent_span, const std::string_view target_address) {
   assert(parent_span);
   std::string header_value;
 
@@ -229,9 +228,8 @@ std::string SegmentContextImpl::encodeSpan(
   return header_value;
 }
 
-CurrentSegmentSpanPtr SegmentContextImpl::createSpan() {
-  auto current_span =
-      std::make_shared<CurrentSegmentSpanImpl>(spans_.size(), *this);
+TracingSpanPtr TracingContextImpl::createSpan() {
+  auto current_span = std::make_shared<TracingSpanImpl>(spans_.size(), *this);
 
   // It supports only HTTP request tracing.
   current_span->setSpanLayer(SpanLayer::Http);
@@ -243,7 +241,7 @@ CurrentSegmentSpanPtr SegmentContextImpl::createSpan() {
   return current_span;
 }
 
-SegmentObject SegmentContextImpl::createSegmentObject() {
+SegmentObject TracingContextImpl::createSegmentObject() {
   SegmentObject obj;
   obj.set_traceid(trace_id_);
   obj.set_tracesegmentid(trace_segment_id_);
@@ -258,7 +256,7 @@ SegmentObject SegmentContextImpl::createSegmentObject() {
   return obj;
 }
 
-bool SegmentContextImpl::readyToSend() {
+bool TracingContextImpl::readyToSend() {
   for (const auto& span : spans_) {
     if (!span->finished()) {
       return false;
@@ -267,22 +265,22 @@ bool SegmentContextImpl::readyToSend() {
   return true;
 }
 
-SegmentContextFactory::SegmentContextFactory(const TracerConfig& cfg)
+TracingContextFactory::TracingContextFactory(const TracerConfig& cfg)
     : service_name_(cfg.service_name()), instance_name_(cfg.instance_name()) {}
 
-SegmentContextPtr SegmentContextFactory::create() {
-  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
+TracingContextPtr TracingContextFactory::create() {
+  return std::make_unique<TracingContextImpl>(service_name_, instance_name_,
                                               random_generator_);
 }
 
-SegmentContextPtr SegmentContextFactory::create(SpanContextPtr span_context) {
-  return std::make_unique<SegmentContextImpl>(service_name_, instance_name_,
+TracingContextPtr TracingContextFactory::create(SpanContextPtr span_context) {
+  return std::make_unique<TracingContextImpl>(service_name_, instance_name_,
                                               span_context, random_generator_);
 }
 
-SegmentContextPtr SegmentContextFactory::create(
+TracingContextPtr TracingContextFactory::create(
     SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
-  auto context = std::make_unique<SegmentContextImpl>(
+  auto context = std::make_unique<TracingContextImpl>(
       service_name_, instance_name_, span_context, ext_span_context,
       random_generator_);
   if (ext_span_context->tracingMode() == TracingMode::Skip) {
