@@ -86,13 +86,6 @@ class AsyncClient {
   virtual StubWrapper<RequestType, ResponseType>& stub() = 0;
 };
 
-enum class Operation : uint8_t {
-  Initialized = 0,
-  Connected = 1,
-  Idle = 2,
-  WriteDone = 3,
-};
-
 template <class RequestType, class ResponseType>
 using AsyncClientPtr = std::unique_ptr<AsyncClient<RequestType, ResponseType>>;
 
@@ -105,11 +98,51 @@ class AsyncStream {
    * Send message. It will move the state from Init to Write.
    */
   virtual void sendMessage(RequestType message) = 0;
+};
+
+enum class StreamState : uint8_t {
+  Initialized = 0,
+  Connected = 1,
+  Idle = 2,
+  WriteDone = 3,
+};
+
+class AsyncStreamCallback {
+ public:
+  /**
+   * Callback when connected event occured.
+   */ 
+  virtual void onConnected() = 0;
 
   /**
-   * Handle incoming event related to this stream.
-   */
-  virtual void handleOperation(Operation incoming_op) = 0;
+   * Callback when idle event occured.
+   */ 
+  virtual void onIdle() = 0;
+
+  /**
+   * Callback when write done event occured.
+   */ 
+  virtual void onWriteDone() = 0;
+};
+
+struct StreamCallbackTag {
+public:
+  void callback() {
+    switch (state_) {
+      case StreamState::Connected: 
+        callback_->onConnected();
+        break;
+      case StreamState::WriteDone:
+        callback_->onWriteDone();
+        break;
+      case StreamState::Idle:
+        callback_->onIdle();
+        break;
+    }
+  }
+
+  StreamState state_;
+  AsyncStreamCallback* callback_;
 };
 
 template <class RequestType, class ResponseType>

@@ -16,8 +16,8 @@
 #include <string>
 
 #include "cpp2sky/propagation.h"
-#include "cpp2sky/segment_context.h"
 #include "cpp2sky/tracer.h"
+#include "cpp2sky/tracing_context.h"
 #include "cpp2sky/well_known_names.h"
 #include "httplib.h"
 
@@ -39,18 +39,18 @@ int main() {
   auto tracer = createInsecureGrpcTracer(config);
 
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    // std::string context = req.get_header_value(kPropagationHeader.data());
+    std::string context = req.get_header_value(kPropagationHeader.data());
 
-    SegmentContextPtr segment_context;
-    // if (!context.empty()) {
-    // 2. Create segment context with propagated information.
-    // segment_context = tracer->newSegment(createSpanContext(context));
-    // }
-    segment_context = tracer->newSegment();
+    TracingContextPtr tracing_context;
+
+    if (!context.empty()) {
+      // 2. Create segment context with propagated information.
+      tracing_context = tracer->newContext(createSpanContext(context));
+    }
 
     {
       // 3. Create entry span.
-      StartEntrySpan current_span(segment_context, "sample_op3");
+      StartEntrySpan current_span(tracing_context, "sample_op3");
 
       /**
        * something....
@@ -58,8 +58,8 @@ int main() {
     }
 
     // 4. Send span data
-    if (segment_context != nullptr) {
-      tracer->sendSegment(std::move(segment_context));
+    if (tracing_context != nullptr) {
+      tracer->report(std::move(tracing_context));
     }
   });
 

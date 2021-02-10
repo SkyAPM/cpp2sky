@@ -33,27 +33,28 @@ class MockRandomGenerator : public RandomGenerator {
   MOCK_METHOD(std::string, uuid, ());
 };
 
-template <class RequestType>
-class MockAsyncStream : public AsyncStream<RequestType> {
+template <class RequestType, class ResponseType>
+class MockAsyncStream : public AsyncStream<RequestType, ResponseType> {
  public:
-  MOCK_METHOD(bool, startStream, ());
   MOCK_METHOD(void, sendMessage, (RequestType));
-  MOCK_METHOD(std::string, peerAddress, ());
-  MOCK_METHOD(void, handleOperation, (Operation));
-  MOCK_METHOD(void, undrainMessage, (RequestType));
+  MOCK_METHOD(void, onIdle, ());
+  MOCK_METHOD(void, onWriteDone, ());
+  MOCK_METHOD(void, onConnected, ());
 };
 
 template <class RequestType, class ResponseType>
 class MockAsyncClient : public AsyncClient<RequestType, ResponseType> {
  public:
+  using StubWrapperType = StubWrapper<RequestType, ResponseType>;
+
   MOCK_METHOD(void, sendMessage, (RequestType));
-  MOCK_METHOD(std::unique_ptr<grpc::ClientAsyncWriter<RequestType>>,
-              createWriter, (grpc::ClientContext*, ResponseType*, void*));
+  MOCK_METHOD(StubWrapperType&, stub, ());
   MOCK_METHOD(std::string, peerAddress, ());
   MOCK_METHOD(void, drainPendingMessage, (RequestType));
   MOCK_METHOD(void, resetStream, ());
   MOCK_METHOD(void, startStream, ());
   MOCK_METHOD(size_t, numOfMessages, ());
+  MOCK_METHOD(grpc::CompletionQueue&, completionQueue, ());
 };
 
 template <class RequestType, class ResponseType>
@@ -61,14 +62,19 @@ class MockAsyncStreamFactory
     : public AsyncStreamFactory<RequestType, ResponseType> {
  public:
   using AsyncClientType = AsyncClient<RequestType, ResponseType>;
-  MockAsyncStreamFactory(AsyncStreamPtr<RequestType> stream) : stream_(stream) {
+  using AsyncStreamPtrType = AsyncStreamPtr<RequestType, ResponseType>;
+
+  MockAsyncStreamFactory(
+      std::shared_ptr<MockAsyncStream<RequestType, ResponseType>> stream)
+      : stream_(stream) {
     ON_CALL(*this, create(_, _)).WillByDefault(Return(stream_));
   }
-  MOCK_METHOD(AsyncStreamPtr<RequestType>, create,
-              (AsyncClientType*, std::condition_variable&));
+
+  MOCK_METHOD(AsyncStreamPtrType, create,
+              (AsyncClientType&, std::condition_variable&));
 
  private:
-  AsyncStreamPtr<RequestType> stream_;
+  std::shared_ptr<MockAsyncStream<RequestType, ResponseType>> stream_;
 };
 
 }  // namespace cpp2sky

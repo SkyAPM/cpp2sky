@@ -16,8 +16,8 @@
 #include <string>
 
 #include "cpp2sky/propagation.h"
-#include "cpp2sky/segment_context.h"
 #include "cpp2sky/tracer.h"
+#include "cpp2sky/tracing_context.h"
 #include "cpp2sky/well_known_names.h"
 #include "httplib.h"
 
@@ -39,11 +39,11 @@ int main() {
 
   svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
     auto parent = req.get_header_value(kPropagationHeader.data());
-    auto segment_context = tracer->newSegment(createSpanContext(parent));
+    auto tracing_context = tracer->newContext(createSpanContext(parent));
 
-    { StartEntrySpan entry_span(segment_context, "/pong"); }
+    { StartEntrySpan entry_span(tracing_context, "/pong"); }
 
-    tracer->sendSegment(std::move(segment_context));
+    tracer->report(std::move(tracing_context));
   });
 
   svr.listen("0.0.0.0", 8080);

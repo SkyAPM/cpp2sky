@@ -37,13 +37,13 @@ TracerImpl::~TracerImpl() {
   th_.join();
 }
 
-SegmentContextPtr TracerImpl::newSegment() { return segment_factory_.create(); }
+TracingContextPtr TracerImpl::newContext() { return segment_factory_.create(); }
 
-SegmentContextPtr TracerImpl::newSegment(SpanContextPtr span) {
+TracingContextPtr TracerImpl::newContext(SpanContextPtr span) {
   return segment_factory_.create(span);
 }
 
-void TracerImpl::sendSegment(SegmentContextPtr obj) {
+void TracerImpl::report(TracingContextPtr obj) {
   if (!obj || !obj->readyToSend()) {
     return;
   }
@@ -59,12 +59,12 @@ void TracerImpl::run() {
     if (status == grpc::CompletionQueue::SHUTDOWN) {
       return;
     }
-    TaggedStream* t_stream = deTag(got_tag);
+    auto* tag = static_cast<StreamCallbackTag*>(got_tag);
     if (!ok) {
       client_->startStream();
       continue;
     }
-    t_stream->stream->handleOperation(t_stream->operation);
+    tag->callback();
   }
 }
 

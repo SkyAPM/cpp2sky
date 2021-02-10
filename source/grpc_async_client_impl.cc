@@ -26,9 +26,6 @@ namespace {
 static constexpr std::string_view authenticationKey = "authentication";
 }
 
-void* toTag(TaggedStream* stream) { return reinterpret_cast<void*>(stream); }
-TaggedStream* deTag(void* stream) { return static_cast<TaggedStream*>(stream); }
-
 TracerStubImpl::TracerStubImpl(std::shared_ptr<grpc::Channel> channel)
     : stub_(TraceSegmentReportService::NewStub(channel)) {}
 
@@ -43,7 +40,9 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     const std::string& address, grpc::CompletionQueue& cq,
     AsyncStreamFactoryPtr<TracerRequestType, TracerResponseType> factory,
     std::shared_ptr<grpc::ChannelCredentials> cred)
-    : factory_(std::move(factory)), cq_(cq), stub_(grpc::CreateChannel(address, cred)) {
+    : factory_(std::move(factory)),
+      cq_(cq),
+      stub_(grpc::CreateChannel(address, cred)) {
   startStream();
 }
 
@@ -57,7 +56,7 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
   // signal.
   // TODO(shikugawa): Block to wait drained messages to be clear with createing
   // condition variable wrapper.
-#ifndef TEST
+#ifndef GRPC_TEST
   if (stream_) {
     std::unique_lock<std::mutex> lck(mux_);
     while (!drained_messages_.empty()) {
@@ -116,7 +115,7 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
   ctx_.set_wait_for_ready(true);
 
   request_writer_ = client_.stub().createWriter(
-      &ctx_, &commands_, &client_.completionQueue(), toTag(&connected_));
+      &ctx_, &commands_, &client_.completionQueue(), reinterpret_cast<void*>(&connected_));
 }
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
@@ -133,49 +132,50 @@ GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
   pending_messages_.push(message);
-  clearPendingMessages();
+  clearPendingMessage();
 }
 
-bool GrpcAsyncSegmentReporterStream::clearPendingMessages() {
-  if (state_ != Operation::Idle || pending_messages_.empty()) {
+bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
+  if (state_ != StreamState::Idle || pending_messages_.empty()) {
     return false;
   }
   auto message = pending_messages_.front();
   if (!message.has_value()) {
     return false;
   }
-  request_writer_->Write(message.value(), toTag(&write_done_));
+  request_writer_->Write(message.value(), reinterpret_cast<void*>(&write_done_));
   return true;
 }
 
-void GrpcAsyncSegmentReporterStream::handleOperation(Operation incoming_op) {
-  state_ = incoming_op;
-  if (state_ == Operation::Connected) {
-    gpr_log(GPR_INFO, "Established connection: %s",
+void GrpcAsyncSegmentReporterStream::onConnected() {
+  gpr_log(GPR_INFO, "Established connection: %s",
             client_.peerAddress().c_str());
-    state_ = Operation::Idle;
-  } else if (state_ == Operation::WriteDone) {
-    gpr_log(GPR_INFO, "Write finished");
-    // Enqueue message after sending message finished.
-    // With this, messages which failed to sent never lost even if connection
-    // was closed. because pending messages with messages which failed to send
-    // will drained and resend another stream.
-    pending_messages_.pop();
-    state_ = Operation::Idle;
-  }
+  state_ = StreamState::Idle;
+  onIdle();
+}
 
-  if (state_ == Operation::Idle) {
-    gpr_log(GPR_INFO, "Stream idleing");
-    // Release pending messages which are inserted when stream is not ready
-    // to write.
-    clearPendingMessages();
+void GrpcAsyncSegmentReporterStream::onIdle() {
+  gpr_log(GPR_INFO, "Stream idleing");
 
-    if (pending_messages_.empty()) {
-      cv_.notify_all();
-    }
-  } else {
-    throw TracerException("Unknown stream operation");
+  // Release pending messages which are inserted when stream is not ready
+  // to write.
+  clearPendingMessage();
+
+  if (pending_messages_.empty()) {
+    cv_.notify_all();
   }
+}
+
+void GrpcAsyncSegmentReporterStream::onWriteDone() {
+  gpr_log(GPR_INFO, "Write finished");
+  // Enqueue message after sending message finished.
+  // With this, messages which failed to sent never lost even if connection
+  // was closed. because pending messages with messages which failed to send
+  // will drained and resend another stream.
+  pending_messages_.pop();
+  state_ = StreamState::Idle;
+
+  onIdle();
 }
 
 AsyncStreamPtr<TracerRequestType, TracerResponseType>

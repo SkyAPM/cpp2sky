@@ -22,7 +22,7 @@
 #include "external/skywalking_data_collect_protocol/language-agent/Tracing.pb.h"
 #include "mocks.h"
 #include "source/propagation_impl.h"
-#include "source/segment_context_impl.h"
+#include "source/tracing_context_impl.h"
 
 using google::protobuf::util::JsonStringToMessage;
 using testing::NiceMock;
@@ -34,16 +34,16 @@ static constexpr std::string_view sample_ctx =
     "1-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
 
-class SegmentContextTest : public testing::Test {
+class TracingContextTest : public testing::Test {
  public:
-  SegmentContextTest() {
+  TracingContextTest() {
     config_.set_service_name(service_name_);
     config_.set_instance_name(instance_name_);
 
     span_ctx_ = std::make_shared<SpanContextImpl>(sample_ctx);
     span_ext_ctx_ = std::make_shared<SpanContextExtensionImpl>("1");
 
-    factory_ = std::make_unique<SegmentContextFactory>(config_);
+    factory_ = std::make_unique<TracingContextFactory>(config_);
   }
 
  protected:
@@ -53,10 +53,10 @@ class SegmentContextTest : public testing::Test {
   TracerConfig config_;
   SpanContextPtr span_ctx_;
   SpanContextExtensionPtr span_ext_ctx_;
-  std::unique_ptr<SegmentContextFactory> factory_;
+  std::unique_ptr<TracingContextFactory> factory_;
 };
 
-TEST_F(SegmentContextTest, BasicTest) {
+TEST_F(TracingContextTest, BasicTest) {
   auto sc = factory_->create();
   EXPECT_EQ(sc->service(), "mesh");
   EXPECT_EQ(sc->serviceInstance(), "service_0");
@@ -127,7 +127,7 @@ TEST_F(SegmentContextTest, BasicTest) {
             span_child->createSpanObject().DebugString());
 }
 
-TEST_F(SegmentContextTest, ChildSegmentContext) {
+TEST_F(TracingContextTest, ChildSegmentContext) {
   auto sc = factory_->create(span_ctx_);
   EXPECT_EQ(sc->service(), "mesh");
   EXPECT_EQ(sc->serviceInstance(), "service_0");
@@ -239,7 +239,7 @@ TEST_F(SegmentContextTest, ChildSegmentContext) {
             span_child->createSpanObject().DebugString());
 }
 
-TEST_F(SegmentContextTest, SkipAnalysisSegment) {
+TEST_F(TracingContextTest, SkipAnalysisSegment) {
   auto sc = factory_->create(span_ctx_, span_ext_ctx_);
   EXPECT_TRUE(sc->skipAnalysis());
 
@@ -286,8 +286,8 @@ TEST_F(SegmentContextTest, SkipAnalysisSegment) {
   EXPECT_EQ(expected_obj.DebugString(), span->createSpanObject().DebugString());
 }
 
-TEST_F(SegmentContextTest, SW8CreateTest) {
-  SegmentContextImpl sc(config_.service_name(), config_.instance_name(),
+TEST_F(TracingContextTest, SW8CreateTest) {
+  TracingContextImpl sc(config_.service_name(), config_.instance_name(),
                         span_ctx_, span_ext_ctx_, random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
@@ -316,7 +316,7 @@ TEST_F(SegmentContextTest, SW8CreateTest) {
   EXPECT_EQ(expect_sw8, *sc.createSW8HeaderValue(span2, target_address));
 }
 
-TEST_F(SegmentContextTest, ReadyToSendTest) {
+TEST_F(TracingContextTest, ReadyToSendTest) {
   auto sc = factory_->create();
 
   // No parent span

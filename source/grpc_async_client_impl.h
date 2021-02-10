@@ -91,16 +91,9 @@ class GrpcAsyncSegmentReporterClient final
   std::condition_variable cv_;
 };
 
-struct TaggedStream {
-  Operation operation;
-  GrpcAsyncSegmentReporterStream* stream;
-};
-
-void* toTag(TaggedStream* stream);
-TaggedStream* deTag(void* stream);
-
 class GrpcAsyncSegmentReporterStream final
-    : public AsyncStream<TracerRequestType, TracerResponseType> {
+    : public AsyncStream<TracerRequestType, TracerResponseType>,
+      public AsyncStreamCallback {
  public:
   GrpcAsyncSegmentReporterStream(
       AsyncClient<TracerRequestType, TracerResponseType>& client,
@@ -109,10 +102,14 @@ class GrpcAsyncSegmentReporterStream final
 
   // AsyncStream
   void sendMessage(TracerRequestType message) override;
-  void handleOperation(Operation incoming_op) override;
+
+  // AsyncStreamCallback
+  void onConnected() override;
+  void onIdle() override;
+  void onWriteDone() override;
 
  private:
-  bool clearPendingMessages();
+  bool clearPendingMessage();
 
   AsyncClient<TracerRequestType, TracerResponseType>& client_;
   TracerResponseType commands_;
@@ -120,10 +117,10 @@ class GrpcAsyncSegmentReporterStream final
   std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> request_writer_;
   CircularBuffer<TracerRequestType> pending_messages_{
       PENDING_MESSAGE_BUFFER_SIZE};
-  Operation state_{Operation::Initialized};
+  StreamState state_{StreamState::Initialized};
 
-  TaggedStream connected_{Operation::Connected, this};
-  TaggedStream write_done_{Operation::WriteDone, this};
+  StreamCallbackTag connected_{StreamState::Connected, this};
+  StreamCallbackTag write_done_{StreamState::WriteDone, this};
 
   std::condition_variable& cv_;
 };

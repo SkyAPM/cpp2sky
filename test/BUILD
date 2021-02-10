@@ -26,9 +26,9 @@ cc_test(
 )
 
 cc_test(
-  name = "segment_context_test",
+  name = "tracing_context_test",
   srcs = [
-    "segment_context_test.cc",
+    "tracing_context_test.cc",
   ],
   deps = [
     "@com_google_googletest//:gtest_main",
@@ -46,7 +46,7 @@ cc_test(
   ],
   deps = [
     "@com_google_googletest//:gtest_main",
-    "//source:cpp2sky_lib",
+    "//source:async_client_impl_test",
     ":mocks",
   ],
   visibility = ["//visibility:public"],
