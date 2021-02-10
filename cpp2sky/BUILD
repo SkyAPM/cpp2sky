@@ -18,7 +18,7 @@ cc_library(
   name = "cpp2sky_interface",
   hdrs = [
     "tracer.h",
-    "segment_context.h",
+    "tracing_context.h",
     "propagation.h",
     "well_known_names.h",
     "exception.h",

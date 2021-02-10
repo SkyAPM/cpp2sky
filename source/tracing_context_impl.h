@@ -16,15 +16,14 @@
 
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
-#include "cpp2sky/segment_context.h"
+#include "cpp2sky/tracing_context.h"
 #include "source/utils/random_generator.h"
 
 namespace cpp2sky {
 
-class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
+class TracingSpanImpl : public TracingSpan {
  public:
-  CurrentSegmentSpanImpl(int32_t span_id,
-                         SegmentContext& parent_segment_context);
+  TracingSpanImpl(int32_t span_id, TracingContext& parent_tracing_context);
 
   skywalking::v3::SpanObject createSpanObject() override;
 
@@ -110,19 +109,19 @@ class CurrentSegmentSpanImpl : public CurrentSegmentSpan {
   bool skip_analysis_ = false;
   bool finished_ = false;
 
-  SegmentContext& parent_segment_context_;
+  TracingContext& parent_tracing_context_;
 };
 
-class SegmentContextImpl : public SegmentContext {
+class TracingContextImpl : public TracingContext {
  public:
   // This constructor is called when there is no parent SpanContext.
-  SegmentContextImpl(const std::string& service_name,
+  TracingContextImpl(const std::string& service_name,
                      const std::string& instance_name, RandomGenerator& random);
-  SegmentContextImpl(const std::string& service_name,
+  TracingContextImpl(const std::string& service_name,
                      const std::string& instance_name,
                      SpanContextPtr parent_span_context,
                      RandomGenerator& random);
-  SegmentContextImpl(const std::string& service_name,
+  TracingContextImpl(const std::string& service_name,
                      const std::string& instance_name,
                      SpanContextPtr parent_span_context,
                      SpanContextExtensionPtr parent_ext_span_context,
@@ -137,9 +136,7 @@ class SegmentContextImpl : public SegmentContext {
   const std::string& serviceInstance() const override {
     return service_instance_;
   }
-  const std::list<CurrentSegmentSpanPtr>& spans() const override {
-    return spans_;
-  }
+  const std::list<TracingSpanPtr>& spans() const override { return spans_; }
   SpanContextPtr parentSpanContext() const override {
     return parent_span_context_;
   }
@@ -148,16 +145,15 @@ class SegmentContextImpl : public SegmentContext {
   }
 #pragma endregion
 
-  CurrentSegmentSpanPtr createExitSpan(
-      CurrentSegmentSpanPtr parent_span) override;
+  TracingSpanPtr createExitSpan(TracingSpanPtr parent_span) override;
 
-  CurrentSegmentSpanPtr createEntrySpan() override;
+  TracingSpanPtr createEntrySpan() override;
   std::optional<std::string> createSW8HeaderValue(
       const std::string_view target_address) override {
     return createSW8HeaderValue(nullptr, target_address);
   }
   std::optional<std::string> createSW8HeaderValue(
-      CurrentSegmentSpanPtr parent_span,
+      TracingSpanPtr parent_span,
       const std::string_view target_address) override;
   skywalking::v3::SegmentObject createSegmentObject() override;
   void setSkipAnalysis() override { should_skip_analysis_ = true; }
@@ -165,14 +161,14 @@ class SegmentContextImpl : public SegmentContext {
   bool readyToSend() override;
 
  private:
-  std::string encodeSpan(CurrentSegmentSpanPtr parent_span,
+  std::string encodeSpan(TracingSpanPtr parent_span,
                          const std::string_view target_address);
-  CurrentSegmentSpanPtr createSpan();
+  TracingSpanPtr createSpan();
 
   SpanContextPtr parent_span_context_;
   SpanContextExtensionPtr parent_ext_span_context_;
 
-  std::list<CurrentSegmentSpanPtr> spans_;
+  std::list<TracingSpanPtr> spans_;
 
   // Based on
   // https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto
@@ -184,13 +180,13 @@ class SegmentContextImpl : public SegmentContext {
   bool should_skip_analysis_ = false;
 };
 
-class SegmentContextFactory {
+class TracingContextFactory {
  public:
-  SegmentContextFactory(const TracerConfig& cfg);
+  TracingContextFactory(const TracerConfig& cfg);
 
-  SegmentContextPtr create();
-  SegmentContextPtr create(SpanContextPtr span_context);
-  SegmentContextPtr create(SpanContextPtr span_context,
+  TracingContextPtr create();
+  TracingContextPtr create(SpanContextPtr span_context);
+  TracingContextPtr create(SpanContextPtr span_context,
                            SpanContextExtensionPtr ext_span_context);
 
  private:
