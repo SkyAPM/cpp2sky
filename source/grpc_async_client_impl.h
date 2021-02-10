@@ -23,6 +23,7 @@
 
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/internal/async_client.h"
+#include "cpp2sky/internal/stream_builder.h"
 #include "language-agent/Tracing.grpc.pb.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/utils/circular_buffer.h"
@@ -62,7 +63,8 @@ class GrpcAsyncSegmentReporterClient final
  public:
   GrpcAsyncSegmentReporterClient(
       const std::string& address, grpc::CompletionQueue& cq,
-      ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType> factory,
+      ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
+          factory,
       std::shared_ptr<grpc::ChannelCredentials> cred);
   ~GrpcAsyncSegmentReporterClient();
 
@@ -88,7 +90,8 @@ class GrpcAsyncSegmentReporterClient final
   }
 
   std::string address_;
-  ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType> factory_;
+  ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
+      factory_;
   grpc::CompletionQueue& cq_;
   TracerStubImpl stub_;
   AsyncStreamPtr<TracerRequestType, TracerResponseType> stream_;
@@ -133,10 +136,11 @@ class GrpcAsyncSegmentReporterStream final
   std::condition_variable& cv_;
 };
 
-class GrpcAsyncSegmentReporterStreamFactory final
-    : public ClientStreamingStreamBuilder<TracerRequestType, TracerResponseType> {
+class GrpcAsyncSegmentReporterStreamBuilder final
+    : public ClientStreamingStreamBuilder<TracerRequestType,
+                                          TracerResponseType> {
  public:
-  explicit GrpcAsyncSegmentReporterStreamFactory(const std::string& token)
+  explicit GrpcAsyncSegmentReporterStreamBuilder(const std::string& token)
       : token_(token) {}
 
   // ClientStreamingStreamBuilder

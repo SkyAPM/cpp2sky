@@ -116,7 +116,7 @@ class AsyncStreamCallback {
  public:
   /**
    * Callback when stream ready event occured.
-   */ 
+   */
   virtual void onReady() = 0;
 
   /**
@@ -131,7 +131,7 @@ class AsyncStreamCallback {
 
   /**
    * Callback when read done event occured.
-   */ 
+   */
   virtual void onReadDone() = 0;
 };
 
@@ -139,7 +139,7 @@ struct StreamCallbackTag {
  public:
   void callback() {
     switch (state_) {
-      case StreamState::Ready: 
+      case StreamState::Ready:
         callback_->onReady();
         break;
       case StreamState::WriteDone:

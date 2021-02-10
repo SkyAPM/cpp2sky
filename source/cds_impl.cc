@@ -26,44 +26,49 @@ std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>>
 ConfigDiscoveryServiceStubImpl::createReader(grpc::ClientContext* ctx,
                                              CdsRequest* request,
                                              grpc::CompletionQueue* cq) {
-  return stub_->PrepareAsyncfetchConfigurations(ctx, *request, cq);
+  // return stub_->PrepareAsyncfetchConfigurations(ctx, *request, cq);
+  return nullptr;
 }
 
-GrpcAsyncConfigDiscoveryServiceClient:: GrpcAsyncConfigDiscoveryServiceClient(
-      const std::string& address, grpc::CompletionQueue& cq,
-      AsyncStreamFactoryPtr<CdsRequest, CdsResponse> factory,
-      std::shared_ptr<grpc::ChannelCredentials> cred
-    : factory_(factory), cq_(cq), channel_(grpc::CreateChannel(address, cred)) {
-  stub_ = std::make_unique<ConfigDiscoveryServiceStubImpl>(channel_);
+GrpcAsyncConfigDiscoveryServiceClient::GrpcAsyncConfigDiscoveryServiceClient(
+    const std::string& address, grpc::CompletionQueue& cq,
+    UnaryStreamBuilderPtr<CdsRequest, CdsResponse> builder,
+    std::shared_ptr<grpc::ChannelCredentials> cred)
+    : builder_(std::move(builder)), cq_(cq), stub_(grpc::CreateChannel(address, cred)) {}
+
+GrpcAsyncConfigDiscoveryServiceClient::~GrpcAsyncConfigDiscoveryServiceClient() {
+  resetStream();
 }
 
 void GrpcAsyncConfigDiscoveryServiceClient::sendMessage(CdsRequest request) {
   resetStream();
 
-  std::condition_variable cv;
-  stream_ = factory_->create(*this, cv);
+  stream_ = builder_->create(*this, request);
 
   gpr_log(GPR_INFO, "[CDS] Stream %p had created.", stream_.get());
 }
 
 GrpcAsyncConfigDiscoveryServiceStream::GrpcAsyncConfigDiscoveryServiceStream(
-    GrpcAsyncConfigDiscoveryServiceClient& parent, CdsRequest request)
+    AsyncClient<CdsRequest, CdsResponse>& parent, CdsRequest request)
     : client_(parent) {
   sendMessage(request);
 }
 
 void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request) {
-  response_reader_ = parent.stub().createReader(&ctx_, &request, &client_.completionQueue());
+  response_reader_ =
+      client_.stub().createReader(&ctx_, &request, &client_.completionQueue());
   response_reader_->StartCall();
-  response_reader_->Finish(&commands_, &status_, reinterpret_cast<void*>(read_done_));
+  response_reader_->Finish(&commands_, &status_,
+                           reinterpret_cast<void*>(&read_done_));
 }
 
 void GrpcAsyncConfigDiscoveryServiceStream::onReadDone() {}
 
-AsyncStreamPtr<CdsRequest, CdsResponse> GrpcAsyncConfigDiscoveryServiceStreamFactory::create(
-    AsyncClient<TracerRequestType, TracerResponseType>& client,
-    std::condition_variable& cv) {
-  return std::make_shared<GrpcAsyncConfigDiscoveryServiceStream>(client);
+AsyncStreamPtr<CdsRequest, CdsResponse>
+GrpcAsyncConfigDiscoveryServiceStreamBuilder::create(
+    AsyncClient<CdsRequest, CdsResponse>& client, CdsRequest request) {
+  return std::make_shared<GrpcAsyncConfigDiscoveryServiceStream>(client,
+                                                                 request);
 }
 
 }  // namespace cpp2sky

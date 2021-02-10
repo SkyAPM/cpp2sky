@@ -24,25 +24,7 @@ cc_library(
 )
 
 cc_library(
-  name = "cds_client_interface",
-  hdrs = [
-    "cds_client.h",
-  ],
-  deps = [
-    "@com_github_grpc_grpc//:grpc++",
-    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
-  ],
-  visibility = ["//visibility:public"],
-)
-
-cc_library(
-  name = "reporter_client_interface",
-  hdrs = [
-    "reporter_client.h",
-  ],
-  deps = [
-    "@com_github_grpc_grpc//:grpc++",
-    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
-  ],
+  name = "stream_builder_interface",
+  hdrs = ["stream_builder.h"],
   visibility = ["//visibility:public"],
 )

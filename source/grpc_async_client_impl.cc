@@ -38,7 +38,8 @@ TracerStubImpl::createWriter(grpc::ClientContext* ctx,
 
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     const std::string& address, grpc::CompletionQueue& cq,
-    ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType> factory,
+    ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
+        factory,
     std::shared_ptr<grpc::ChannelCredentials> cred)
     : factory_(std::move(factory)),
       cq_(cq),
@@ -114,8 +115,9 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
   // sent to CompletionQueue.
   ctx_.set_wait_for_ready(true);
 
-  request_writer_ = client_.stub().createWriter(
-      &ctx_, &commands_, &client_.completionQueue(), reinterpret_cast<void*>(&ready_));
+  request_writer_ =
+      client_.stub().createWriter(&ctx_, &commands_, &client_.completionQueue(),
+                                  reinterpret_cast<void*>(&ready_));
 }
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
@@ -181,7 +183,7 @@ void GrpcAsyncSegmentReporterStream::onWriteDone() {
 }
 
 AsyncStreamPtr<TracerRequestType, TracerResponseType>
-GrpcAsyncSegmentReporterStreamFactory::create(
+GrpcAsyncSegmentReporterStreamBuilder::create(
     AsyncClient<TracerRequestType, TracerResponseType>& client,
     std::condition_variable& cv) {
   return std::make_shared<GrpcAsyncSegmentReporterStream>(client, cv, token_);

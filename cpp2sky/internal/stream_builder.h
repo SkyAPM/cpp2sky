@@ -46,12 +46,11 @@ class UnaryStreamBuilder {
    * Create async stream entity
    */
   virtual AsyncStreamPtr<RequestType, ResponseType> create(
-      AsyncClient<RequestType, ResponseType>& client,
-      RequestType request) = 0;
+      AsyncClient<RequestType, ResponseType>& client, RequestType request) = 0;
 };
 
 template <class RequestType, class ResponseType>
 using UnaryStreamBuilderPtr =
     std::unique_ptr<UnaryStreamBuilder<RequestType, ResponseType>>;
 
-}
+}  // namespace cpp2sky

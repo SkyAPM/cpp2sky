@@ -9,6 +9,7 @@ cc_library(
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "@com_google_googletest//:gtest_main",
     "//cpp2sky/internal:async_client_interface",
+    "//cpp2sky/internal:stream_builder_interface",
     "//cpp2sky/internal:random_generator_interface",
   ]
 )

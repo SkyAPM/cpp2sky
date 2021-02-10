@@ -15,8 +15,9 @@
 #pragma once
 
 #include "cpp2sky/internal/async_client.h"
-#include "language-agent/ConfigirationDiscoveryService.pb.h"
+#include "cpp2sky/internal/stream_builder.h"
 #include "language-agent/ConfigurationDiscoveryService.grpc.pb.h"
+#include "language-agent/ConfigurationDiscoveryService.pb.h"
 
 namespace cpp2sky {
 
@@ -29,18 +30,18 @@ class ConfigDiscoveryServiceStubImpl final
   ConfigDiscoveryServiceStubImpl(std::shared_ptr<grpc::Channel> channel);
 
   // StubWrapper
-  std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> createWriter(
-      grpc::ClientContext* ctx, TracerResponseType* response,
+  std::unique_ptr<grpc::ClientAsyncWriter<CdsRequest>> createWriter(
+      grpc::ClientContext* ctx, CdsResponse* response,
       grpc::CompletionQueue* cq, void* tag) override {
     assert(false);
   }
 
-  std::unique_ptr<grpc::ClientAsyncResponseReader<TracerResponseType>>
-  createReader(grpc::ClientContext* ctx, TracerRequestType* request,
-               grpc::CompletionQueue* cq) override;
+  std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>> createReader(
+      grpc::ClientContext* ctx, CdsRequest* request,
+      grpc::CompletionQueue* cq) override;
 
  private:
-  std::unique_ptr<skywalking::v3::ConfigurationDiscoveryService> stub_;
+  std::unique_ptr<skywalking::v3::ConfigurationDiscoveryService::Stub> stub_;
 };
 
 class GrpcAsyncConfigDiscoveryServiceStream;
@@ -50,15 +51,15 @@ class GrpcAsyncConfigDiscoveryServiceClient final
  public:
   explicit GrpcAsyncConfigDiscoveryServiceClient(
       const std::string& address, grpc::CompletionQueue& cq,
-      AsyncStreamFactoryPtr<CdsRequest, CdsResponse> factory,
+      UnaryStreamBuilderPtr<CdsRequest, CdsResponse> builder,
       std::shared_ptr<grpc::ChannelCredentials> cred);
   ~GrpcAsyncConfigDiscoveryServiceClient();
 
   void sendMessage(CdsRequest request);
-  void drainPendingMessage(TracerRequestType pending_message) override {}
+  void drainPendingMessage(CdsRequest pending_message) override {}
   void startStream() override {}
   grpc::CompletionQueue& completionQueue() override { return cq_; }
-  StubWrapper<RequestType, ResponseType>& stub() override { return stub_; }
+  StubWrapper<CdsRequest, CdsResponse>& stub() override { return stub_; }
 
  private:
   void resetStream() {
@@ -69,7 +70,7 @@ class GrpcAsyncConfigDiscoveryServiceClient final
   }
 
   std::string address_;
-  AsyncStreamFactoryPtr<TracerRequestType, TracerResponseType> factory_;
+  UnaryStreamBuilderPtr<CdsRequest, CdsResponse> builder_;
   grpc::CompletionQueue& cq_;
   ConfigDiscoveryServiceStubImpl stub_;
   AsyncStreamPtr<CdsRequest, CdsResponse> stream_;
@@ -86,14 +87,15 @@ class GrpcAsyncConfigDiscoveryServiceStream final
   void sendMessage(CdsRequest request);
 
   // AsyncStreamCallback
-  void onConnected() override {}
+  void onReady() override {}
   void onIdle() override {}
   void onWriteDone() override {}
   void onReadDone() override;
 
  private:
   AsyncClient<CdsRequest, CdsResponse>& client_;
-  std::unique_ptr<grpc::ClientAsyncResponseReader<TracerResponseType>> response_reader_;
+  std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>>
+      response_reader_;
   CdsRequest request_;
   CdsResponse commands_;
   grpc::Status status_;
@@ -103,13 +105,13 @@ class GrpcAsyncConfigDiscoveryServiceStream final
   StreamCallbackTag read_done_{StreamState::ReadDone, this};
 };
 
-class GrpcAsyncConfigDiscoveryServiceStreamFactory final
-  : public AsyncStreamFactory<CdsRequest, CdsResponse> {
-public:
+class GrpcAsyncConfigDiscoveryServiceStreamBuilder final
+    : public UnaryStreamBuilder<CdsRequest, CdsResponse> {
+ public:
   // AsyncStreamFactory
   AsyncStreamPtr<CdsRequest, CdsResponse> create(
-    AsyncClient<TracerRequestType, TracerResponseType>& client,
-    std::condition_variable& cv) override;
+      AsyncClient<CdsRequest, CdsResponse>& client,
+      CdsRequest request) override;
 };
 
 }  // namespace cpp2sky
