@@ -55,10 +55,8 @@ class GrpcAsyncConfigDiscoveryServiceClient final
   ~GrpcAsyncConfigDiscoveryServiceClient();
 
   void sendMessage(CdsRequest request);
-  std::string peerAddress() override { return address_; }
   void drainPendingMessage(TracerRequestType pending_message) override {}
-  void startStream() override;
-  size_t numOfMessages() override { assert(false); }
+  void startStream() override {}
   grpc::CompletionQueue& completionQueue() override { return cq_; }
   StubWrapper<RequestType, ResponseType>& stub() override { return stub_; }
 
@@ -82,7 +80,7 @@ class GrpcAsyncConfigDiscoveryServiceStream final
       public AsyncStreamCallback {
  public:
   explicit GrpcAsyncConfigDiscoveryServiceStream(
-      AsyncClient<CdsRequest, CdsResponse>& parent);
+      AsyncClient<CdsRequest, CdsResponse>& parent, CdsRequest request);
 
   // AsyncStream
   void sendMessage(CdsRequest request);

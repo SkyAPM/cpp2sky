@@ -17,7 +17,6 @@
 #include <google/protobuf/message.h>
 #include <grpcpp/grpcpp.h>
 
-#include <condition_variable>
 #include <memory>
 
 using google::protobuf::Message;
@@ -71,11 +70,6 @@ class AsyncClient {
   virtual void sendMessage(RequestType message) = 0;
 
   /**
-   * Peer address of current gRPC client.
-   */
-  virtual std::string peerAddress() = 0;
-
-  /**
    * Drain pending message.
    */
   virtual void drainPendingMessage(RequestType message) = 0;
@@ -84,11 +78,6 @@ class AsyncClient {
    * Start stream if there is no living stream.
    */
   virtual void startStream() = 0;
-
-  /**
-   * The number of drained pending messages.
-   */
-  virtual size_t numOfMessages() = 0;
 
   /**
    * Completion queue.
@@ -117,7 +106,7 @@ class AsyncStream {
 
 enum class StreamState : uint8_t {
   Initialized = 0,
-  Connected = 1,
+  Ready = 1,
   Idle = 2,
   WriteDone = 3,
   ReadDone = 4,
@@ -126,9 +115,9 @@ enum class StreamState : uint8_t {
 class AsyncStreamCallback {
  public:
   /**
-   * Callback when connected event occured.
-   */
-  virtual void onConnected() = 0;
+   * Callback when stream ready event occured.
+   */ 
+  virtual void onReady() = 0;
 
   /**
    * Callback when idle event occured.
@@ -150,8 +139,8 @@ struct StreamCallbackTag {
  public:
   void callback() {
     switch (state_) {
-      case StreamState::Connected:
-        callback_->onConnected();
+      case StreamState::Ready: 
+        callback_->onReady();
         break;
       case StreamState::WriteDone:
         callback_->onWriteDone();
@@ -171,22 +160,5 @@ struct StreamCallbackTag {
 
 template <class RequestType, class ResponseType>
 using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType, ResponseType>>;
-
-template <class RequestType, class ResponseType>
-class AsyncStreamFactory {
- public:
-  virtual ~AsyncStreamFactory() = default;
-
-  /**
-   * Create async stream entity
-   */
-  virtual AsyncStreamPtr<RequestType, ResponseType> create(
-      AsyncClient<RequestType, ResponseType>& client,
-      std::condition_variable& cv) = 0;
-};
-
-template <class RequestType, class ResponseType>
-using AsyncStreamFactoryPtr =
-    std::unique_ptr<AsyncStreamFactory<RequestType, ResponseType>>;
 
 }  // namespace cpp2sky

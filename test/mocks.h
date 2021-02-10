@@ -39,7 +39,7 @@ class MockAsyncStream : public AsyncStream<RequestType, ResponseType> {
   MOCK_METHOD(void, sendMessage, (RequestType));
   MOCK_METHOD(void, onIdle, ());
   MOCK_METHOD(void, onWriteDone, ());
-  MOCK_METHOD(void, onConnected, ());
+  MOCK_METHOD(void, onReady, ());
 };
 
 template <class RequestType, class ResponseType>
@@ -49,21 +49,19 @@ class MockAsyncClient : public AsyncClient<RequestType, ResponseType> {
 
   MOCK_METHOD(void, sendMessage, (RequestType));
   MOCK_METHOD(StubWrapperType&, stub, ());
-  MOCK_METHOD(std::string, peerAddress, ());
   MOCK_METHOD(void, drainPendingMessage, (RequestType));
   MOCK_METHOD(void, startStream, ());
-  MOCK_METHOD(size_t, numOfMessages, ());
   MOCK_METHOD(grpc::CompletionQueue&, completionQueue, ());
 };
 
 template <class RequestType, class ResponseType>
-class MockAsyncStreamFactory
-    : public AsyncStreamFactory<RequestType, ResponseType> {
+class MockClientStreamingStreamBuilder
+    : public ClientStreamingStreamBuilder<RequestType, ResponseType> {
  public:
   using AsyncClientType = AsyncClient<RequestType, ResponseType>;
   using AsyncStreamPtrType = AsyncStreamPtr<RequestType, ResponseType>;
 
-  MockAsyncStreamFactory(
+  MockClientStreamingStreamBuilder(
       std::shared_ptr<MockAsyncStream<RequestType, ResponseType>> stream)
       : stream_(stream) {
     ON_CALL(*this, create(_, _)).WillByDefault(Return(stream_));

@@ -40,22 +40,19 @@ GrpcAsyncConfigDiscoveryServiceClient:: GrpcAsyncConfigDiscoveryServiceClient(
 void GrpcAsyncConfigDiscoveryServiceClient::sendMessage(CdsRequest request) {
   resetStream();
 
-  stream_ = std::make_unique<GrpcAsyncConfigDiscoveryServiceStream>(*this);
-  stream_->sendMessage(request);
-}
-
-void GrpcAsyncConfigDiscoveryServiceClient::startStream() {
-  resetStream();
-
   std::condition_variable cv;
   stream_ = factory_->create(*this, cv);
 
   gpr_log(GPR_INFO, "[CDS] Stream %p had created.", stream_.get());
 }
 
-GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
+GrpcAsyncConfigDiscoveryServiceStream::GrpcAsyncConfigDiscoveryServiceStream(
     GrpcAsyncConfigDiscoveryServiceClient& parent, CdsRequest request)
     : client_(parent) {
+  sendMessage(request);
+}
+
+void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request) {
   response_reader_ = parent.stub().createReader(&ctx_, &request, &client_.completionQueue());
   response_reader_->StartCall();
   response_reader_->Finish(&commands_, &status_, reinterpret_cast<void*>(read_done_));

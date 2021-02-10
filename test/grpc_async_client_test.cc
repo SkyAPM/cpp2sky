@@ -33,7 +33,7 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
     stream_ = std::make_shared<
         MockAsyncStream<TracerRequestType, TracerResponseType>>();
     factory_ = std::make_unique<
-        MockAsyncStreamFactory<TracerRequestType, TracerResponseType>>(stream_);
+        MockClientStreamingStreamBuilder<TracerRequestType, TracerResponseType>>(stream_);
     EXPECT_CALL(*factory_, create(_, _));
 
     client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
@@ -46,7 +46,7 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
   std::string token_{"token"};
   std::shared_ptr<MockAsyncStream<TracerRequestType, TracerResponseType>>
       stream_;
-  std::unique_ptr<MockAsyncStreamFactory<TracerRequestType, TracerResponseType>>
+  std::unique_ptr<MockClientStreamingStreamBuilder<TracerRequestType, TracerResponseType>>
       factory_;
 
   std::unique_ptr<GrpcAsyncSegmentReporterClient> client_;

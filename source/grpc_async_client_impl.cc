@@ -38,7 +38,7 @@ TracerStubImpl::createWriter(grpc::ClientContext* ctx,
 
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     const std::string& address, grpc::CompletionQueue& cq,
-    AsyncStreamFactoryPtr<TracerRequestType, TracerResponseType> factory,
+    ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType> factory,
     std::shared_ptr<grpc::ChannelCredentials> cred)
     : factory_(std::move(factory)),
       cq_(cq),
@@ -114,9 +114,8 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
   // sent to CompletionQueue.
   ctx_.set_wait_for_ready(true);
 
-  request_writer_ =
-      client_.stub().createWriter(&ctx_, &commands_, &client_.completionQueue(),
-                                  reinterpret_cast<void*>(&connected_));
+  request_writer_ = client_.stub().createWriter(
+      &ctx_, &commands_, &client_.completionQueue(), reinterpret_cast<void*>(&ready_));
 }
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
@@ -149,9 +148,9 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
   return true;
 }
 
-void GrpcAsyncSegmentReporterStream::onConnected() {
-  gpr_log(GPR_INFO, "Established connection: %s",
-          client_.peerAddress().c_str());
+void GrpcAsyncSegmentReporterStream::onReady() {
+  gpr_log(GPR_INFO, "Stream initialized");
+
   state_ = StreamState::Idle;
   onIdle();
 }
@@ -170,6 +169,7 @@ void GrpcAsyncSegmentReporterStream::onIdle() {
 
 void GrpcAsyncSegmentReporterStream::onWriteDone() {
   gpr_log(GPR_INFO, "Write finished");
+
   // Enqueue message after sending message finished.
   // With this, messages which failed to sent never lost even if connection
   // was closed. because pending messages with messages which failed to send
