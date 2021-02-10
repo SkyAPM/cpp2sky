@@ -22,3 +22,9 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "stream_builder_interface",
+  hdrs = ["stream_builder.h"],
+  visibility = ["//visibility:public"],
+)

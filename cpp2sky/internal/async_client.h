@@ -133,21 +133,4 @@ public:
 template <class RequestType, class ResponseType>
 using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType, ResponseType>>;
 
-template <class RequestType, class ResponseType>
-class ClientStreamingStreamBuilder {
- public:
-  virtual ~ClientStreamingStreamBuilder() = default;
-
-  /**
-   * Create async stream entity
-   */
-  virtual AsyncStreamPtr<RequestType, ResponseType> create(
-      AsyncClient<RequestType, ResponseType>& client,
-      std::condition_variable& cv) = 0;
-};
-
-template <class RequestType, class ResponseType>
-using ClientStreamingStreamBuilderPtr =
-    std::unique_ptr<ClientStreamingStreamBuilder<RequestType, ResponseType>>;
-
 }  // namespace cpp2sky

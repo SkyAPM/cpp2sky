@@ -179,7 +179,7 @@ void GrpcAsyncSegmentReporterStream::onWriteDone() {
 }
 
 AsyncStreamPtr<TracerRequestType, TracerResponseType>
-GrpcAsyncSegmentReporterStreamFactory::create(
+GrpcAsyncSegmentReporterStreamBuilder::create(
     AsyncClient<TracerRequestType, TracerResponseType>& client,
     std::condition_variable& cv) {
   return std::make_shared<GrpcAsyncSegmentReporterStream>(client, cv, token_);

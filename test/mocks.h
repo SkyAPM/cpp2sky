@@ -20,6 +20,7 @@
 #include <condition_variable>
 
 #include "cpp2sky/internal/async_client.h"
+#include "cpp2sky/internal/stream_builder.h"
 #include "cpp2sky/internal/random_generator.h"
 
 using testing::_;
@@ -55,8 +56,7 @@ class MockAsyncClient : public AsyncClient<RequestType, ResponseType> {
 };
 
 template <class RequestType, class ResponseType>
-class MockClientStreamingStreamBuilder
-    : public ClientStreamingStreamBuilder<RequestType, ResponseType> {
+class MockClientStreamingStreamBuilder final : public ClientStreamingStreamBuilder<RequestType, ResponseType> {
  public:
   using AsyncClientType = AsyncClient<RequestType, ResponseType>;
   using AsyncStreamPtrType = AsyncStreamPtr<RequestType, ResponseType>;
