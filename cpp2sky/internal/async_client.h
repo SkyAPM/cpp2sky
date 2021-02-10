@@ -51,29 +51,14 @@ class AsyncClient {
   virtual void sendMessage(RequestType message) = 0;
 
   /**
-   * Peer address of current gRPC client.
-   */
-  virtual std::string peerAddress() = 0;
-
-  /**
    * Drain pending message.
    */
   virtual void drainPendingMessage(RequestType message) = 0;
 
   /**
-   * Reset stream if it is living.
-   */
-  virtual void resetStream() = 0;
-
-  /**
    * Start stream if there is no living stream.
    */
   virtual void startStream() = 0;
-
-  /**
-   * The number of drained pending messages.
-   */
-  virtual size_t numOfMessages() = 0;
 
   /**
    * Completion queue.
@@ -102,7 +87,7 @@ class AsyncStream {
 
 enum class StreamState : uint8_t {
   Initialized = 0,
-  Connected = 1,
+  Ready = 1,
   Idle = 2,
   WriteDone = 3,
 };
@@ -112,7 +97,7 @@ class AsyncStreamCallback {
   /**
    * Callback when connected event occured.
    */ 
-  virtual void onConnected() = 0;
+  virtual void onReady() = 0;
 
   /**
    * Callback when idle event occured.
@@ -129,8 +114,8 @@ struct StreamCallbackTag {
 public:
   void callback() {
     switch (state_) {
-      case StreamState::Connected: 
-        callback_->onConnected();
+      case StreamState::Ready: 
+        callback_->onReady();
         break;
       case StreamState::WriteDone:
         callback_->onWriteDone();
@@ -149,9 +134,9 @@ template <class RequestType, class ResponseType>
 using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType, ResponseType>>;
 
 template <class RequestType, class ResponseType>
-class AsyncStreamFactory {
+class ClientStreamingStreamBuilder {
  public:
-  virtual ~AsyncStreamFactory() = default;
+  virtual ~ClientStreamingStreamBuilder() = default;
 
   /**
    * Create async stream entity
@@ -162,7 +147,7 @@ class AsyncStreamFactory {
 };
 
 template <class RequestType, class ResponseType>
-using AsyncStreamFactoryPtr =
-    std::unique_ptr<AsyncStreamFactory<RequestType, ResponseType>>;
+using ClientStreamingStreamBuilderPtr =
+    std::unique_ptr<ClientStreamingStreamBuilder<RequestType, ResponseType>>;
 
 }  // namespace cpp2sky
