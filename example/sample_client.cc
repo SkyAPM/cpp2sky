@@ -16,8 +16,8 @@
 #include <string>
 
 #include "cpp2sky/propagation.h"
-#include "cpp2sky/segment_context.h"
 #include "cpp2sky/tracer.h"
+#include "cpp2sky/tracing_context.h"
 #include "cpp2sky/well_known_names.h"
 #include "httplib.h"
 
@@ -37,8 +37,8 @@ int main() {
   // 1. Create tracer object to send span data to OAP.
   auto tracer = createInsecureGrpcTracer(config);
 
-  // 2. Create segment context
-  auto current_segment = tracer->newSegment();
+  // 2. Create tracing context
+  auto tracing_context = tracer->newContext();
 
   /**
    * 3. Create entry span it traces RPC call.
@@ -47,16 +47,16 @@ int main() {
    *
    * example:
    *
-   * auto current_span = current_segment->createEntrySpan();
+   * auto current_span = tracing_context->createEntrySpan();
    * current_span->startSpan("sample_op1");
    *
-   * auto current_span2 = current_segment->createExitSpan();
+   * auto current_span2 = tracing_context->createExitSpan();
    * current_span2->startSpan("sample_op2");
    *
    * httplib::Client cli("remote", 8082);
    * httplib::Headers headers = {
    *   {kPropagationHeader.data(),
-   *   current_segment->createSW8HeaderValue(current_span, "remote:8082")}};
+   *   tracing_context->createSW8HeaderValue(current_span, "remote:8082")}};
    *
    * auto res = cli.Get("/ping", headers);
    *
@@ -65,22 +65,22 @@ int main() {
    *
    */
   {
-    StartEntrySpan entry_span(current_segment, "sample_op1");
+    StartEntrySpan entry_span(tracing_context, "sample_op1");
 
     {
       std::string target_address = "remote:8082";
-      StartExitSpan exit_span(current_segment, entry_span.get(), "sample_op2");
+      StartExitSpan exit_span(tracing_context, entry_span.get(), "sample_op2");
       exit_span.get()->setPeer(target_address);
 
       httplib::Client cli("remote", 8082);
       httplib::Headers headers = {
-          {kPropagationHeader.data(), *current_segment->createSW8HeaderValue(
+          {kPropagationHeader.data(), *tracing_context->createSW8HeaderValue(
                                           exit_span.get(), target_address)}};
 
       auto res = cli.Get("/ping", headers);
     }
   }
 
-  tracer->sendSegment(std::move(current_segment));
+  tracer->report(std::move(tracing_context));
   return 0;
 }

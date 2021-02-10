@@ -14,6 +14,8 @@
 
 #include "cds_impl.h"
 
+#include <condition_variable>
+
 namespace cpp2sky {
 
 ConfigDiscoveryServiceStubImpl::ConfigDiscoveryServiceStubImpl(
@@ -27,10 +29,10 @@ ConfigDiscoveryServiceStubImpl::createReader(grpc::ClientContext* ctx,
   return stub_->PrepareAsyncfetchConfigurations(ctx, *request, cq);
 }
 
-GrpcAsyncConfigDiscoveryServiceClient::GrpcAsyncConfigDiscoveryServiceClient(
-    const std::string& address, grpc::CompletionQueue* cq,
-    AsyncStreamFactory<CdsRequest, CdsResponse>& factory,
-    std::shared_ptr<grpc::ChannelCredentials> cred)
+GrpcAsyncConfigDiscoveryServiceClient:: GrpcAsyncConfigDiscoveryServiceClient(
+      const std::string& address, grpc::CompletionQueue& cq,
+      AsyncStreamFactoryPtr<CdsRequest, CdsResponse> factory,
+      std::shared_ptr<grpc::ChannelCredentials> cred
     : factory_(factory), cq_(cq), channel_(grpc::CreateChannel(address, cred)) {
   stub_ = std::make_unique<ConfigDiscoveryServiceStubImpl>(channel_);
 }
@@ -42,9 +44,29 @@ void GrpcAsyncConfigDiscoveryServiceClient::sendMessage(CdsRequest request) {
   stream_->sendMessage(request);
 }
 
-GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
-  GrpcAsyncConfigDiscoveryServiceClient& parent) : client_(parent) {}
+void GrpcAsyncConfigDiscoveryServiceClient::startStream() {
+  resetStream();
 
-void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request)
+  std::condition_variable cv;
+  stream_ = factory_->create(*this, cv);
+
+  gpr_log(GPR_INFO, "[CDS] Stream %p had created.", stream_.get());
+}
+
+GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
+    GrpcAsyncConfigDiscoveryServiceClient& parent, CdsRequest request)
+    : client_(parent) {
+  response_reader_ = parent.stub().createReader(&ctx_, &request, &client_.completionQueue());
+  response_reader_->StartCall();
+  response_reader_->Finish(&commands_, &status_, reinterpret_cast<void*>(read_done_));
+}
+
+void GrpcAsyncConfigDiscoveryServiceStream::onReadDone() {}
+
+AsyncStreamPtr<CdsRequest, CdsResponse> GrpcAsyncConfigDiscoveryServiceStreamFactory::create(
+    AsyncClient<TracerRequestType, TracerResponseType>& client,
+    std::condition_variable& cv) {
+  return std::make_shared<GrpcAsyncConfigDiscoveryServiceStream>(client);
+}
 
 }  // namespace cpp2sky

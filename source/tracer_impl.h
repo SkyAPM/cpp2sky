@@ -18,7 +18,7 @@
 
 #include "cpp2sky/tracer.h"
 #include "source/grpc_async_client_impl.h"
-#include "source/segment_context_impl.h"
+#include "source/tracing_context_impl.h"
 
 namespace cpp2sky {
 
@@ -28,14 +28,13 @@ using TracerResponseType = skywalking::v3::Commands;
 class TracerImpl : public Tracer {
  public:
   TracerImpl(const TracerConfig& config,
-             std::shared_ptr<grpc::ChannelCredentials> cred,
-             GrpcAsyncSegmentReporterStreamFactory& factory);
+             std::shared_ptr<grpc::ChannelCredentials> cred);
   ~TracerImpl();
 
-  SegmentContextPtr newSegment() override;
-  SegmentContextPtr newSegment(SpanContextPtr span) override;
+  TracingContextPtr newContext() override;
+  TracingContextPtr newContext(SpanContextPtr span) override;
 
-  void sendSegment(SegmentContextPtr obj) override;
+  void report(TracingContextPtr obj) override;
 
  private:
   void run();
@@ -43,10 +42,8 @@ class TracerImpl : public Tracer {
   AsyncClientPtr<TracerRequestType, TracerResponseType> client_;
   grpc::CompletionQueue cq_;
   std::thread th_;
-  SegmentContextFactory segment_factory_;
+  TracingContextFactory segment_factory_;
 };
-
-static GrpcAsyncSegmentReporterStreamFactory stream_factory;
 
 TracerPtr createInsecureGrpcTracer(const TracerConfig& cfg);
 

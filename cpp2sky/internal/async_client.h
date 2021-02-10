@@ -25,20 +25,27 @@ using google::protobuf::Message;
 namespace cpp2sky {
 
 template <class RequestType, class ResponseType>
-class TracerStub {
+class StubWrapper {
  public:
-  virtual ~TracerStub() = default;
+  virtual ~StubWrapper() = default;
 
   /**
-   * Initialize request writer.
+   * Initialize request writer. (async client streaming RPC)
    */
   virtual std::unique_ptr<grpc::ClientAsyncWriter<RequestType>> createWriter(
       grpc::ClientContext* ctx, ResponseType* response,
       grpc::CompletionQueue* cq, void* tag) = 0;
+
+  /**
+   * Initialize response reader. (async client unary RPC)
+   */
+  virtual std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
+  createReader(grpc::ClientContext* ctx, RequestType* request,
+               grpc::CompletionQueue* cq) = 0;
 };
 
 template <class RequestType, class ResponseType>
-using TracerStubPtr = std::unique_ptr<TracerStub<RequestType, ResponseType>>;
+using StubWrapperPtr = std::shared_ptr<StubWrapper<RequestType, ResponseType>>;
 
 template <class RequestType, class ResponseType>
 class ConfigDiscoveryServiceStub {
@@ -64,13 +71,7 @@ class AsyncClient {
   virtual void sendMessage(RequestType message) = 0;
 
   /**
-   * Get writer.
-   */
-  virtual std::unique_ptr<grpc::ClientAsyncWriter<RequestType>> createWriter(
-      grpc::ClientContext* ctx, ResponseType* response, void* tag) = 0;
-
-  /**
-   * Peer address of current gRPC client..
+   * Peer address of current gRPC client.
    */
   virtual std::string peerAddress() = 0;
 
@@ -78,11 +79,6 @@ class AsyncClient {
    * Drain pending message.
    */
   virtual void drainPendingMessage(RequestType message) = 0;
-
-  /**
-   * Reset stream if it is living.
-   */
-  virtual void resetStream() = 0;
 
   /**
    * Start stream if there is no living stream.
@@ -93,52 +89,88 @@ class AsyncClient {
    * The number of drained pending messages.
    */
   virtual size_t numOfMessages() = 0;
-};
 
-enum class Operation : uint8_t {
-  Initialized = 0,
-  Connected = 1,
-  Idle = 2,
-  WriteDone = 3,
-};
+  /**
+   * Completion queue.
+   */
+  virtual grpc::CompletionQueue& completionQueue() = 0;
 
-// TODO: fix
-enum class Operation2 : uint8_t {
-  Initialized = 0,
-  WriteDone = 1,
+  /**
+   * gRPC Stub
+   */
+  virtual StubWrapper<RequestType, ResponseType>& stub() = 0;
 };
 
 template <class RequestType, class ResponseType>
 using AsyncClientPtr = std::unique_ptr<AsyncClient<RequestType, ResponseType>>;
 
-template <class RequestType>
+template <class RequestType, class ResponseType>
 class AsyncStream {
  public:
   virtual ~AsyncStream() = default;
 
   /**
-   * Start stream. It will move the state of stream to Init.
-   */
-  virtual bool startStream() = 0;
-
-  /**
    * Send message. It will move the state from Init to Write.
    */
   virtual void sendMessage(RequestType message) = 0;
-
-  /**
-   * Restore drained message.
-   */
-  virtual void undrainMessage(RequestType message) = 0;
-
-  /**
-   * Handle incoming event related to this stream.
-   */
-  virtual void handleOperation(Operation incoming_op) = 0;
 };
 
-template <class RequestType>
-using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType>>;
+enum class StreamState : uint8_t {
+  Initialized = 0,
+  Connected = 1,
+  Idle = 2,
+  WriteDone = 3,
+  ReadDone = 4,
+};
+
+class AsyncStreamCallback {
+ public:
+  /**
+   * Callback when connected event occured.
+   */
+  virtual void onConnected() = 0;
+
+  /**
+   * Callback when idle event occured.
+   */
+  virtual void onIdle() = 0;
+
+  /**
+   * Callback when write done event occured.
+   */
+  virtual void onWriteDone() = 0;
+
+  /**
+   * Callback when read done event occured.
+   */ 
+  virtual void onReadDone() = 0;
+};
+
+struct StreamCallbackTag {
+ public:
+  void callback() {
+    switch (state_) {
+      case StreamState::Connected:
+        callback_->onConnected();
+        break;
+      case StreamState::WriteDone:
+        callback_->onWriteDone();
+        break;
+      case StreamState::Idle:
+        callback_->onIdle();
+        break;
+      case StreamState::ReadDone:
+        callback_->onReadDone();
+        break;
+    }
+  }
+
+  StreamState state_;
+  AsyncStreamCallback* callback_;
+};
+
+template <class RequestType, class ResponseType>
+using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType, ResponseType>>;
 
 template <class RequestType, class ResponseType>
 class AsyncStreamFactory {
@@ -148,8 +180,8 @@ class AsyncStreamFactory {
   /**
    * Create async stream entity
    */
-  virtual AsyncStreamPtr<RequestType> create(
-      AsyncClient<RequestType, ResponseType>* client,
+  virtual AsyncStreamPtr<RequestType, ResponseType> create(
+      AsyncClient<RequestType, ResponseType>& client,
       std::condition_variable& cv) = 0;
 };
 

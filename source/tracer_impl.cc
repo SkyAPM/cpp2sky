@@ -19,12 +19,13 @@
 namespace cpp2sky {
 
 TracerImpl::TracerImpl(const TracerConfig& config,
-                       std::shared_ptr<grpc::ChannelCredentials> cred,
-                       GrpcAsyncSegmentReporterStreamFactory& factory)
+                       std::shared_ptr<grpc::ChannelCredentials> cred)
     : th_([this] { this->run(); }), segment_factory_(config) {
   if (config.protocol() == Protocol::GRPC) {
     client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
-        config.address(), config.token(), &cq_, factory, cred);
+        config.address(), cq_,
+        std::make_unique<GrpcAsyncSegmentReporterStreamFactory>(config.token()),
+        cred);
   } else {
     throw TracerException("REST is not supported.");
   }
@@ -36,13 +37,13 @@ TracerImpl::~TracerImpl() {
   th_.join();
 }
 
-SegmentContextPtr TracerImpl::newSegment() { return segment_factory_.create(); }
+TracingContextPtr TracerImpl::newContext() { return segment_factory_.create(); }
 
-SegmentContextPtr TracerImpl::newSegment(SpanContextPtr span) {
+TracingContextPtr TracerImpl::newContext(SpanContextPtr span) {
   return segment_factory_.create(span);
 }
 
-void TracerImpl::sendSegment(SegmentContextPtr obj) {
+void TracerImpl::report(TracingContextPtr obj) {
   if (!obj || !obj->readyToSend()) {
     return;
   }
@@ -58,19 +59,17 @@ void TracerImpl::run() {
     if (status == grpc::CompletionQueue::SHUTDOWN) {
       return;
     }
-    TaggedStream* t_stream = deTag(got_tag);
+    auto* tag = static_cast<StreamCallbackTag*>(got_tag);
     if (!ok) {
-      client_->resetStream();
       client_->startStream();
       continue;
     }
-    t_stream->stream->handleOperation(t_stream->operation);
+    tag->callback();
   }
 }
 
 TracerPtr createInsecureGrpcTracer(const TracerConfig& cfg) {
-  return std::make_unique<TracerImpl>(cfg, grpc::InsecureChannelCredentials(),
-                                      stream_factory);
+  return std::make_unique<TracerImpl>(cfg, grpc::InsecureChannelCredentials());
 }
 
 }  // namespace cpp2sky
