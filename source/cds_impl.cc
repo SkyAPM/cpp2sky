@@ -26,8 +26,7 @@ std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>>
 ConfigDiscoveryServiceStubImpl::createReader(grpc::ClientContext* ctx,
                                              CdsRequest* request,
                                              grpc::CompletionQueue* cq) {
-  // return stub_->PrepareAsyncfetchConfigurations(ctx, *request, cq);
-  return nullptr;
+  return stub_->PrepareAsyncfetchConfigurations(ctx, *request, cq);
 }
 
 GrpcAsyncConfigDiscoveryServiceClient::GrpcAsyncConfigDiscoveryServiceClient(

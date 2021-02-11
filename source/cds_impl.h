@@ -22,7 +22,7 @@
 namespace cpp2sky {
 
 using CdsRequest = skywalking::v3::ConfigurationSyncRequest;
-using CdsResponse = skywalking::v3::Command;
+using CdsResponse = skywalking::v3::Commands;
 
 class ConfigDiscoveryServiceStubImpl final
     : public StubWrapper<CdsRequest, CdsResponse> {
