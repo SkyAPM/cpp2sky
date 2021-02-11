@@ -4,4 +4,5 @@ RUN wget -O /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases
 RUN chmod +x /usr/local/bin/bazel
 COPY . /tmp
 WORKDIR tmp
-RUN bazel build //test/e2e:e2e_provider
+ENV GRPC_VERBOSITY=debug
+ENTRYPOINT bazel run //test/e2e:e2e_provider

@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Prepare service container
         run: |
-          docker-compose -f docker-compose.e2e.yml up -d
+          docker-compose -f docker-compose.e2e.yml up -d --build
       - name: Run e2e
         run: |
           pip3 install --upgrade pip
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Prepare service container
         run: |
-          docker-compose -f docker-compose.e2e-python.yml up -d
+          docker-compose -f docker-compose.e2e-python.yml up -d --build
       - name: Run e2e
         run: |
           pip3 install --upgrade pip
