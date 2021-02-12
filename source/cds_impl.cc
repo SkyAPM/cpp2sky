@@ -33,21 +33,25 @@ GrpcAsyncConfigDiscoveryServiceClient::GrpcAsyncConfigDiscoveryServiceClient(
     const std::string& address, grpc::CompletionQueue& cq,
     UnaryStreamBuilderPtr<CdsRequest, CdsResponse> builder,
     std::shared_ptr<grpc::ChannelCredentials> cred)
-    : builder_(std::move(builder)), cq_(cq), stub_(grpc::CreateChannel(address, cred)) {}
+    : builder_(std::move(builder)),
+      cq_(cq),
+      stub_(grpc::CreateChannel(address, cred)) {}
 
-GrpcAsyncConfigDiscoveryServiceClient::~GrpcAsyncConfigDiscoveryServiceClient() {
+GrpcAsyncConfigDiscoveryServiceClient::
+    ~GrpcAsyncConfigDiscoveryServiceClient() {
   resetStream();
 }
 
 void GrpcAsyncConfigDiscoveryServiceClient::sendMessage(CdsRequest request) {
   resetStream();
   stream_ = builder_->create(*this, request);
-  gpr_log(GPR_INFO, "[CDS] Stream %p had created.", stream_.get());
+  gpr_log(GPR_INFO, "Stream %p had created.", stream_.get());
 }
 
 GrpcAsyncConfigDiscoveryServiceStream::GrpcAsyncConfigDiscoveryServiceStream(
-    AsyncClient<CdsRequest, CdsResponse>& parent, CdsRequest request)
-    : client_(parent) {
+    AsyncClient<CdsRequest, CdsResponse>& parent, CdsRequest request,
+    DynamicConfig& config)
+    : client_(parent), config_(config) {
   sendMessage(request);
 }
 
@@ -60,14 +64,20 @@ void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request) {
 }
 
 void GrpcAsyncConfigDiscoveryServiceStream::onReadDone() {
-  std::cout << "hogehogehogehogheohgoe" << std::endl;
+  if (status_.ok()) {
+    config_.onConfigChange(commands_);
+    return;
+  }
+
+  gpr_log(GPR_ERROR, "Stream ended with grpc status %d",
+          static_cast<int>(status_.error_code()));
 }
 
 AsyncStreamPtr<CdsRequest, CdsResponse>
 GrpcAsyncConfigDiscoveryServiceStreamBuilder::create(
     AsyncClient<CdsRequest, CdsResponse>& client, CdsRequest request) {
-  return std::make_shared<GrpcAsyncConfigDiscoveryServiceStream>(client,
-                                                                 request);
+  return std::make_shared<GrpcAsyncConfigDiscoveryServiceStream>(
+      client, request, config_);
 }
 
 }  // namespace cpp2sky

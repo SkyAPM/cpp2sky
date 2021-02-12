@@ -8,6 +8,7 @@ cc_library(
     "grpc_async_client_impl.h",
     "tracer_impl.h",
     "cds_impl.h",
+    "dynamic_config.h"
   ],
   srcs = [
     "propagation_impl.cc",
@@ -58,12 +59,14 @@ cc_library(
   hdrs  =[
     "propagation_impl.h",
     "tracing_context_impl.h",
+    "dynamic_config.h",
   ],
   srcs = [
     "propagation_impl.cc",
     "tracing_context_impl.cc",
   ],
   deps = [
+    "@skywalking_data_collect_protocol//language-agent:configuration_discovery_service_cc_proto",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "//cpp2sky:config_cc_proto",
     "//cpp2sky:cpp2sky_interface",

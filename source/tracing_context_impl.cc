@@ -143,34 +143,28 @@ void TracingSpanImpl::setComponentId(int32_t component_id) {
   component_id_ = component_id;
 }
 
-TracingContextImpl::TracingContextImpl(const std::string& service_name,
-                                       const std::string& instance_name,
+TracingContextImpl::TracingContextImpl(const DynamicConfig& config,
                                        RandomGenerator& random)
     : trace_id_(random.uuid()),
       trace_segment_id_(random.uuid()),
-      service_(service_name),
-      service_instance_(instance_name) {}
+      config_(config) {}
 
 TracingContextImpl::TracingContextImpl(
-    const std::string& service_name, const std::string& instance_name,
-    SpanContextPtr parent_span_context,
+    const DynamicConfig& config, SpanContextPtr parent_span_context,
     SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       parent_ext_span_context_(std::move(parent_ext_span_context)),
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
-      service_(service_name),
-      service_instance_(instance_name) {}
+      config_(config) {}
 
-TracingContextImpl::TracingContextImpl(const std::string& service_name,
-                                       const std::string& instance_name,
+TracingContextImpl::TracingContextImpl(const DynamicConfig& config,
                                        SpanContextPtr parent_span_context,
                                        RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       trace_id_(parent_span_context_->traceId()),
       trace_segment_id_(random.uuid()),
-      service_(service_name),
-      service_instance_(instance_name) {}
+      config_(config) {}
 
 TracingSpanPtr TracingContextImpl::createExitSpan(TracingSpanPtr parent_span) {
   auto current_span = createSpan();
@@ -220,8 +214,8 @@ std::string TracingContextImpl::encodeSpan(
   header_value += Base64::encode(trace_id_) + "-";
   header_value += Base64::encode(trace_segment_id_) + "-";
   header_value += parent_spanid + "-";
-  header_value += Base64::encode(service_) + "-";
-  header_value += Base64::encode(service_instance_) + "-";
+  header_value += Base64::encode(config_.tracerConfig().service_name()) + "-";
+  header_value += Base64::encode(config_.tracerConfig().instance_name()) + "-";
   header_value += Base64::encode(endpoint) + "-";
   header_value += Base64::encode(target_address.data());
 
@@ -246,8 +240,8 @@ skywalking::v3::SegmentObject TracingContextImpl::createSegmentObject() {
 
   obj.set_traceid(trace_id_);
   obj.set_tracesegmentid(trace_segment_id_);
-  obj.set_service(service_);
-  obj.set_serviceinstance(service_instance_);
+  obj.set_service(config_.tracerConfig().service_name());
+  obj.set_serviceinstance(config_.tracerConfig().instance_name());
 
   for (auto& span : spans_) {
     auto* entry = obj.mutable_spans()->Add();
@@ -266,24 +260,22 @@ bool TracingContextImpl::readyToSend() {
   return true;
 }
 
-TracingContextFactory::TracingContextFactory(const TracerConfig& cfg)
-    : service_name_(cfg.service_name()), instance_name_(cfg.instance_name()) {}
+TracingContextFactory::TracingContextFactory(const DynamicConfig& config)
+    : config_(config) {}
 
 TracingContextPtr TracingContextFactory::create() {
-  return std::make_unique<TracingContextImpl>(service_name_, instance_name_,
-                                              random_generator_);
+  return std::make_unique<TracingContextImpl>(config_, random_generator_);
 }
 
 TracingContextPtr TracingContextFactory::create(SpanContextPtr span_context) {
-  return std::make_unique<TracingContextImpl>(service_name_, instance_name_,
-                                              span_context, random_generator_);
+  return std::make_unique<TracingContextImpl>(config_, span_context,
+                                              random_generator_);
 }
 
 TracingContextPtr TracingContextFactory::create(
     SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
   auto context = std::make_unique<TracingContextImpl>(
-      service_name_, instance_name_, span_context, ext_span_context,
-      random_generator_);
+      config_, span_context, ext_span_context, random_generator_);
   if (ext_span_context->tracingMode() == TracingMode::Skip) {
     context->setSkipAnalysis();
   }

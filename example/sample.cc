@@ -27,7 +27,7 @@ TracerConfig config;
 
 void init() {
   config.set_instance_name("node_0");
-  config.set_service_name("");
+  config.set_service_name("mesh");
   config.set_address("0.0.0.0:11800");
 }
 
@@ -44,8 +44,8 @@ int main() {
     TracingContextPtr tracing_context;
 
     // if (!context.empty()) {
-      // 2. Create segment context with propagated information.
-      tracing_context = tracer->newContext();
+    // 2. Create segment context with propagated information.
+    tracing_context = tracer->newContext();
     // }
 
     {

@@ -14,32 +14,42 @@
 
 #include "source/tracer_impl.h"
 
+#include <chrono>
+#include <thread>
+
 #include "cds_impl.h"
 #include "cpp2sky/exception.h"
+#include "language-agent/ConfigurationDiscoveryService.pb.h"
 
 namespace cpp2sky {
 
-TracerImpl::TracerImpl(const TracerConfig& config,
+TracerImpl::TracerImpl(TracerConfig& config,
                        std::shared_ptr<grpc::ChannelCredentials> cred)
-    : th_([this] { this->run(); }), segment_factory_(config) {
+    : config_(config),
+      grpc_callback_thread_([this] { this->run(); }),
+      segment_factory_(config_) {
   if (config.protocol() == Protocol::GRPC) {
     reporter_client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
         config.address(), cq_,
         std::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(config.token()),
         cred);
     cds_client_ = std::make_unique<GrpcAsyncConfigDiscoveryServiceClient>(
-      config.address(), cq_, std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(), cred
-    );
+        config.address(), cq_,
+        std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(config_),
+        cred);
   } else {
     throw TracerException("REST is not supported.");
   }
+
+  cds_thread_ = std::thread([this] { this->startCds(); });
 }
 
 TracerImpl::~TracerImpl() {
   reporter_client_.reset();
   cds_client_.reset();
   cq_.Shutdown();
-  th_.join();
+  grpc_callback_thread_.join();
+  cds_thread_.join();
 }
 
 TracingContextPtr TracerImpl::newContext() { return segment_factory_.create(); }
@@ -64,20 +74,22 @@ void TracerImpl::run() {
     if (status == grpc::CompletionQueue::SHUTDOWN) {
       return;
     }
-    auto* tag = static_cast<StreamCallbackTag*>(got_tag);
-    
-    if (!ok) {
-      std::cout << "stream disconnected" << std::endl;
-      reporter_client_->startStream();
-      // tag->callback_->onStreamFinish();
-      continue;
-    }
 
-    tag->callback();
+    static_cast<StreamCallbackTag*>(got_tag)->callback(!ok);
   }
 }
 
-TracerPtr createInsecureGrpcTracer(const TracerConfig& cfg) {
+void TracerImpl::startCds() {
+  while (true) {
+    skywalking::v3::ConfigurationSyncRequest request;
+    request.set_service("hogehoge");
+    request.set_uuid("hogehoge");
+    cds_client_->sendMessage(request);
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+  }
+}
+
+TracerPtr createInsecureGrpcTracer(TracerConfig& cfg) {
   return std::make_unique<TracerImpl>(cfg, grpc::InsecureChannelCredentials());
 }
 

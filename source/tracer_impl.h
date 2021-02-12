@@ -18,9 +18,9 @@
 
 #include "cpp2sky/tracer.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
+#include "source/cds_impl.h"
 #include "source/grpc_async_client_impl.h"
 #include "source/tracing_context_impl.h"
-#include "source/cds_impl.h"
 
 namespace cpp2sky {
 
@@ -32,7 +32,7 @@ using CdsResponse = skywalking::v3::Commands;
 
 class TracerImpl : public Tracer {
  public:
-  TracerImpl(const TracerConfig& config,
+  TracerImpl(TracerConfig& config,
              std::shared_ptr<grpc::ChannelCredentials> cred);
   ~TracerImpl();
 
@@ -43,14 +43,17 @@ class TracerImpl : public Tracer {
 
  private:
   void run();
+  void startCds();
 
+  DynamicConfig config_;
   AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client_;
   AsyncClientPtr<CdsRequest, CdsResponse> cds_client_;
   grpc::CompletionQueue cq_;
-  std::thread th_;
+  std::thread grpc_callback_thread_;
+  std::thread cds_thread_;
   TracingContextFactory segment_factory_;
 };
 
-TracerPtr createInsecureGrpcTracer(const TracerConfig& cfg);
+TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
 
 }  // namespace cpp2sky

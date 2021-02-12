@@ -18,6 +18,7 @@
 #include "cpp2sky/internal/stream_builder.h"
 #include "language-agent/ConfigurationDiscoveryService.grpc.pb.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
+#include "source/dynamic_config.h"
 
 namespace cpp2sky {
 
@@ -81,7 +82,8 @@ class GrpcAsyncConfigDiscoveryServiceStream final
       public AsyncStreamCallback {
  public:
   explicit GrpcAsyncConfigDiscoveryServiceStream(
-      AsyncClient<CdsRequest, CdsResponse>& parent, CdsRequest request);
+      AsyncClient<CdsRequest, CdsResponse>& parent, CdsRequest request,
+      DynamicConfig& config);
 
   // AsyncStream
   void sendMessage(CdsRequest request);
@@ -102,6 +104,7 @@ class GrpcAsyncConfigDiscoveryServiceStream final
   grpc::Status status_;
   grpc::ClientContext ctx_;
   StreamState state_{StreamState::Initialized};
+  DynamicConfig& config_;
 
   StreamCallbackTag read_done_{StreamState::ReadDone, this};
 };
@@ -109,10 +112,16 @@ class GrpcAsyncConfigDiscoveryServiceStream final
 class GrpcAsyncConfigDiscoveryServiceStreamBuilder final
     : public UnaryStreamBuilder<CdsRequest, CdsResponse> {
  public:
+  explicit GrpcAsyncConfigDiscoveryServiceStreamBuilder(DynamicConfig& config)
+      : config_(config) {}
+
   // AsyncStreamFactory
   AsyncStreamPtr<CdsRequest, CdsResponse> create(
       AsyncClient<CdsRequest, CdsResponse>& client,
       CdsRequest request) override;
+
+ private:
+  DynamicConfig& config_;
 };
 
 }  // namespace cpp2sky

@@ -136,28 +136,29 @@ class AsyncStreamCallback {
 
   /**
    * Callback when stream had finished with arbitrary error.
-   */ 
+   */
   virtual void onStreamFinish() = 0;
 };
 
 struct StreamCallbackTag {
  public:
-  void callback() {
+  void callback(bool stream_finished) {
+    if (stream_finished) {
+      callback_->onStreamFinish();
+      return;
+    }
+
     switch (state_) {
       case StreamState::Ready:
-        std::cout << "on ready" << std::endl;
         callback_->onReady();
         break;
       case StreamState::WriteDone:
-        std::cout << "on write done" << std::endl;
         callback_->onWriteDone();
         break;
       case StreamState::Idle:
-        std::cout << "on idle" << std::endl;
         callback_->onIdle();
         break;
       case StreamState::ReadDone:
-        std::cout << "on read done" << std::endl;
         callback_->onReadDone();
         break;
     }
