@@ -60,11 +60,7 @@ void TracerImpl::run() {
       return;
     }
     auto* tag = static_cast<StreamCallbackTag*>(got_tag);
-    if (!ok) {
-      client_->startStream();
-      continue;
-    }
-    tag->callback();
+    tag->callback(!ok);
   }
 }
 
