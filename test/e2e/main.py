@@ -52,7 +52,8 @@ if __name__ == "__main__":
 
     try:
       requests.get('http://0.0.0.0:8081{0}'.format(args.target_path), timeout=5)
-    except:
+    except Exception as e:
+      print(e)
       retry_times += 1
       time.sleep(2)
       continue
