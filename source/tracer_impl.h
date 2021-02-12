@@ -22,8 +22,8 @@
 
 namespace cpp2sky {
 
-using TracerRequestType = SegmentObject;
-using TracerResponseType = Commands;
+using TracerRequestType = skywalking::v3::SegmentObject;
+using TracerResponseType = skywalking::v3::Commands;
 
 class TracerImpl : public Tracer {
  public:

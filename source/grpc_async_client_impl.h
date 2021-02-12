@@ -34,8 +34,8 @@
 
 namespace cpp2sky {
 
-using TracerRequestType = SegmentObject;
-using TracerResponseType = Commands;
+using TracerRequestType = skywalking::v3::SegmentObject;
+using TracerResponseType = skywalking::v3::Commands;
 
 class TracerStubImpl final
     : public TracerStub<TracerRequestType, TracerResponseType> {
@@ -48,7 +48,7 @@ class TracerStubImpl final
       grpc::CompletionQueue* cq, void* tag) override;
 
  private:
-  std::unique_ptr<TraceSegmentReportService::Stub> stub_;
+  std::unique_ptr<skywalking::v3::TraceSegmentReportService::Stub> stub_;
 };
 
 class GrpcAsyncSegmentReporterStream;

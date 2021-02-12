@@ -30,7 +30,7 @@ void* toTag(TaggedStream* stream) { return reinterpret_cast<void*>(stream); }
 TaggedStream* deTag(void* stream) { return static_cast<TaggedStream*>(stream); }
 
 TracerStubImpl::TracerStubImpl(std::shared_ptr<grpc::Channel> channel)
-    : stub_(TraceSegmentReportService::NewStub(channel)) {}
+    : stub_(skywalking::v3::TraceSegmentReportService::NewStub(channel)) {}
 
 std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>>
 TracerStubImpl::createWriter(grpc::ClientContext* ctx,
