@@ -14,6 +14,7 @@
 
 #include "source/tracer_impl.h"
 
+#include "cds_impl.h"
 #include "cpp2sky/exception.h"
 
 namespace cpp2sky {
@@ -22,17 +23,21 @@ TracerImpl::TracerImpl(const TracerConfig& config,
                        std::shared_ptr<grpc::ChannelCredentials> cred)
     : th_([this] { this->run(); }), segment_factory_(config) {
   if (config.protocol() == Protocol::GRPC) {
-    client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
+    reporter_client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
         config.address(), cq_,
         std::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(config.token()),
         cred);
+    cds_client_ = std::make_unique<GrpcAsyncConfigDiscoveryServiceClient>(
+      config.address(), cq_, std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(), cred
+    );
   } else {
     throw TracerException("REST is not supported.");
   }
 }
 
 TracerImpl::~TracerImpl() {
-  client_.reset();
+  reporter_client_.reset();
+  cds_client_.reset();
   cq_.Shutdown();
   th_.join();
 }
@@ -47,7 +52,7 @@ void TracerImpl::report(TracingContextPtr obj) {
   if (!obj || !obj->readyToSend()) {
     return;
   }
-  client_->sendMessage(obj->createSegmentObject());
+  reporter_client_->sendMessage(obj->createSegmentObject());
 }
 
 void TracerImpl::run() {
@@ -60,10 +65,14 @@ void TracerImpl::run() {
       return;
     }
     auto* tag = static_cast<StreamCallbackTag*>(got_tag);
+    
     if (!ok) {
-      client_->startStream();
+      std::cout << "stream disconnected" << std::endl;
+      reporter_client_->startStream();
+      // tag->callback_->onStreamFinish();
       continue;
     }
+
     tag->callback();
   }
 }

@@ -118,6 +118,7 @@ class GrpcAsyncSegmentReporterStream final
   void onIdle() override;
   void onWriteDone() override;
   void onReadDone() override {}
+  void onStreamFinish() override { client_.startStream(); }
 
  private:
   bool clearPendingMessage();

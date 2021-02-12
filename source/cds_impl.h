@@ -91,6 +91,7 @@ class GrpcAsyncConfigDiscoveryServiceStream final
   void onIdle() override {}
   void onWriteDone() override {}
   void onReadDone() override;
+  void onStreamFinish() override { delete this; }
 
  private:
   AsyncClient<CdsRequest, CdsResponse>& client_;

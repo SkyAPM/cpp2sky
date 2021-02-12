@@ -133,6 +133,7 @@ GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
 }
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
+  std::cout << "send message" << std::endl;
   pending_messages_.push(message);
   clearPendingMessage();
 }
@@ -145,6 +146,8 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
   if (!message.has_value()) {
     return false;
   }
+    std::cout << "write message" << std::endl;
+
   request_writer_->Write(message.value(),
                          reinterpret_cast<void*>(&write_done_));
   return true;

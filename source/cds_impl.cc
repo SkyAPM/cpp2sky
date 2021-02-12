@@ -41,9 +41,7 @@ GrpcAsyncConfigDiscoveryServiceClient::~GrpcAsyncConfigDiscoveryServiceClient() 
 
 void GrpcAsyncConfigDiscoveryServiceClient::sendMessage(CdsRequest request) {
   resetStream();
-
   stream_ = builder_->create(*this, request);
-
   gpr_log(GPR_INFO, "[CDS] Stream %p had created.", stream_.get());
 }
 
@@ -61,7 +59,9 @@ void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request) {
                            reinterpret_cast<void*>(&read_done_));
 }
 
-void GrpcAsyncConfigDiscoveryServiceStream::onReadDone() {}
+void GrpcAsyncConfigDiscoveryServiceStream::onReadDone() {
+  std::cout << "hogehogehogehogheohgoe" << std::endl;
+}
 
 AsyncStreamPtr<CdsRequest, CdsResponse>
 GrpcAsyncConfigDiscoveryServiceStreamBuilder::create(
