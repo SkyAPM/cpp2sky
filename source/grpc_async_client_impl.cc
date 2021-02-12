@@ -27,7 +27,7 @@ static constexpr std::string_view authenticationKey = "authentication";
 }
 
 TracerStubImpl::TracerStubImpl(std::shared_ptr<grpc::Channel> channel)
-    : stub_(TraceSegmentReportService::NewStub(channel)) {}
+    : stub_(skywalking::v3::TraceSegmentReportService::NewStub(channel)) {}
 
 std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>>
 TracerStubImpl::createWriter(grpc::ClientContext* ctx,
@@ -38,7 +38,8 @@ TracerStubImpl::createWriter(grpc::ClientContext* ctx,
 
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     const std::string& address, grpc::CompletionQueue& cq,
-    ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType> factory,
+    ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
+        factory,
     std::shared_ptr<grpc::ChannelCredentials> cred)
     : factory_(std::move(factory)),
       cq_(cq),
@@ -114,8 +115,9 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
   // sent to CompletionQueue.
   ctx_.set_wait_for_ready(true);
 
-  request_writer_ = client_.stub().createWriter(
-      &ctx_, &commands_, &client_.completionQueue(), reinterpret_cast<void*>(&ready_));
+  request_writer_ =
+      client_.stub().createWriter(&ctx_, &commands_, &client_.completionQueue(),
+                                  reinterpret_cast<void*>(&ready_));
 }
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
@@ -143,7 +145,9 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
   if (!message.has_value()) {
     return false;
   }
-  request_writer_->Write(message.value(), reinterpret_cast<void*>(&write_done_));
+
+  request_writer_->Write(message.value(),
+                         reinterpret_cast<void*>(&write_done_));
   return true;
 }
 
@@ -168,6 +172,7 @@ void GrpcAsyncSegmentReporterStream::onIdle() {
 
 void GrpcAsyncSegmentReporterStream::onWriteDone() {
   gpr_log(GPR_INFO, "Write finished");
+
   // Enqueue message after sending message finished.
   // With this, messages which failed to sent never lost even if connection
   // was closed. because pending messages with messages which failed to send

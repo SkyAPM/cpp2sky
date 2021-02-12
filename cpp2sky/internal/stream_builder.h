@@ -37,4 +37,20 @@ template <class RequestType, class ResponseType>
 using ClientStreamingStreamBuilderPtr =
     std::unique_ptr<ClientStreamingStreamBuilder<RequestType, ResponseType>>;
 
-}
+template <class RequestType, class ResponseType>
+class UnaryStreamBuilder {
+ public:
+  virtual ~UnaryStreamBuilder() = default;
+
+  /**
+   * Create async stream entity
+   */
+  virtual AsyncStreamPtr<RequestType, ResponseType> create(
+      AsyncClient<RequestType, ResponseType>& client, RequestType request) = 0;
+};
+
+template <class RequestType, class ResponseType>
+using UnaryStreamBuilderPtr =
+    std::unique_ptr<UnaryStreamBuilder<RequestType, ResponseType>>;
+
+}  // namespace cpp2sky

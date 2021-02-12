@@ -17,7 +17,6 @@
 #include <google/protobuf/message.h>
 #include <grpcpp/grpcpp.h>
 
-#include <condition_variable>
 #include <memory>
 
 using google::protobuf::Message;
@@ -30,15 +29,35 @@ class StubWrapper {
   virtual ~StubWrapper() = default;
 
   /**
-   * Initialize request writer.
+   * Initialize request writer. (async client streaming RPC)
    */
   virtual std::unique_ptr<grpc::ClientAsyncWriter<RequestType>> createWriter(
       grpc::ClientContext* ctx, ResponseType* response,
       grpc::CompletionQueue* cq, void* tag) = 0;
+
+  /**
+   * Initialize response reader. (async client unary RPC)
+   */
+  virtual std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
+  createReader(grpc::ClientContext* ctx, RequestType* request,
+               grpc::CompletionQueue* cq) = 0;
 };
 
 template <class RequestType, class ResponseType>
 using StubWrapperPtr = std::shared_ptr<StubWrapper<RequestType, ResponseType>>;
+
+template <class RequestType, class ResponseType>
+class ConfigDiscoveryServiceStub {
+ public:
+  virtual ~ConfigDiscoveryServiceStub() = default;
+
+  /**
+   * Initialize response reader for unary RPC.
+   */
+  virtual std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
+  createReader(grpc::ClientContext* ctx, RequestType* request,
+               grpc::CompletionQueue* cq) = 0;
+};
 
 template <class RequestType, class ResponseType>
 class AsyncClient {
@@ -90,31 +109,47 @@ enum class StreamState : uint8_t {
   Ready = 1,
   Idle = 2,
   WriteDone = 3,
+  ReadDone = 4,
 };
 
 class AsyncStreamCallback {
  public:
   /**
-   * Callback when connected event occured.
-   */ 
+   * Callback when stream ready event occured.
+   */
   virtual void onReady() = 0;
 
   /**
    * Callback when idle event occured.
-   */ 
+   */
   virtual void onIdle() = 0;
 
   /**
    * Callback when write done event occured.
-   */ 
+   */
   virtual void onWriteDone() = 0;
+
+  /**
+   * Callback when read done event occured.
+   */
+  virtual void onReadDone() = 0;
+
+  /**
+   * Callback when stream had finished with arbitrary error.
+   */
+  virtual void onStreamFinish() = 0;
 };
 
 struct StreamCallbackTag {
-public:
-  void callback() {
+ public:
+  void callback(bool stream_finished) {
+    if (stream_finished) {
+      callback_->onStreamFinish();
+      return;
+    }
+
     switch (state_) {
-      case StreamState::Ready: 
+      case StreamState::Ready:
         callback_->onReady();
         break;
       case StreamState::WriteDone:
@@ -122,6 +157,9 @@ public:
         break;
       case StreamState::Idle:
         callback_->onIdle();
+        break;
+      case StreamState::ReadDone:
+        callback_->onReadDone();
         break;
     }
   }

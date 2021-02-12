@@ -33,8 +33,8 @@
 
 namespace cpp2sky {
 
-using TracerRequestType = SegmentObject;
-using TracerResponseType = Commands;
+using TracerRequestType = skywalking::v3::SegmentObject;
+using TracerResponseType = skywalking::v3::Commands;
 
 class TracerStubImpl final
     : public StubWrapper<TracerRequestType, TracerResponseType> {
@@ -46,8 +46,14 @@ class TracerStubImpl final
       grpc::ClientContext* ctx, TracerResponseType* response,
       grpc::CompletionQueue* cq, void* tag) override;
 
+  std::unique_ptr<grpc::ClientAsyncResponseReader<TracerResponseType>>
+  createReader(grpc::ClientContext* ctx, TracerRequestType* request,
+               grpc::CompletionQueue* cq) override {
+    assert(false);
+  }
+
  private:
-  std::unique_ptr<TraceSegmentReportService::Stub> stub_;
+  std::unique_ptr<skywalking::v3::TraceSegmentReportService::Stub> stub_;
 };
 
 class GrpcAsyncSegmentReporterStream;
@@ -57,7 +63,8 @@ class GrpcAsyncSegmentReporterClient final
  public:
   GrpcAsyncSegmentReporterClient(
       const std::string& address, grpc::CompletionQueue& cq,
-      ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType> factory,
+      ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
+          factory,
       std::shared_ptr<grpc::ChannelCredentials> cred);
   ~GrpcAsyncSegmentReporterClient();
 
@@ -83,7 +90,8 @@ class GrpcAsyncSegmentReporterClient final
   }
 
   std::string address_;
-  ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType> factory_;
+  ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
+      factory_;
   grpc::CompletionQueue& cq_;
   TracerStubImpl stub_;
   AsyncStreamPtr<TracerRequestType, TracerResponseType> stream_;
@@ -109,6 +117,8 @@ class GrpcAsyncSegmentReporterStream final
   void onReady() override;
   void onIdle() override;
   void onWriteDone() override;
+  void onReadDone() override {}
+  void onStreamFinish() override { client_.startStream(); }
 
  private:
   bool clearPendingMessage();
@@ -128,7 +138,8 @@ class GrpcAsyncSegmentReporterStream final
 };
 
 class GrpcAsyncSegmentReporterStreamBuilder final
-    : public ClientStreamingStreamBuilder<TracerRequestType, TracerResponseType> {
+    : public ClientStreamingStreamBuilder<TracerRequestType,
+                                          TracerResponseType> {
  public:
   explicit GrpcAsyncSegmentReporterStreamBuilder(const std::string& token)
       : token_(token) {}
