@@ -15,30 +15,14 @@
 #pragma once
 
 #include <google/protobuf/message.h>
+#include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/grpcpp.h>
 
-#include <condition_variable>
 #include <memory>
 
 using google::protobuf::Message;
 
 namespace cpp2sky {
-
-template <class RequestType, class ResponseType>
-class TracerStub {
- public:
-  virtual ~TracerStub() = default;
-
-  /**
-   * Initialize request writer.
-   */
-  virtual std::unique_ptr<grpc::ClientAsyncWriter<RequestType>> createWriter(
-      grpc::ClientContext* ctx, ResponseType* response,
-      grpc::CompletionQueue* cq, void* tag) = 0;
-};
-
-template <class RequestType, class ResponseType>
-using TracerStubPtr = std::unique_ptr<TracerStub<RequestType, ResponseType>>;
 
 template <class RequestType, class ResponseType>
 class AsyncClient {
@@ -51,25 +35,9 @@ class AsyncClient {
   virtual void sendMessage(RequestType message) = 0;
 
   /**
-   * Get writer.
-   */
-  virtual std::unique_ptr<grpc::ClientAsyncWriter<RequestType>> createWriter(
-      grpc::ClientContext* ctx, ResponseType* response, void* tag) = 0;
-
-  /**
-   * Peer address of current gRPC client..
-   */
-  virtual std::string peerAddress() = 0;
-
-  /**
    * Drain pending message.
    */
   virtual void drainPendingMessage(RequestType message) = 0;
-
-  /**
-   * Reset stream if it is living.
-   */
-  virtual void resetStream() = 0;
 
   /**
    * Start stream if there is no living stream.
@@ -77,65 +45,95 @@ class AsyncClient {
   virtual void startStream() = 0;
 
   /**
-   * The number of drained pending messages.
+   * Completion queue.
    */
-  virtual size_t numOfMessages() = 0;
-};
+  virtual grpc::CompletionQueue& completionQueue() = 0;
 
-enum class Operation : uint8_t {
-  Initialized = 0,
-  Connected = 1,
-  Idle = 2,
-  WriteDone = 3,
+  /**
+   * gRPC Stub
+   */
+  virtual grpc::TemplatedGenericStub<RequestType, ResponseType>& stub() = 0;
 };
 
 template <class RequestType, class ResponseType>
 using AsyncClientPtr = std::unique_ptr<AsyncClient<RequestType, ResponseType>>;
 
-template <class RequestType>
+template <class RequestType, class ResponseType>
 class AsyncStream {
  public:
   virtual ~AsyncStream() = default;
 
   /**
-   * Start stream. It will move the state of stream to Init.
-   */
-  virtual bool startStream() = 0;
-
-  /**
    * Send message. It will move the state from Init to Write.
    */
   virtual void sendMessage(RequestType message) = 0;
-
-  /**
-   * Restore drained message.
-   */
-  virtual void undrainMessage(RequestType message) = 0;
-
-  /**
-   * Handle incoming event related to this stream.
-   */
-  virtual void handleOperation(Operation incoming_op) = 0;
 };
 
-template <class RequestType>
-using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType>>;
+enum class StreamState : uint8_t {
+  Initialized = 0,
+  Ready = 1,
+  Idle = 2,
+  WriteDone = 3,
+  ReadDone = 4,
+};
 
-template <class RequestType, class ResponseType>
-class AsyncStreamFactory {
+class AsyncStreamCallback {
  public:
-  virtual ~AsyncStreamFactory() = default;
+  /**
+   * Callback when stream ready event occured.
+   */
+  virtual void onReady() = 0;
 
   /**
-   * Create async stream entity
+   * Callback when idle event occured.
    */
-  virtual AsyncStreamPtr<RequestType> create(
-      AsyncClient<RequestType, ResponseType>* client,
-      std::condition_variable& cv) = 0;
+  virtual void onIdle() = 0;
+
+  /**
+   * Callback when write done event occured.
+   */
+  virtual void onWriteDone() = 0;
+
+  /**
+   * Callback when read done event occured.
+   */
+  virtual void onReadDone() = 0;
+
+  /**
+   * Callback when stream had finished with arbitrary error.
+   */
+  virtual void onStreamFinish() = 0;
+};
+
+struct StreamCallbackTag {
+ public:
+  void callback(bool stream_finished) {
+    if (stream_finished) {
+      callback_->onStreamFinish();
+      return;
+    }
+
+    switch (state_) {
+      case StreamState::Ready:
+        callback_->onReady();
+        break;
+      case StreamState::WriteDone:
+        callback_->onWriteDone();
+        break;
+      case StreamState::Idle:
+        callback_->onIdle();
+        break;
+      case StreamState::ReadDone:
+        callback_->onReadDone();
+        break;
+    }
+  }
+
+  StreamState state_;
+  AsyncStreamCallback* callback_;
 };
 
 template <class RequestType, class ResponseType>
-using AsyncStreamFactoryPtr =
-    std::unique_ptr<AsyncStreamFactory<RequestType, ResponseType>>;
+using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType, ResponseType>>;
 
 }  // namespace cpp2sky

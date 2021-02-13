@@ -19,12 +19,13 @@
 namespace cpp2sky {
 
 TracerImpl::TracerImpl(const TracerConfig& config,
-                       std::shared_ptr<grpc::ChannelCredentials> cred,
-                       GrpcAsyncSegmentReporterStreamFactory& factory)
+                       std::shared_ptr<grpc::ChannelCredentials> cred)
     : th_([this] { this->run(); }), segment_factory_(config) {
   if (config.protocol() == Protocol::GRPC) {
     client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
-        config.address(), config.token(), &cq_, factory, cred);
+        config.address(), cq_,
+        std::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(config.token()),
+        cred);
   } else {
     throw TracerException("REST is not supported.");
   }
@@ -58,19 +59,13 @@ void TracerImpl::run() {
     if (status == grpc::CompletionQueue::SHUTDOWN) {
       return;
     }
-    TaggedStream* t_stream = deTag(got_tag);
-    if (!ok) {
-      client_->resetStream();
-      client_->startStream();
-      continue;
-    }
-    t_stream->stream->handleOperation(t_stream->operation);
+    auto* tag = static_cast<StreamCallbackTag*>(got_tag);
+    tag->callback(!ok);
   }
 }
 
 TracerPtr createInsecureGrpcTracer(const TracerConfig& cfg) {
-  return std::make_unique<TracerImpl>(cfg, grpc::InsecureChannelCredentials(),
-                                      stream_factory);
+  return std::make_unique<TracerImpl>(cfg, grpc::InsecureChannelCredentials());
 }
 
 }  // namespace cpp2sky

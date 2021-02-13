@@ -27,7 +27,7 @@ TracerConfig config;
 
 void init() {
   config.set_instance_name("node_0");
-  config.set_service_name("");
+  config.set_service_name("mesh");
   config.set_address("0.0.0.0:11800");
 }
 
@@ -42,6 +42,7 @@ int main() {
     std::string context = req.get_header_value(kPropagationHeader.data());
 
     TracingContextPtr tracing_context;
+
     if (!context.empty()) {
       // 2. Create tracing context with propagated information.
       tracing_context = tracer->newContext(createSpanContext(context));

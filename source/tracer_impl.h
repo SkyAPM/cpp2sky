@@ -28,8 +28,7 @@ using TracerResponseType = skywalking::v3::Commands;
 class TracerImpl : public Tracer {
  public:
   TracerImpl(const TracerConfig& config,
-             std::shared_ptr<grpc::ChannelCredentials> cred,
-             GrpcAsyncSegmentReporterStreamFactory& factory);
+             std::shared_ptr<grpc::ChannelCredentials> cred);
   ~TracerImpl();
 
   TracingContextPtr newContext() override;
@@ -45,8 +44,6 @@ class TracerImpl : public Tracer {
   std::thread th_;
   TracingContextFactory segment_factory_;
 };
-
-static GrpcAsyncSegmentReporterStreamFactory stream_factory;
 
 TracerPtr createInsecureGrpcTracer(const TracerConfig& cfg);
 

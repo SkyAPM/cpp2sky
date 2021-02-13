@@ -9,6 +9,7 @@ cc_library(
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "@com_google_googletest//:gtest_main",
     "//cpp2sky/internal:async_client_interface",
+    "//cpp2sky/internal:stream_builder_interface",
     "//cpp2sky/internal:random_generator_interface",
   ]
 )
@@ -46,7 +47,7 @@ cc_test(
   ],
   deps = [
     "@com_google_googletest//:gtest_main",
-    "//source:cpp2sky_lib",
+    "//source:async_client_impl_test",
     ":mocks",
   ],
   visibility = ["//visibility:public"],
