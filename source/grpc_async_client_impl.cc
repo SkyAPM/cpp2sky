@@ -26,16 +26,6 @@ namespace {
 static constexpr std::string_view authenticationKey = "authentication";
 }
 
-TracerStubImpl::TracerStubImpl(std::shared_ptr<grpc::Channel> channel)
-    : stub_(skywalking::v3::TraceSegmentReportService::NewStub(channel)) {}
-
-std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>>
-TracerStubImpl::createWriter(grpc::ClientContext* ctx,
-                             TracerResponseType* response,
-                             grpc::CompletionQueue* cq, void* tag) {
-  return stub_->Asynccollect(ctx, response, cq, tag);
-}
-
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     const std::string& address, grpc::CompletionQueue& cq,
     ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
@@ -115,9 +105,10 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
   // sent to CompletionQueue.
   ctx_.set_wait_for_ready(true);
 
-  request_writer_ =
-      client_.stub().createWriter(&ctx_, &commands_, &client_.completionQueue(),
-                                  reinterpret_cast<void*>(&ready_));
+  request_writer_ = client_.stub().PrepareCall(
+      &ctx_, "/skywalking.v3.TraceSegmentReportService/collect",
+      &client_.completionQueue());
+  request_writer_->StartCall(reinterpret_cast<void*>(&ready_));
 }
 
 GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {

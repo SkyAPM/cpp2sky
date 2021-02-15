@@ -15,6 +15,7 @@
 #pragma once
 
 #include <google/protobuf/message.h>
+#include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/grpcpp.h>
 
 #include <memory>
@@ -22,42 +23,6 @@
 using google::protobuf::Message;
 
 namespace cpp2sky {
-
-template <class RequestType, class ResponseType>
-class StubWrapper {
- public:
-  virtual ~StubWrapper() = default;
-
-  /**
-   * Initialize request writer. (async client streaming RPC)
-   */
-  virtual std::unique_ptr<grpc::ClientAsyncWriter<RequestType>> createWriter(
-      grpc::ClientContext* ctx, ResponseType* response,
-      grpc::CompletionQueue* cq, void* tag) = 0;
-
-  /**
-   * Initialize response reader. (async client unary RPC)
-   */
-  virtual std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
-  createReader(grpc::ClientContext* ctx, RequestType* request,
-               grpc::CompletionQueue* cq) = 0;
-};
-
-template <class RequestType, class ResponseType>
-using StubWrapperPtr = std::shared_ptr<StubWrapper<RequestType, ResponseType>>;
-
-template <class RequestType, class ResponseType>
-class ConfigDiscoveryServiceStub {
- public:
-  virtual ~ConfigDiscoveryServiceStub() = default;
-
-  /**
-   * Initialize response reader for unary RPC.
-   */
-  virtual std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>
-  createReader(grpc::ClientContext* ctx, RequestType* request,
-               grpc::CompletionQueue* cq) = 0;
-};
 
 template <class RequestType, class ResponseType>
 class AsyncClient {
@@ -87,7 +52,7 @@ class AsyncClient {
   /**
    * gRPC Stub
    */
-  virtual StubWrapper<RequestType, ResponseType>& stub() = 0;
+  virtual grpc::TemplatedGenericStub<RequestType, ResponseType>& stub() = 0;
 };
 
 template <class RequestType, class ResponseType>

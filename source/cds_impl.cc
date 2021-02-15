@@ -18,17 +18,6 @@
 
 namespace cpp2sky {
 
-ConfigDiscoveryServiceStubImpl::ConfigDiscoveryServiceStubImpl(
-    std::shared_ptr<grpc::Channel> channel)
-    : stub_(skywalking::v3::ConfigurationDiscoveryService::NewStub(channel)) {}
-
-std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>>
-ConfigDiscoveryServiceStubImpl::createReader(grpc::ClientContext* ctx,
-                                             CdsRequest* request,
-                                             grpc::CompletionQueue* cq) {
-  return stub_->PrepareAsyncfetchConfigurations(ctx, *request, cq);
-}
-
 GrpcAsyncConfigDiscoveryServiceClient::GrpcAsyncConfigDiscoveryServiceClient(
     const std::string& address, grpc::CompletionQueue& cq,
     UnaryStreamBuilderPtr<CdsRequest, CdsResponse> builder,
@@ -56,8 +45,10 @@ GrpcAsyncConfigDiscoveryServiceStream::GrpcAsyncConfigDiscoveryServiceStream(
 }
 
 void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request) {
-  response_reader_ =
-      client_.stub().createReader(&ctx_, &request, &client_.completionQueue());
+  std::cout << request.DebugString() << std::endl;
+  response_reader_ = client_.stub().PrepareUnaryCall(
+      &ctx_, "/skywalking.v3.ConfigurationDiscoveryService/fetchConfigurations",
+      request, &client_.completionQueue());
   response_reader_->StartCall();
   response_reader_->Finish(&commands_, &status_,
                            reinterpret_cast<void*>(&read_done_));

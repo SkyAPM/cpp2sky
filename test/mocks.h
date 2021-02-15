@@ -46,10 +46,10 @@ class MockAsyncStream : public AsyncStream<RequestType, ResponseType> {
 template <class RequestType, class ResponseType>
 class MockAsyncClient : public AsyncClient<RequestType, ResponseType> {
  public:
-  using StubWrapperType = StubWrapper<RequestType, ResponseType>;
+  using GenericStub = grpc::TemplatedGenericStub<RequestType, ResponseType>;
 
   MOCK_METHOD(void, sendMessage, (RequestType));
-  MOCK_METHOD(StubWrapperType&, stub, ());
+  MOCK_METHOD(GenericStub&, stub, ());
   MOCK_METHOD(void, drainPendingMessage, (RequestType));
   MOCK_METHOD(void, startStream, ());
   MOCK_METHOD(grpc::CompletionQueue&, completionQueue, ());

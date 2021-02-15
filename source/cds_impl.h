@@ -25,26 +25,6 @@ namespace cpp2sky {
 using CdsRequest = skywalking::v3::ConfigurationSyncRequest;
 using CdsResponse = skywalking::v3::Commands;
 
-class ConfigDiscoveryServiceStubImpl final
-    : public StubWrapper<CdsRequest, CdsResponse> {
- public:
-  ConfigDiscoveryServiceStubImpl(std::shared_ptr<grpc::Channel> channel);
-
-  // StubWrapper
-  std::unique_ptr<grpc::ClientAsyncWriter<CdsRequest>> createWriter(
-      grpc::ClientContext* ctx, CdsResponse* response,
-      grpc::CompletionQueue* cq, void* tag) override {
-    assert(false);
-  }
-
-  std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>> createReader(
-      grpc::ClientContext* ctx, CdsRequest* request,
-      grpc::CompletionQueue* cq) override;
-
- private:
-  std::unique_ptr<skywalking::v3::ConfigurationDiscoveryService::Stub> stub_;
-};
-
 class GrpcAsyncConfigDiscoveryServiceStream;
 
 class GrpcAsyncConfigDiscoveryServiceClient final
@@ -60,7 +40,7 @@ class GrpcAsyncConfigDiscoveryServiceClient final
   void drainPendingMessage(CdsRequest pending_message) override {}
   void startStream() override {}
   grpc::CompletionQueue& completionQueue() override { return cq_; }
-  StubWrapper<CdsRequest, CdsResponse>& stub() override { return stub_; }
+  grpc::TemplatedGenericStub<CdsRequest, CdsResponse>& stub() override { return stub_; }
 
  private:
   void resetStream() {
@@ -73,7 +53,7 @@ class GrpcAsyncConfigDiscoveryServiceClient final
   std::string address_;
   UnaryStreamBuilderPtr<CdsRequest, CdsResponse> builder_;
   grpc::CompletionQueue& cq_;
-  ConfigDiscoveryServiceStubImpl stub_;
+  grpc::TemplatedGenericStub<CdsRequest, CdsResponse> stub_;
   AsyncStreamPtr<CdsRequest, CdsResponse> stream_;
 };
 

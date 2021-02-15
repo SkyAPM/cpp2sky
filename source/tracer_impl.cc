@@ -74,7 +74,6 @@ void TracerImpl::run() {
     if (status == grpc::CompletionQueue::SHUTDOWN) {
       return;
     }
-
     static_cast<StreamCallbackTag*>(got_tag)->callback(!ok);
   }
 }
@@ -82,8 +81,7 @@ void TracerImpl::run() {
 void TracerImpl::startCds() {
   while (true) {
     skywalking::v3::ConfigurationSyncRequest request;
-    request.set_service("hogehoge");
-    request.set_uuid("hogehoge");
+    request.set_service("mesh");
     cds_client_->sendMessage(request);
     std::this_thread::sleep_for(std::chrono::seconds(5));
   }

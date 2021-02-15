@@ -25,12 +25,19 @@ class DynamicConfig {
 
   void onConfigChange(skywalking::v3::Commands commands) {
     std::cout << commands.DebugString() << std::endl;
+    for (const auto& command: commands.commands()) {
+      
+    }
   }
 
   TracerConfig& tracerConfig() const { return config_; }
 
+  const std::string& uuid() { return uuid_; }
+  void updateUuid(std::string& uuid) { uuid_ = uuid; }
+
  private:
   TracerConfig& config_;
+  std::string uuid_;
 };
 
 }  // namespace cpp2sky

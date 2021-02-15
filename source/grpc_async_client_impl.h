@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/grpcpp.h>
 
 #include <condition_variable>
@@ -36,26 +37,6 @@ namespace cpp2sky {
 using TracerRequestType = skywalking::v3::SegmentObject;
 using TracerResponseType = skywalking::v3::Commands;
 
-class TracerStubImpl final
-    : public StubWrapper<TracerRequestType, TracerResponseType> {
- public:
-  TracerStubImpl(std::shared_ptr<grpc::Channel> channel);
-
-  // StubWrapper
-  std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> createWriter(
-      grpc::ClientContext* ctx, TracerResponseType* response,
-      grpc::CompletionQueue* cq, void* tag) override;
-
-  std::unique_ptr<grpc::ClientAsyncResponseReader<TracerResponseType>>
-  createReader(grpc::ClientContext* ctx, TracerRequestType* request,
-               grpc::CompletionQueue* cq) override {
-    assert(false);
-  }
-
- private:
-  std::unique_ptr<skywalking::v3::TraceSegmentReportService::Stub> stub_;
-};
-
 class GrpcAsyncSegmentReporterStream;
 
 class GrpcAsyncSegmentReporterClient final
@@ -74,7 +55,8 @@ class GrpcAsyncSegmentReporterClient final
     drained_messages_.push(pending_message);
   }
   void startStream() override;
-  StubWrapper<TracerRequestType, TracerResponseType>& stub() override {
+  grpc::TemplatedGenericStub<TracerRequestType, TracerResponseType>& stub()
+      override {
     return stub_;
   }
   grpc::CompletionQueue& completionQueue() override { return cq_; }
@@ -93,7 +75,7 @@ class GrpcAsyncSegmentReporterClient final
   ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
       factory_;
   grpc::CompletionQueue& cq_;
-  TracerStubImpl stub_;
+  grpc::TemplatedGenericStub<TracerRequestType, TracerResponseType> stub_;
   AsyncStreamPtr<TracerRequestType, TracerResponseType> stream_;
   CircularBuffer<TracerRequestType> drained_messages_{DRAIN_BUFFER_SIZE};
 
@@ -126,7 +108,9 @@ class GrpcAsyncSegmentReporterStream final
   AsyncClient<TracerRequestType, TracerResponseType>& client_;
   TracerResponseType commands_;
   grpc::ClientContext ctx_;
-  std::unique_ptr<grpc::ClientAsyncWriter<TracerRequestType>> request_writer_;
+  std::unique_ptr<
+      grpc::ClientAsyncReaderWriter<TracerRequestType, TracerResponseType>>
+      request_writer_;
   CircularBuffer<TracerRequestType> pending_messages_{
       PENDING_MESSAGE_BUFFER_SIZE};
   StreamState state_{StreamState::Initialized};
