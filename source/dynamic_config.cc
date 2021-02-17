@@ -19,7 +19,7 @@ namespace cpp2sky {
 namespace {  // well known fields on response commands.
 static constexpr std::string_view UUID_FIELD = "UUID";
 static constexpr std::string_view SERIAL_NUMBER_FIELD = "SerialNumber";
-static constexpr std::string_view INSTANCE_FIELD = "instance";
+static constexpr std::string_view INSTANCE_FIELD = "instance_name";
 }  // namespace
 
 using namespace spdlog;
@@ -45,24 +45,31 @@ void DynamicConfig::onConfigChange(skywalking::v3::Commands commands) {
   }
 
   if (uuid.empty() || uuid_ == uuid) {
-    info("UUID not changed changed {}", uuid_);
+    info("UUID not changed changed from {}", uuid_);
     return;
   }
 
   std::unique_lock<std::mutex> lck(mux_);
+  bool config_changed = false;
   for (const auto& target : top_command.args()) {
     if (ignore_fields_.find(target.key()) != ignore_fields_.end() ||
         target_fields_.find(target.key()) == target_fields_.end()) {
       continue;
     }
 
-    if (target.key() == INSTANCE_FIELD.data()) {
-      info("{} updated from {} to {}", INSTANCE_FIELD.data(),
-           config_.instance_name(), target.value());
-      config_.set_instance_name(target.value());
-    }
+    const auto* reflection = config_.GetReflection();
+    info("{} updated from {} to {}", INSTANCE_FIELD.data(),
+         config_.instance_name(), target.value());
+    reflection->SetString(
+        static_cast<google::protobuf::Message*>(&config_),
+        config_.GetDescriptor()->FindFieldByName(INSTANCE_FIELD.data()),
+        target.value());
+    config_changed = true;
   }
-  uuid_ = uuid;
+
+  if (config_changed) {
+    uuid_ = uuid;
+  }
 }
 
 }  // namespace cpp2sky
