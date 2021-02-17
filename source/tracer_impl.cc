@@ -29,7 +29,7 @@ TracerImpl::TracerImpl(TracerConfig& config,
     : config_(config),
       grpc_callback_thread_([this] { this->run(); }),
       segment_factory_(config_) {
-  // spdlog::set_level(spdlog::level::warn);
+  spdlog::set_level(spdlog::level::warn);
 
   if (config.protocol() == Protocol::GRPC) {
     reporter_client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
