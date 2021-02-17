@@ -43,7 +43,7 @@ class TracerImpl : public Tracer {
 
  private:
   void run();
-  void startCds();
+  void startCds(std::chrono::seconds seconds);
 
   DynamicConfig config_;
   AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client_;

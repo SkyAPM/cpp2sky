@@ -30,22 +30,27 @@ TracerImpl::TracerImpl(TracerConfig& config,
     : config_(config),
       grpc_callback_thread_([this] { this->run(); }),
       segment_factory_(config_) {
-  spdlog::set_level(spdlog::level::warn);
+  // spdlog::set_level(spdlog::level::warn);
 
   if (config.protocol() == Protocol::GRPC) {
     reporter_client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
         config.address(), cq_,
         std::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(config.token()),
         cred);
-    cds_client_ = std::make_unique<GrpcAsyncConfigDiscoveryServiceClient>(
-        config.address(), cq_,
-        std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(config_),
-        cred);
   } else {
     throw TracerException("REST is not supported.");
   }
 
-  cds_thread_ = std::thread([this] { this->startCds(); });
+  if (config_.tracerConfig().cds_request_interval() != 0) {
+    cds_client_ = std::make_unique<GrpcAsyncConfigDiscoveryServiceClient>(
+        config.address(), cq_,
+        std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(config_),
+        cred);
+    cds_thread_ = std::thread([this] {
+      this->startCds(
+          std::chrono::seconds(config_.tracerConfig().cds_request_interval()));
+    });
+  }
 }
 
 TracerImpl::~TracerImpl() {
@@ -53,7 +58,10 @@ TracerImpl::~TracerImpl() {
   cds_client_.reset();
   cq_.Shutdown();
   grpc_callback_thread_.join();
-  cds_thread_.join();
+
+  if (cds_thread_.joinable()) {
+    cds_thread_.join();
+  }
 }
 
 TracingContextPtr TracerImpl::newContext() { return segment_factory_.create(); }
@@ -82,13 +90,13 @@ void TracerImpl::run() {
   }
 }
 
-void TracerImpl::startCds() {
+void TracerImpl::startCds(std::chrono::seconds seconds) {
   while (true) {
     skywalking::v3::ConfigurationSyncRequest request;
     request.set_service(config_.tracerConfig().service_name());
     request.set_uuid(config_.uuid());
     cds_client_->sendMessage(request);
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(seconds);
   }
 }
 

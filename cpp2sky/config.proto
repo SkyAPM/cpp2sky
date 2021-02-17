@@ -25,4 +25,7 @@ message TracerConfig {
 
   // The size of buffer it stores pending messages.
   uint32 delayed_buffer_size = 6;
+
+  // CDS sync request interval. If this value is zero, CDS feature will be disabled.
+  uint32 cds_request_interval = 7;
 }

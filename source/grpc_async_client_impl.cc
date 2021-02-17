@@ -67,7 +67,8 @@ void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
   if (!stream_) {
     drained_messages_.push(message);
     info(
-        "No active stream, inserted message into draining message queue. "
+        "[Reporter] No active stream, inserted message into draining message "
+        "queue. "
         "pending message size: {}",
         drained_messages_.size());
     return;
@@ -79,7 +80,7 @@ void GrpcAsyncSegmentReporterClient::startStream() {
   resetStream();
 
   stream_ = factory_->create(*this, cv_);
-  info("Stream {} had created.", fmt::ptr(stream_.get()));
+  info("[Reporter] Stream {} had created.", fmt::ptr(stream_.get()));
 
   const auto drained_messages_size = drained_messages_.size();
 
@@ -91,13 +92,13 @@ void GrpcAsyncSegmentReporterClient::startStream() {
     }
   }
 
-  info("{} drained messages inserted into pending messages.",
+  info("[Reporter] {} drained messages inserted into pending messages.",
        drained_messages_size);
 }
 
 void GrpcAsyncSegmentReporterClient::resetStream() {
   if (stream_) {
-    info("Stream {} has destroyed.", fmt::ptr(stream_.get()));
+    info("[Reporter] Stream {} has destroyed.", fmt::ptr(stream_.get()));
     stream_.reset();
   }
 }
@@ -131,7 +132,7 @@ GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
       client_.drainPendingMessage(msg.value());
     }
   }
-  info("{} pending messages drained.", pending_messages_size);
+  info("[Reporter] {} pending messages drained.", pending_messages_size);
 }
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
@@ -154,14 +155,14 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
 }
 
 void GrpcAsyncSegmentReporterStream::onReady() {
-  info("Stream ready");
+  info("[Reporter] Stream ready");
 
   state_ = StreamState::Idle;
   onIdle();
 }
 
 void GrpcAsyncSegmentReporterStream::onIdle() {
-  info("Stream idleing");
+  info("[Reporter] Stream idleing");
 
   // Release pending messages which are inserted when stream is not ready
   // to write.
@@ -173,7 +174,7 @@ void GrpcAsyncSegmentReporterStream::onIdle() {
 }
 
 void GrpcAsyncSegmentReporterStream::onWriteDone() {
-  info("Write finished");
+  info("[Reporter] Write finished");
 
   // Enqueue message after sending message finished.
   // With this, messages which failed to sent never lost even if connection
