@@ -14,6 +14,8 @@
 
 #include "dynamic_config.h"
 
+#include "spdlog/spdlog.h"
+
 namespace cpp2sky {
 
 namespace {  // well known fields on response commands.
