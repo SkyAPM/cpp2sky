@@ -14,6 +14,8 @@
 
 #include "source/tracer_impl.h"
 
+#include <spdlog/spdlog.h>
+
 #include <chrono>
 #include <thread>
 
@@ -28,6 +30,8 @@ TracerImpl::TracerImpl(TracerConfig& config,
     : config_(config),
       grpc_callback_thread_([this] { this->run(); }),
       segment_factory_(config_) {
+  spdlog::set_level(spdlog::level::warn);
+
   if (config.protocol() == Protocol::GRPC) {
     reporter_client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
         config.address(), cq_,
@@ -81,7 +85,8 @@ void TracerImpl::run() {
 void TracerImpl::startCds() {
   while (true) {
     skywalking::v3::ConfigurationSyncRequest request;
-    request.set_service("mesh");
+    request.set_service(config_.tracerConfig().service_name());
+    request.set_uuid(config_.uuid());
     cds_client_->sendMessage(request);
     std::this_thread::sleep_for(std::chrono::seconds(5));
   }

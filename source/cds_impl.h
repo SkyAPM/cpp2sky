@@ -40,15 +40,12 @@ class GrpcAsyncConfigDiscoveryServiceClient final
   void drainPendingMessage(CdsRequest pending_message) override {}
   void startStream() override {}
   grpc::CompletionQueue& completionQueue() override { return cq_; }
-  grpc::TemplatedGenericStub<CdsRequest, CdsResponse>& stub() override { return stub_; }
+  grpc::TemplatedGenericStub<CdsRequest, CdsResponse>& stub() override {
+    return stub_;
+  }
 
  private:
-  void resetStream() {
-    if (stream_) {
-      gpr_log(GPR_INFO, "Stream %p had destroyed.", stream_.get());
-      stream_.reset();
-    }
-  }
+  void resetStream();
 
   std::string address_;
   UnaryStreamBuilderPtr<CdsRequest, CdsResponse> builder_;

@@ -14,9 +14,13 @@
 
 #include "cds_impl.h"
 
+#include <spdlog/spdlog.h>
+
 #include <condition_variable>
 
 namespace cpp2sky {
+
+using namespace spdlog;
 
 GrpcAsyncConfigDiscoveryServiceClient::GrpcAsyncConfigDiscoveryServiceClient(
     const std::string& address, grpc::CompletionQueue& cq,
@@ -34,7 +38,14 @@ GrpcAsyncConfigDiscoveryServiceClient::
 void GrpcAsyncConfigDiscoveryServiceClient::sendMessage(CdsRequest request) {
   resetStream();
   stream_ = builder_->create(*this, request);
-  gpr_log(GPR_INFO, "Stream %p had created.", stream_.get());
+  info("Stream {} had created", fmt::ptr(stream_.get()));
+}
+
+void GrpcAsyncConfigDiscoveryServiceClient::resetStream() {
+  if (stream_) {
+    info("Stream {} has destroyed", fmt::ptr(this));
+    stream_.reset();
+  }
 }
 
 GrpcAsyncConfigDiscoveryServiceStream::GrpcAsyncConfigDiscoveryServiceStream(
@@ -45,7 +56,6 @@ GrpcAsyncConfigDiscoveryServiceStream::GrpcAsyncConfigDiscoveryServiceStream(
 }
 
 void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request) {
-  std::cout << request.DebugString() << std::endl;
   response_reader_ = client_.stub().PrepareUnaryCall(
       &ctx_, "/skywalking.v3.ConfigurationDiscoveryService/fetchConfigurations",
       request, &client_.completionQueue());
@@ -60,8 +70,8 @@ void GrpcAsyncConfigDiscoveryServiceStream::onReadDone() {
     return;
   }
 
-  gpr_log(GPR_ERROR, "Stream ended with grpc status %d",
-          static_cast<int>(status_.error_code()));
+  info("Stream {} ended with gRPC status {}", fmt::ptr(this),
+       static_cast<int>(status_.error_code()));
 }
 
 AsyncStreamPtr<CdsRequest, CdsResponse>

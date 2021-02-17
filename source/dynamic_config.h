@@ -14,6 +14,12 @@
 
 #pragma once
 
+#include <spdlog/spdlog.h>
+
+#include <mutex>
+#include <set>
+#include <string_view>
+
 #include "cpp2sky/config.pb.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
 
@@ -21,23 +27,21 @@ namespace cpp2sky {
 
 class DynamicConfig {
  public:
-  DynamicConfig(TracerConfig& config) : config_(config) {}
+  DynamicConfig(TracerConfig& config);
 
-  void onConfigChange(skywalking::v3::Commands commands) {
-    std::cout << commands.DebugString() << std::endl;
-    for (const auto& command: commands.commands()) {
-      
-    }
+  void onConfigChange(skywalking::v3::Commands commands);
+  const TracerConfig& tracerConfig() const& {
+    std::unique_lock<std::mutex> lck(mux_);
+    return config_;
   }
-
-  TracerConfig& tracerConfig() const { return config_; }
-
-  const std::string& uuid() { return uuid_; }
-  void updateUuid(std::string& uuid) { uuid_ = uuid; }
+  const std::string& uuid() const { return uuid_; }
 
  private:
+  mutable std::mutex mux_;
   TracerConfig& config_;
   std::string uuid_;
+  std::set<std::string> target_fields_;
+  std::set<std::string> ignore_fields_;
 };
 
 }  // namespace cpp2sky

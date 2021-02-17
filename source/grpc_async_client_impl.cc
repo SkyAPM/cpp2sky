@@ -14,6 +14,8 @@
 
 #include "grpc_async_client_impl.h"
 
+#include <spdlog/spdlog.h>
+
 #include <chrono>
 #include <string_view>
 #include <thread>
@@ -25,6 +27,8 @@ namespace cpp2sky {
 namespace {
 static constexpr std::string_view authenticationKey = "authentication";
 }
+
+using namespace spdlog;
 
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     const std::string& address, grpc::CompletionQueue& cq,
@@ -62,10 +66,10 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
 void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
   if (!stream_) {
     drained_messages_.push(message);
-    gpr_log(GPR_INFO,
-            "No active stream, inserted message into draining message queue. "
-            "pending message size: %ld",
-            drained_messages_.size());
+    info(
+        "No active stream, inserted message into draining message queue. "
+        "pending message size: {}",
+        drained_messages_.size());
     return;
   }
   stream_->sendMessage(message);
@@ -75,7 +79,7 @@ void GrpcAsyncSegmentReporterClient::startStream() {
   resetStream();
 
   stream_ = factory_->create(*this, cv_);
-  gpr_log(GPR_INFO, "Stream %p had created.", stream_.get());
+  info("Stream {} had created.", fmt::ptr(stream_.get()));
 
   const auto drained_messages_size = drained_messages_.size();
 
@@ -87,8 +91,15 @@ void GrpcAsyncSegmentReporterClient::startStream() {
     }
   }
 
-  gpr_log(GPR_INFO, "%ld drained messages inserted into pending messages.",
-          drained_messages_size);
+  info("{} drained messages inserted into pending messages.",
+       drained_messages_size);
+}
+
+void GrpcAsyncSegmentReporterClient::resetStream() {
+  if (stream_) {
+    info("Stream {} has destroyed.", fmt::ptr(stream_.get()));
+    stream_.reset();
+  }
 }
 
 GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
@@ -120,7 +131,7 @@ GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
       client_.drainPendingMessage(msg.value());
     }
   }
-  gpr_log(GPR_INFO, "%ld pending messages drained.", pending_messages_size);
+  info("{} pending messages drained.", pending_messages_size);
 }
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
@@ -143,14 +154,14 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
 }
 
 void GrpcAsyncSegmentReporterStream::onReady() {
-  gpr_log(GPR_INFO, "Stream initialized");
+  info("Stream ready");
 
   state_ = StreamState::Idle;
   onIdle();
 }
 
 void GrpcAsyncSegmentReporterStream::onIdle() {
-  gpr_log(GPR_INFO, "Stream idleing");
+  info("Stream idleing");
 
   // Release pending messages which are inserted when stream is not ready
   // to write.
@@ -162,7 +173,7 @@ void GrpcAsyncSegmentReporterStream::onIdle() {
 }
 
 void GrpcAsyncSegmentReporterStream::onWriteDone() {
-  gpr_log(GPR_INFO, "Write finished");
+  info("Write finished");
 
   // Enqueue message after sending message finished.
   // With this, messages which failed to sent never lost even if connection
