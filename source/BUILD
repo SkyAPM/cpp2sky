@@ -47,6 +47,7 @@ cc_library(
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
     "@com_github_grpc_grpc//:grpc++",
+    "@com_github_gabime_spdlog//:spdlog",
     "//cpp2sky/internal:async_client_interface",
     "//cpp2sky/internal:stream_builder_interface",
     "//cpp2sky:cpp2sky_interface",
