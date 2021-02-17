@@ -139,7 +139,7 @@ Currently, Configurable values dynamically are like below.
 
 | Config Key | Value Description |
 |:----:|:----:|
-|instance_name| Instance name of this agent. |
+|instance_name| Instance name of this agent |
 
 
 ## Security
