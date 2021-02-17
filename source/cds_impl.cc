@@ -14,9 +14,9 @@
 
 #include "cds_impl.h"
 
-#include <spdlog/spdlog.h>
-
 #include <condition_variable>
+
+#include "spdlog/spdlog.h"
 
 namespace cpp2sky {
 

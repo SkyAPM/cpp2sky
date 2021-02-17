@@ -14,14 +14,13 @@
 
 #include "source/tracer_impl.h"
 
-#include <spdlog/spdlog.h>
-
 #include <chrono>
 #include <thread>
 
 #include "cds_impl.h"
 #include "cpp2sky/exception.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
+#include "spdlog/spdlog.h"
 
 namespace cpp2sky {
 

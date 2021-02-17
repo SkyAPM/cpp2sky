@@ -14,8 +14,6 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
-
 #include <mutex>
 #include <set>
 #include <string_view>

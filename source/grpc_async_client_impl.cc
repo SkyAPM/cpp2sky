@@ -14,13 +14,12 @@
 
 #include "grpc_async_client_impl.h"
 
-#include <spdlog/spdlog.h>
-
 #include <chrono>
 #include <string_view>
 #include <thread>
 
 #include "cpp2sky/exception.h"
+#include "spdlog/spdlog.h"
 
 namespace cpp2sky {
 
