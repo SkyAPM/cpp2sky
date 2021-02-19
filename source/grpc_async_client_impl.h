@@ -64,12 +64,7 @@ class GrpcAsyncSegmentReporterClient final
   size_t numOfMessages() { return drained_messages_.size(); }
 
  private:
-  void resetStream() {
-    if (stream_) {
-      gpr_log(GPR_INFO, "Stream %p had destroyed.", stream_.get());
-      stream_.reset();
-    }
-  }
+  void resetStream();
 
   std::string address_;
   ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>

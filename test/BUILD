@@ -65,3 +65,16 @@ cc_test(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_test(
+  name = "dynamic_config_test",
+  srcs = [
+    "dynamic_config_test.cc",
+  ],
+  deps = [
+    "@com_google_googletest//:gtest_main",
+    "//source:cpp2sky_lib",
+    ":mocks",
+  ],
+  visibility = ["//visibility:public"],
+)

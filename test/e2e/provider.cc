@@ -36,6 +36,7 @@ int main() {
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(config);
 
+  // C++
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
     auto tracing_context = tracer->newContext();
 
@@ -59,6 +60,7 @@ int main() {
     tracer->report(std::move(tracing_context));
   });
 
+  // Python
   svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
     auto tracing_context = tracer->newContext();
 

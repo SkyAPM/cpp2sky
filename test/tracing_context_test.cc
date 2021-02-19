@@ -43,10 +43,12 @@ class TracingContextTest : public testing::Test {
     span_ctx_ = std::make_shared<SpanContextImpl>(sample_ctx);
     span_ext_ctx_ = std::make_shared<SpanContextExtensionImpl>("1");
 
-    factory_ = std::make_unique<TracingContextFactory>(config_);
+    dy_config_ = std::make_unique<DynamicConfig>(config_);
+    factory_ = std::make_unique<TracingContextFactory>(*dy_config_);
   }
 
  protected:
+  std::unique_ptr<DynamicConfig> dy_config_;
   NiceMock<MockRandomGenerator> random_;
   std::string service_name_ = "mesh";
   std::string instance_name_ = "service_0";
@@ -287,8 +289,7 @@ TEST_F(TracingContextTest, SkipAnalysisSegment) {
 }
 
 TEST_F(TracingContextTest, SW8CreateTest) {
-  TracingContextImpl sc(config_.service_name(), config_.instance_name(),
-                        span_ctx_, span_ext_ctx_, random_);
+  TracingContextImpl sc(*dy_config_, span_ctx_, span_ext_ctx_, random_);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 

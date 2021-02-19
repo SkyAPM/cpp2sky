@@ -7,13 +7,17 @@ def cpp2sky_dependencies():
   com_google_googletest()
   com_google_protobuf()
   com_github_httplib()
+  com_github_fmtlib_fmt()
+  com_github_gabime_spdlog()
 
 def skywalking_data_collect_protocol():
   http_archive(
     name = "skywalking_data_collect_protocol",
-    sha256 = "edfa970394511213eacc8055b4c13e4e9773e9196122a49e0db68f6162f67dff",
-    urls = ["https://github.com/apache/skywalking-data-collect-protocol/archive/v8.4.0.tar.gz"],
-    strip_prefix = "skywalking-data-collect-protocol-8.4.0",
+    sha256 = "015d152be6efc653cf0f9f9c2e7edff1b38b826273f03fffedd307026ef56e28",
+    urls = [
+      "https://github.com/Shikugawa/skywalking-data-collect-protocol/archive/fbce318842c40c81cf909d50a7f6dd1556d2e4b2.tar.gz"
+    ],
+    strip_prefix = "skywalking-data-collect-protocol-fbce318842c40c81cf909d50a7f6dd1556d2e4b2",
   )
 
 def com_github_grpc_grpc():
@@ -58,4 +62,22 @@ def com_github_httplib():
     strip_prefix = "cpp-httplib-0.7.15",
     build_file = "//bazel:httplib.BUILD",
     urls = ["https://github.com/yhirose/cpp-httplib/archive/v0.7.15.tar.gz"]
+  )
+
+def com_github_fmtlib_fmt():
+  http_archive(
+    name = "com_github_fmtlib_fmt",
+    sha256 = "decfdf9ad274070fa85f26407b816f5a4d82205ae86bac1990be658d0795ea4d",
+    strip_prefix = "fmt-7.0.3",
+    build_file = "//bazel:fmtlib.BUILD",
+    urls = ["https://github.com/fmtlib/fmt/releases/download/7.0.3/fmt-7.0.3.zip"],
+  )
+
+def com_github_gabime_spdlog():
+  http_archive(
+    name = "com_github_gabime_spdlog",
+    sha256 = "f0114a4d3c88be9e696762f37a7c379619443ce9d668546c61b21d41affe5b62",
+    strip_prefix = "spdlog-1.7.0",
+    build_file = "//bazel:spdlog.BUILD",
+    urls = ["https://github.com/gabime/spdlog/archive/v1.7.0.tar.gz"]
   )

@@ -1,4 +1,4 @@
-// Copyright 2020 SkyAPM
+// Copyright 2021 SkyAPM
 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,32 +14,32 @@
 
 #pragma once
 
-#include <memory>
+#include <mutex>
+#include <set>
+#include <string_view>
 
 #include "cpp2sky/config.pb.h"
-#include "cpp2sky/propagation.h"
-#include "cpp2sky/tracing_context.h"
+#include "language-agent/ConfigurationDiscoveryService.pb.h"
 
 namespace cpp2sky {
 
-class Tracer {
+class DynamicConfig {
  public:
-  virtual ~Tracer() = default;
+  DynamicConfig(TracerConfig& config);
 
-  /**
-   * Start new segment. It will be called per request, for example.
-   */
-  virtual TracingContextPtr newContext() = 0;
-  virtual TracingContextPtr newContext(SpanContextPtr span) = 0;
+  void onConfigChange(skywalking::v3::Commands commands);
+  const TracerConfig& tracerConfig() const& {
+    std::unique_lock<std::mutex> lck(mux_);
+    return config_;
+  }
+  const std::string& uuid() const { return uuid_; }
 
-  /**
-   * Send SegmentContext to the collector.
-   */
-  virtual void report(TracingContextPtr obj) = 0;
+ private:
+  mutable std::mutex mux_;
+  TracerConfig& config_;
+  std::string uuid_;
+  std::set<std::string> target_fields_;
+  std::set<std::string> ignore_fields_;
 };
-
-using TracerPtr = std::unique_ptr<Tracer>;
-
-TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
 
 }  // namespace cpp2sky

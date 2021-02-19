@@ -29,6 +29,7 @@ void init() {
   config.set_instance_name("node_0");
   config.set_service_name("mesh");
   config.set_address("0.0.0.0:11800");
+  config.set_cds_request_interval(5);
 }
 
 int main() {

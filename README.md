@@ -64,7 +64,10 @@ After you constructed config, then setup tracer. Tracer supports gRPC reporter o
 TLS adoption and REST tracer will be supported in the future.
 
 ```cpp
-TracerConfig tracer_config(oap_addr, token);
+TracerConfig tracer_config;
+
+// Setup
+
 TracerPtr tracer = createInsecureGrpcTracer(tracer_config);
 ```
 
@@ -121,6 +124,23 @@ tracing_span->endSpan();
 
 tracer->report(std::move(tracing_context));
 ```
+
+#### Skywalking CDS
+
+C++ agent implements Skywalking CDS feature it allows to change bootstrap config dynamically from the response of sync request, invoked from this periodically.
+
+```cpp
+TracerConfig config;
+// If you set this value as zero, CDS request won't occur.
+config.set_cds_request_interval(5); // CDS request interval should be 5sec
+```
+
+Currently, Configurable values dynamically are like below.
+
+| Config Key | Value Description |
+|:----:|:----:|
+|instance_name| Instance name of this agent |
+
 
 ## Security
 
