@@ -125,9 +125,9 @@ tracing_span->endSpan();
 tracer->report(std::move(tracing_context));
 ```
 
-#### Skywalking CDS
+#### Skywalking DCS
 
-C++ agent implements Skywalking CDS feature it allows to change bootstrap config dynamically from the response of sync request, invoked from this periodically.
+C++ agent implements Skywalking DCS feature it allows to change bootstrap config dynamically from the response of sync request, invoked from this periodically.
 
 ```cpp
 TracerConfig config;
