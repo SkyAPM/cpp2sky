@@ -26,6 +26,10 @@ message TracerConfig {
   // The size of buffer it stores pending messages.
   uint32 delayed_buffer_size = 6;
 
+  // If the operation name of the first span is included in this set, 
+  // this segment should be ignored.
+  repeated string ignore_operation_name_suffix = 8;
+
   // CDS sync request interval. If this value is zero, CDS feature will be disabled.
   uint32 cds_request_interval = 7;
 }

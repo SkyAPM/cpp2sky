@@ -20,6 +20,7 @@
 #include "cds_impl.h"
 #include "cpp2sky/exception.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
+#include "matchers/suffix_matcher.h"
 #include "spdlog/spdlog.h"
 
 namespace cpp2sky {
@@ -29,27 +30,17 @@ TracerImpl::TracerImpl(TracerConfig& config,
     : config_(config),
       grpc_callback_thread_([this] { this->run(); }),
       segment_factory_(config_) {
-  spdlog::set_level(spdlog::level::warn);
+  init(config, cred);
+}
 
-  if (config.protocol() == Protocol::GRPC) {
-    reporter_client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
-        config.address(), cq_,
-        std::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(config.token()),
-        cred);
-  } else {
-    throw TracerException("REST is not supported.");
-  }
-
-  if (config_.tracerConfig().cds_request_interval() != 0) {
-    cds_client_ = std::make_unique<GrpcAsyncConfigDiscoveryServiceClient>(
-        config.address(), cq_,
-        std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(config_),
-        cred);
-    cds_thread_ = std::thread([this] {
-      this->startCds(
-          std::chrono::seconds(config_.tracerConfig().cds_request_interval()));
-    });
-  }
+TracerImpl::TracerImpl(
+    TracerConfig& config,
+    AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client)
+    : config_(config),
+      reporter_client_(std::move(reporter_client)),
+      grpc_callback_thread_([this] { this->run(); }),
+      segment_factory_(config_) {
+  init(config, nullptr);
 }
 
 TracerImpl::~TracerImpl() {
@@ -69,11 +60,20 @@ TracingContextPtr TracerImpl::newContext(SpanContextPtr span) {
   return segment_factory_.create(span);
 }
 
-void TracerImpl::report(TracingContextPtr obj) {
+bool TracerImpl::report(TracingContextPtr obj) {
   if (!obj || !obj->readyToSend()) {
-    return;
+    return false;
   }
+
+  for (const auto& op_name_matcher : op_name_matchers_) {
+    if (!obj->spans().empty() &&
+        op_name_matcher->match(obj->spans().front()->operationName())) {
+      return false;
+    }
+  }
+
   reporter_client_->sendMessage(obj->createSegmentObject());
+  return true;
 }
 
 void TracerImpl::run() {
@@ -96,6 +96,38 @@ void TracerImpl::startCds(std::chrono::seconds seconds) {
     request.set_uuid(config_.uuid());
     cds_client_->sendMessage(request);
     std::this_thread::sleep_for(seconds);
+  }
+}
+
+void TracerImpl::init(TracerConfig& config,
+                      std::shared_ptr<grpc::ChannelCredentials> cred) {
+  spdlog::set_level(spdlog::level::warn);
+
+  if (reporter_client_ == nullptr) {
+    if (config.protocol() == Protocol::GRPC) {
+      reporter_client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
+          config.address(), cq_,
+          std::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(
+              config.token()),
+          cred);
+    } else {
+      throw TracerException("REST is not supported.");
+    }
+  }
+
+  op_name_matchers_.emplace_back(std::make_unique<SuffixMatcher>(
+      std::vector<std::string>(config.ignore_operation_name_suffix().begin(),
+                               config.ignore_operation_name_suffix().end())));
+
+  if (config_.tracerConfig().cds_request_interval() != 0) {
+    cds_client_ = std::make_unique<GrpcAsyncConfigDiscoveryServiceClient>(
+        config.address(), cq_,
+        std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(config_),
+        cred);
+    cds_thread_ = std::thread([this] {
+      this->startCds(
+          std::chrono::seconds(config_.tracerConfig().cds_request_interval()));
+    });
   }
 }
 
