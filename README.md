@@ -43,7 +43,7 @@ protodoc --directory=./cpp2sky --parse="message" --languages="C++" --title=cpp2s
 
 #### Config
 
-cpp2sky provides simple configuration for tracer.
+cpp2sky provides simple configuration for tracer. API docs are available at `docs/README.md`.
 The detail information is described in [official protobuf definition](https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L57-L67).
 
 ```cpp
