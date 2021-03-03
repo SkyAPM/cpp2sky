@@ -78,3 +78,30 @@ cc_test(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_test(
+  name = "tracer_test",
+  srcs = [
+    "tracer_test.cc",
+  ],
+  deps = [
+    "@com_google_googletest//:gtest_main",
+    "//source:cpp2sky_lib",
+    ":mocks",
+  ],
+  visibility = ["//visibility:public"],
+)
+
+
+cc_test(
+  name = "matcher_test",
+  srcs = [
+    "matcher_test.cc",
+  ],
+  deps = [
+    "@com_google_googletest//:gtest_main",
+    "//source:cpp2sky_lib",
+    ":mocks",
+  ],
+  visibility = ["//visibility:public"],
+)

@@ -27,8 +27,10 @@ cc_library(
     "@com_github_gabime_spdlog//:spdlog",
     "//cpp2sky/internal:async_client_interface",
     "//cpp2sky/internal:stream_builder_interface",
+    "//cpp2sky/internal:matcher_interface",
     "//cpp2sky:cpp2sky_interface",
     "//source/utils:util_lib",
+    "//source/matchers:suffix_matcher_lib",
   ],
   visibility = ["//visibility:public"],
 )
@@ -50,8 +52,10 @@ cc_library(
     "@com_github_gabime_spdlog//:spdlog",
     "//cpp2sky/internal:async_client_interface",
     "//cpp2sky/internal:stream_builder_interface",
+    "//cpp2sky/internal:matcher_interface",
     "//cpp2sky:cpp2sky_interface",
     "//source/utils:util_lib",
+    "//source/matchers:suffix_matcher_lib",
   ],
   copts = ["-DGRPC_TEST"],
   visibility = ["//visibility:public"],
@@ -59,7 +63,7 @@ cc_library(
 
 cc_library(
   name = "cpp2sky_data_lib",
-  hdrs  =[
+  hdrs = [
     "propagation_impl.h",
     "tracing_context_impl.h",
     "dynamic_config.h",

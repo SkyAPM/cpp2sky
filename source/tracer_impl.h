@@ -16,6 +16,8 @@
 
 #include <thread>
 
+#include "cpp2sky/internal/async_client.h"
+#include "cpp2sky/internal/matcher.h"
 #include "cpp2sky/tracer.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
 #include "source/cds_impl.h"
@@ -34,14 +36,19 @@ class TracerImpl : public Tracer {
  public:
   TracerImpl(TracerConfig& config,
              std::shared_ptr<grpc::ChannelCredentials> cred);
+  TracerImpl(
+      TracerConfig& config,
+      AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client);
   ~TracerImpl();
 
   TracingContextPtr newContext() override;
   TracingContextPtr newContext(SpanContextPtr span) override;
 
-  void report(TracingContextPtr obj) override;
+  bool report(TracingContextPtr obj) override;
 
  private:
+  void init(TracerConfig& config,
+            std::shared_ptr<grpc::ChannelCredentials> cred);
   void run();
   void startCds(std::chrono::seconds seconds);
 
@@ -52,6 +59,7 @@ class TracerImpl : public Tracer {
   std::thread grpc_callback_thread_;
   std::thread cds_thread_;
   TracingContextFactory segment_factory_;
+  std::list<MatcherPtr> op_name_matchers_;
 };
 
 TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);

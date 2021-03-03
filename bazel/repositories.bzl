@@ -8,6 +8,7 @@ def cpp2sky_dependencies():
   com_google_protobuf()
   com_github_httplib()
   com_github_fmtlib_fmt()
+  com_google_abseil()
   com_github_gabime_spdlog()
 
 def skywalking_data_collect_protocol():
@@ -80,4 +81,12 @@ def com_github_gabime_spdlog():
     strip_prefix = "spdlog-1.7.0",
     build_file = "//bazel:spdlog.BUILD",
     urls = ["https://github.com/gabime/spdlog/archive/v1.7.0.tar.gz"]
+  )
+
+def com_google_abseil():
+  http_archive(
+    name = "com_github_abseil-cpp",
+    sha256 = "e3812f256dd7347a33bf9d93a950cf356c61c0596842ff07d8154cd415145d83",
+    strip_prefix = "abseil-cpp-5d8fc9192245f0ea67094af57399d7931d6bd53f",
+    urls = ["https://github.com/abseil/abseil-cpp/archive/5d8fc9192245f0ea67094af57399d7931d6bd53f.tar.gz"],
   )

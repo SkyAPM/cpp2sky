@@ -1,4 +1,4 @@
-// Copyright 2020 SkyAPM
+// Copyright 2021 SkyAPM
 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,34 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
-
-#include <memory>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "cpp2sky/config.pb.h"
-#include "cpp2sky/propagation.h"
-#include "cpp2sky/tracing_context.h"
+#include "mocks.h"
+#include "source/matchers/suffix_matcher.h"
 
 namespace cpp2sky {
 
-class Tracer {
- public:
-  virtual ~Tracer() = default;
-
-  /**
-   * Start new segment. It will be called per request, for example.
-   */
-  virtual TracingContextPtr newContext() = 0;
-  virtual TracingContextPtr newContext(SpanContextPtr span) = 0;
-
-  /**
-   * Send SegmentContext to the collector.
-   */
-  virtual bool report(TracingContextPtr obj) = 0;
-};
-
-using TracerPtr = std::unique_ptr<Tracer>;
-
-TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
+TEST(MatcherTest, Success) {
+  SuffixMatcher matcher(std::vector<std::string>{"/ignore"});
+  EXPECT_TRUE(matcher.match("/istio/ignore"));
+  EXPECT_FALSE(matcher.match("/istio"));
+}
 
 }  // namespace cpp2sky

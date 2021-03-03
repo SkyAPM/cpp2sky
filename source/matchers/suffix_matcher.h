@@ -1,4 +1,4 @@
-// Copyright 2020 SkyAPM
+// Copyright 2021 SkyAPM
 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,32 +14,21 @@
 
 #pragma once
 
-#include <memory>
+#include <vector>
 
-#include "cpp2sky/config.pb.h"
-#include "cpp2sky/propagation.h"
-#include "cpp2sky/tracing_context.h"
+#include "cpp2sky/internal/matcher.h"
 
 namespace cpp2sky {
 
-class Tracer {
+class SuffixMatcher : public Matcher {
  public:
-  virtual ~Tracer() = default;
+  explicit SuffixMatcher(std::vector<std::string>&& target_suffixes)
+      : target_suffixes_(std::move(target_suffixes)) {}
 
-  /**
-   * Start new segment. It will be called per request, for example.
-   */
-  virtual TracingContextPtr newContext() = 0;
-  virtual TracingContextPtr newContext(SpanContextPtr span) = 0;
+  bool match(std::string_view target) override;
 
-  /**
-   * Send SegmentContext to the collector.
-   */
-  virtual bool report(TracingContextPtr obj) = 0;
+ private:
+  std::vector<std::string> target_suffixes_;
 };
-
-using TracerPtr = std::unique_ptr<Tracer>;
-
-TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
 
 }  // namespace cpp2sky
