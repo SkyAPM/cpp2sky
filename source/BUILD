@@ -79,7 +79,7 @@ cc_library(
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "@com_google_absl//absl/strings:strings",
     "//cpp2sky:config_cc_proto",
-    "//cpp2sky:cpp2sky_interface",
+    "//cpp2sky:cpp2sky_data_interface",
     "//source/utils:util_lib",
   ],
   visibility = ["//visibility:public"],
