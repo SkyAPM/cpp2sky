@@ -17,7 +17,6 @@
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/tracing_context.h"
-#include "source/dynamic_config.h"
 #include "source/utils/random_generator.h"
 
 namespace cpp2sky {
@@ -116,11 +115,14 @@ class TracingSpanImpl : public TracingSpan {
 class TracingContextImpl : public TracingContext {
  public:
   // This constructor is called when there is no parent SpanContext.
-  TracingContextImpl(const DynamicConfig& config, RandomGenerator& random);
-  TracingContextImpl(const DynamicConfig& config,
+  TracingContextImpl(const std::string& service_name,
+                     const std::string& instance_name, RandomGenerator& random);
+  TracingContextImpl(const std::string& service_name,
+                     const std::string& instance_name,
                      SpanContextPtr parent_span_context,
                      RandomGenerator& random);
-  TracingContextImpl(const DynamicConfig& config,
+  TracingContextImpl(const std::string& service_name,
+                     const std::string& instance_name,
                      SpanContextPtr parent_span_context,
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
@@ -131,10 +133,10 @@ class TracingContextImpl : public TracingContext {
     return trace_segment_id_;
   }
   const std::string& service() const override {
-    return config_.tracerConfig().service_name();
+    return service_;
   }
   const std::string& serviceInstance() const override {
-    return config_.tracerConfig().instance_name();
+    return service_instance_;
   }
   const std::list<TracingSpanPtr>& spans() const override { return spans_; }
   SpanContextPtr parentSpanContext() const override {
@@ -174,14 +176,15 @@ class TracingContextImpl : public TracingContext {
   // https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto
   std::string trace_id_;
   std::string trace_segment_id_;
-  const DynamicConfig& config_;
+  std::string service_;
+  std::string service_instance_;
 
   bool should_skip_analysis_ = false;
 };
 
 class TracingContextFactory {
  public:
-  TracingContextFactory(const DynamicConfig& config);
+  TracingContextFactory(const TracerConfig& config);
 
   TracingContextPtr create();
   TracingContextPtr create(SpanContextPtr span_context);
@@ -189,7 +192,8 @@ class TracingContextFactory {
                            SpanContextExtensionPtr ext_span_context);
 
  private:
-  const DynamicConfig& config_;
+  std::string service_name_;
+  std::string instance_name_;
   RandomGeneratorImpl random_generator_;
 };
 
