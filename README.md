@@ -146,11 +146,13 @@ config.set_cds_request_interval(5); // CDS request interval should be 5sec
 
 If you are using Consul KVS as backend, we could put configuration value through HTTP request.
 
-```config.yaml
+```yaml
 configurations:
   service_name:
     ignore_suffix: '/ignore, /hoge'
 ```
+
+After setup configurations, try to put values with 
 
 ```
 curl --request PUT --data-binary "@./config.yaml" http://localhost:8500/v1/kv/configuration-discovery.default.agentConfigurations
