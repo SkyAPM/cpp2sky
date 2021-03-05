@@ -1,6 +1,0 @@
-configurations:
-  mesh:
-    instance: hoge
-    key: value
-  serviceB:
-    instance: fuga
