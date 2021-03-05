@@ -14,11 +14,12 @@ def cpp2sky_dependencies():
 def skywalking_data_collect_protocol():
   http_archive(
     name = "skywalking_data_collect_protocol",
-    sha256 = "015d152be6efc653cf0f9f9c2e7edff1b38b826273f03fffedd307026ef56e28",
+    # 2021-03-01
+    sha256 = "4a3401098e0e49ae56d03cc4890b21c75bab6ccf1c157d73bb0c93fc15bb07c7",
     urls = [
-      "https://github.com/Shikugawa/skywalking-data-collect-protocol/archive/fbce318842c40c81cf909d50a7f6dd1556d2e4b2.tar.gz"
+      "https://github.com/apache/skywalking-data-collect-protocol/archive/c987be061e570ce7d0d8f415753f05555e787407.tar.gz"
     ],
-    strip_prefix = "skywalking-data-collect-protocol-fbce318842c40c81cf909d50a7f6dd1556d2e4b2",
+    strip_prefix = "skywalking-data-collect-protocol-c987be061e570ce7d0d8f415753f05555e787407",
   )
 
 def com_github_grpc_grpc():
@@ -85,7 +86,7 @@ def com_github_gabime_spdlog():
 
 def com_google_abseil():
   http_archive(
-    name = "com_github_abseil-cpp",
+    name = "com_google_absl",
     sha256 = "e3812f256dd7347a33bf9d93a950cf356c61c0596842ff07d8154cd415145d83",
     strip_prefix = "abseil-cpp-5d8fc9192245f0ea67094af57399d7931d6bd53f",
     urls = ["https://github.com/abseil/abseil-cpp/archive/5d8fc9192245f0ea67094af57399d7931d6bd53f.tar.gz"],
