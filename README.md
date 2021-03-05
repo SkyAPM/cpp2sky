@@ -136,6 +136,7 @@ tracer->report(std::move(tracing_context));
 #### Skywalking CDS
 
 C++ agent implements Skywalking CDS feature it allows to change bootstrap config dynamically from the response of sync request, invoked from this periodically.
+Dynamically configurable values are described in description of properties on `docs/README.md'.
 
 ```cpp
 TracerConfig config;
@@ -143,12 +144,19 @@ TracerConfig config;
 config.set_cds_request_interval(5); // CDS request interval should be 5sec
 ```
 
-Currently, Configurable values dynamically are like below.
+If you are using Consul KVS as backend, we could put configuration value through HTTP request.
 
-| Config Key | Value Description |
-|:----:|:----:|
-|instance_name| Instance name of this agent |
+```yaml
+configurations:
+  service_name:
+    ignore_suffix: '/ignore, /hoge'
+```
 
+After setup configurations, try to put values with 
+
+```
+curl --request PUT --data-binary "@./config.yaml" http://localhost:8500/v1/kv/configuration-discovery.default.agentConfigurations
+```
 
 ## Security
 

@@ -14,6 +14,10 @@
 
 #include "dynamic_config.h"
 
+#include <string>
+
+#include "absl/strings/str_split.h"
+#include "absl/strings/strip.h"
 #include "spdlog/spdlog.h"
 
 namespace cpp2sky {
@@ -21,13 +25,13 @@ namespace cpp2sky {
 namespace {  // well known fields on response commands.
 static constexpr std::string_view UUID_FIELD = "UUID";
 static constexpr std::string_view SERIAL_NUMBER_FIELD = "SerialNumber";
-static constexpr std::string_view INSTANCE_FIELD = "instance_name";
+static constexpr std::string_view IGNORE_SUFFIX = "ignore_suffix";
 }  // namespace
 
 using namespace spdlog;
 
 DynamicConfig::DynamicConfig(TracerConfig& config) : config_(config) {
-  target_fields_.emplace(INSTANCE_FIELD.data());
+  target_fields_.emplace(IGNORE_SUFFIX.data());
 
   ignore_fields_.emplace(UUID_FIELD.data());
   ignore_fields_.emplace(SERIAL_NUMBER_FIELD.data());
@@ -59,13 +63,24 @@ void DynamicConfig::onConfigChange(skywalking::v3::Commands commands) {
       continue;
     }
 
-    const auto* reflection = config_.GetReflection();
-    info("{} updated from {} to {}", INSTANCE_FIELD.data(),
-         config_.instance_name(), target.value());
-    reflection->SetString(
-        static_cast<google::protobuf::Message*>(&config_),
-        config_.GetDescriptor()->FindFieldByName(INSTANCE_FIELD.data()),
-        target.value());
+    if (target.key() == IGNORE_SUFFIX) {
+      std::string will_destroy_suffixes;
+      for (const auto& current_suffix :
+           config_.ignore_operation_name_suffix()) {
+        will_destroy_suffixes += current_suffix + ",";
+      }
+      will_destroy_suffixes = absl::StripSuffix(will_destroy_suffixes, ",");
+
+      config_.clear_ignore_operation_name_suffix();
+
+      for (const auto& next_suffix : absl::StrSplit(target.value(), ",")) {
+        *config_.add_ignore_operation_name_suffix() = next_suffix;
+      }
+
+      info("{} updated from {} to {}", IGNORE_SUFFIX.data(),
+           will_destroy_suffixes, target.value());
+    }
+
     config_changed = true;
   }
 

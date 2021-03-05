@@ -24,15 +24,15 @@ namespace cpp2sky {
 using testing::_;
 
 skywalking::v3::Commands setCommands(std::string uuid_value,
-                                     std::string instance_name) {
+                                     std::string suffixes) {
   skywalking::v3::Commands commands;
   auto* command = commands.add_commands();
   auto* uuid = command->add_args();
   uuid->set_key("UUID");
   uuid->set_value(uuid_value);
-  auto* instance = command->add_args();
-  instance->set_key("instance_name");
-  instance->set_value(instance_name);
+  auto* suffix = command->add_args();
+  suffix->set_key("ignore_suffix");
+  suffix->set_value(suffixes);
   return commands;
 }
 
@@ -70,7 +70,7 @@ class DynamicConfigTest : public testing::Test {
 TEST_F(DynamicConfigTest, ConfigChange) {
   setup();
 
-  skywalking::v3::Commands commands1 = setCommands("uuid", "instance-updated");
+  skywalking::v3::Commands commands1 = setCommands("uuid", "ignore1");
   update(commands1);
   shouldChanged();
 
@@ -79,8 +79,7 @@ TEST_F(DynamicConfigTest, ConfigChange) {
   shouldNotChanged();
 
   // Config updated
-  skywalking::v3::Commands commands2 =
-      setCommands("uuid2", "instance-updated-2");
+  skywalking::v3::Commands commands2 = setCommands("uuid2", "ignore2");
   update(commands2);
   shouldChanged();
 
@@ -88,15 +87,15 @@ TEST_F(DynamicConfigTest, ConfigChange) {
   {
     skywalking::v3::Commands commands3;
     auto* command = commands3.add_commands();
-    auto* instance = command->add_args();
-    instance->set_key("instance_name");
-    instance->set_value("instance-updated-3");
+    auto* suffixes = command->add_args();
+    suffixes->set_key("ignore_suffix");
+    suffixes->set_value("ignore3");
 
     update(commands3);
     shouldNotChanged();
   }
 
-  // UUID updated but instance name doesn't changed with unknown field
+  // UUID updated but suffixes name doesn't changed with unknown field
   {
     skywalking::v3::Commands commands4;
     auto* command = commands4.add_commands();
@@ -105,13 +104,13 @@ TEST_F(DynamicConfigTest, ConfigChange) {
     uuid->set_value("uuid3");
     auto* unknown = command->add_args();
     unknown->set_key("unknown");
-    unknown->set_value("instance-updated-3");
+    unknown->set_value("suffixes-updated-3");
 
     update(commands4);
     shouldNotChanged();
   }
 
-  // UUID upgraded and instance name changed, with unknown field addition
+  // UUID upgraded and suffixes name changed, with unknown field addition
   {
     skywalking::v3::Commands commands5;
     auto* command = commands5.add_commands();
@@ -120,10 +119,10 @@ TEST_F(DynamicConfigTest, ConfigChange) {
     uuid->set_value("uuid4");
     auto* unknown = command->add_args();
     unknown->set_key("unknown");
-    unknown->set_value("instance-updated-3");
-    auto* instance = command->add_args();
-    instance->set_key("instance_name");
-    instance->set_value("instance-updated-3");
+    unknown->set_value("suffixes-updated-3");
+    auto* suffixes = command->add_args();
+    suffixes->set_key("ignore_suffix");
+    suffixes->set_value("ignore-3");
 
     update(commands5);
     shouldChanged();

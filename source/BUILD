@@ -25,6 +25,7 @@ cc_library(
     "@skywalking_data_collect_protocol//language-agent:configuration_discovery_service_cc_grpc",
     "@com_github_grpc_grpc//:grpc++",
     "@com_github_gabime_spdlog//:spdlog",
+    "@com_github_abseil-cpp//absl/strings:strings",
     "//cpp2sky/internal:async_client_interface",
     "//cpp2sky/internal:stream_builder_interface",
     "//cpp2sky/internal:matcher_interface",
@@ -50,6 +51,7 @@ cc_library(
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
     "@com_github_grpc_grpc//:grpc++",
     "@com_github_gabime_spdlog//:spdlog",
+    "@com_github_abseil-cpp//absl/strings:strings",
     "//cpp2sky/internal:async_client_interface",
     "//cpp2sky/internal:stream_builder_interface",
     "//cpp2sky/internal:matcher_interface",
@@ -75,6 +77,7 @@ cc_library(
   deps = [
     "@skywalking_data_collect_protocol//language-agent:configuration_discovery_service_cc_proto",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
+    "@com_github_abseil-cpp//absl/strings:strings",
     "//cpp2sky:config_cc_proto",
     "//cpp2sky:cpp2sky_interface",
     "//source/utils:util_lib",
