@@ -73,6 +73,7 @@ cc_library(
   srcs = [
     "propagation_impl.cc",
     "tracing_context_impl.cc",
+    "dynamic_config.cc",
   ],
   deps = [
     "@skywalking_data_collect_protocol//language-agent:configuration_discovery_service_cc_proto",
