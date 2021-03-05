@@ -69,7 +69,6 @@ void GrpcAsyncConfigDiscoveryServiceStream::onReadDone() {
        static_cast<int>(status_.error_code()));
 
   if (status_.ok()) {
-    std::cout << commands_.DebugString() << std::endl;
     config_.onConfigChange(commands_);
   }
 

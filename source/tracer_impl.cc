@@ -101,7 +101,7 @@ void TracerImpl::startCds(std::chrono::seconds seconds) {
 
 void TracerImpl::init(TracerConfig& config,
                       std::shared_ptr<grpc::ChannelCredentials> cred) {
-  spdlog::set_level(spdlog::level::info);
+  spdlog::set_level(spdlog::level::warn);
 
   if (reporter_client_ == nullptr) {
     if (config.protocol() == Protocol::GRPC) {
