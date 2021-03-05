@@ -132,9 +132,7 @@ class TracingContextImpl : public TracingContext {
   const std::string& traceSegmentId() const override {
     return trace_segment_id_;
   }
-  const std::string& service() const override {
-    return service_;
-  }
+  const std::string& service() const override { return service_; }
   const std::string& serviceInstance() const override {
     return service_instance_;
   }

@@ -29,3 +29,18 @@ cc_library(
   ],
   visibility = ["//visibility:public"],
 )
+
+cc_library(
+  name = "cpp2sky_data_interface",
+  hdrs = [
+    "tracing_context.h",
+    "propagation.h",
+    "well_known_names.h",
+    "exception.h",
+    "time.h",
+  ],
+  deps = [
+    ":config_cc_proto",
+  ],
+  visibility = ["//visibility:public"],
+)

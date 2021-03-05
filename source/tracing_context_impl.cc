@@ -151,10 +151,9 @@ TracingContextImpl::TracingContextImpl(const std::string& service_name,
       service_(service_name),
       service_instance_(instance_name) {}
 
-
 TracingContextImpl::TracingContextImpl(
-    const std::string& service_name,
-    const std::string& instance_name, SpanContextPtr parent_span_context,
+    const std::string& service_name, const std::string& instance_name,
+    SpanContextPtr parent_span_context,
     SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       parent_ext_span_context_(std::move(parent_ext_span_context)),
@@ -162,7 +161,6 @@ TracingContextImpl::TracingContextImpl(
       trace_segment_id_(random.uuid()),
       service_(service_name),
       service_instance_(instance_name) {}
-
 
 TracingContextImpl::TracingContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
@@ -173,7 +171,6 @@ TracingContextImpl::TracingContextImpl(const std::string& service_name,
       trace_segment_id_(random.uuid()),
       service_(service_name),
       service_instance_(instance_name) {}
-
 
 TracingSpanPtr TracingContextImpl::createExitSpan(TracingSpanPtr parent_span) {
   auto current_span = createSpan();
@@ -270,7 +267,8 @@ bool TracingContextImpl::readyToSend() {
 }
 
 TracingContextFactory::TracingContextFactory(const TracerConfig& config)
-    : service_name_(config.service_name()), instance_name_(config.instance_name()) {}
+    : service_name_(config.service_name()),
+      instance_name_(config.instance_name()) {}
 
 TracingContextPtr TracingContextFactory::create() {
   return std::make_unique<TracingContextImpl>(service_name_, instance_name_,

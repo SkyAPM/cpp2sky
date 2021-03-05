@@ -76,7 +76,7 @@ cc_library(
   deps = [
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "//cpp2sky:config_cc_proto",
-    "//cpp2sky:cpp2sky_interface",
+    "//cpp2sky:cpp2sky_data_interface",
     "//source/utils:util_lib",
   ],
   visibility = ["//visibility:public"],
