@@ -5,7 +5,7 @@ cc_library(
   hdrs = ["suffix_matcher.h"],
   srcs = ["suffix_matcher.cc"],
   deps = [
-    "@com_github_abseil-cpp//absl/strings:strings",
+    "@com_google_absl//absl/strings:strings",
     "//cpp2sky/internal:matcher_interface",
   ],
   visibility = ["//visibility:public"],
