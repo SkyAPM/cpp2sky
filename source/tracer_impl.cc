@@ -29,7 +29,7 @@ TracerImpl::TracerImpl(TracerConfig& config,
                        std::shared_ptr<grpc::ChannelCredentials> cred)
     : config_(config),
       grpc_callback_thread_([this] { this->run(); }),
-      segment_factory_(config_) {
+      segment_factory_(config) {
   init(config, cred);
 }
 
@@ -39,7 +39,7 @@ TracerImpl::TracerImpl(
     : config_(config),
       reporter_client_(std::move(reporter_client)),
       grpc_callback_thread_([this] { this->run(); }),
-      segment_factory_(config_) {
+      segment_factory_(config) {
   init(config, nullptr);
 }
 

@@ -65,21 +65,18 @@ cc_library(
 
 cc_library(
   name = "cpp2sky_data_lib",
-  hdrs = [
+  hdrs  =[
     "propagation_impl.h",
     "tracing_context_impl.h",
-    "dynamic_config.h",
   ],
   srcs = [
     "propagation_impl.cc",
     "tracing_context_impl.cc",
   ],
   deps = [
-    "@skywalking_data_collect_protocol//language-agent:configuration_discovery_service_cc_proto",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
-    "@com_google_absl//absl/strings:strings",
     "//cpp2sky:config_cc_proto",
-    "//cpp2sky:cpp2sky_interface",
+    "//cpp2sky:cpp2sky_data_interface",
     "//source/utils:util_lib",
   ],
   visibility = ["//visibility:public"],
