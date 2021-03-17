@@ -1,7 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 
 cc_binary(
-  name = "tracer_example",
+  name = "sample",
   srcs = ["sample.cc"],
   deps = [
     "//cpp2sky:cpp2sky_interface",
@@ -11,7 +11,7 @@ cc_binary(
 )
 
 cc_binary(
-  name = "tracer_client_example",
+  name = "sample_client",
   srcs = ["sample_client.cc"],
   deps = [
     "//cpp2sky:cpp2sky_interface",

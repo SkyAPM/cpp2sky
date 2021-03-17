@@ -36,7 +36,7 @@ SpanContextImpl::SpanContextImpl(std::string_view header_value) {
   size_t current_field_idx = 0;
   std::string value;
 
-  for (auto i = 0; i < header_value.size(); ++i) {
+  for (size_t i = 0; i < header_value.size(); ++i) {
     if (current_field_idx >= EXPECTED_FIELD_COUNT) {
       throw TracerException(
           "Invalid span context format. It must have 8 fields.");
@@ -78,7 +78,7 @@ SpanContextExtensionImpl::SpanContextExtensionImpl(
   size_t current_field_idx = 0;
   std::string value;
 
-  for (auto i = 0; i < header_value.size(); ++i) {
+  for (size_t i = 0; i < header_value.size(); ++i) {
     if (current_field_idx >= EXPECTED_EXTENSION_FIELD_COUNT) {
       throw TracerException(
           "Invalid span context format. It must have 1 fields.");

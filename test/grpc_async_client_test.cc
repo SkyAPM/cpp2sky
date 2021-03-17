@@ -21,8 +21,6 @@
 #include "source/grpc_async_client_impl.h"
 #include "test/mocks.h"
 
-#define TEST
-
 namespace cpp2sky {
 
 using testing::_;

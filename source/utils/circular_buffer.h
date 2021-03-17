@@ -86,10 +86,8 @@ class CircularBuffer {
   size_t size() const { return item_count_; }
 
   // Used for test
-#pragma region test
   size_t frontIdx() { return front_; }
   size_t backIdx() { return back_; }
-#pragma endregion
 
  private:
   void popInternal() {

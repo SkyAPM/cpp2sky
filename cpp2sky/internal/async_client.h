@@ -126,6 +126,8 @@ struct StreamCallbackTag {
       case StreamState::ReadDone:
         callback_->onReadDone();
         break;
+      default:
+        break;
     }
   }
 

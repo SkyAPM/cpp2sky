@@ -27,7 +27,6 @@ class TracingSpanImpl : public TracingSpan {
 
   skywalking::v3::SpanObject createSpanObject() override;
 
-#pragma region Getters
   int32_t spanId() const override { return span_id_; }
   int32_t parentSpanId() const override { return parent_span_id_; }
   int64_t startTime() const override { return start_time_; }
@@ -47,9 +46,7 @@ class TracingSpanImpl : public TracingSpan {
   }
   bool finished() const override { return finished_; }
   std::string operationName() const override { return operation_name_; }
-#pragma endregion
 
-#pragma region Setters
   void setParentSpanId(int32_t span_id) override {
     assert(!finished_);
     parent_span_id_ = span_id;
@@ -86,7 +83,6 @@ class TracingSpanImpl : public TracingSpan {
   void addLog(std::string key, std::string value,
               TimePoint<SteadyTime> current_time) override;
   void setComponentId(int32_t component_id) override;
-#pragma endregion
 
  private:
   // Based on
@@ -127,7 +123,6 @@ class TracingContextImpl : public TracingContext {
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
-#pragma region Getters
   const std::string& traceId() const override { return trace_id_; }
   const std::string& traceSegmentId() const override {
     return trace_segment_id_;
@@ -143,7 +138,6 @@ class TracingContextImpl : public TracingContext {
   SpanContextExtensionPtr parentSpanContextExtension() const override {
     return parent_ext_span_context_;
   }
-#pragma endregion
 
   TracingSpanPtr createExitSpan(TracingSpanPtr parent_span) override;
 
