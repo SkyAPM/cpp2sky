@@ -117,8 +117,7 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
   ctx_.set_wait_for_ready(true);
 
   request_writer_ = client_.stub().PrepareCall(
-      &ctx_, "/skywalking.v3.TraceSegmentReportService/collect",
-      &client_.completionQueue());
+      &ctx_, "/TraceSegmentReportService/collect", &client_.completionQueue());
   request_writer_->StartCall(reinterpret_cast<void*>(&ready_));
 }
 
