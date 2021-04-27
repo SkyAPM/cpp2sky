@@ -16,6 +16,7 @@
 
 #include <deque>
 #include <mutex>
+#include <optional>
 
 namespace cpp2sky {
 
