@@ -30,18 +30,18 @@ services:
       - '8600:8600'
       - '8600:8600/udp'
   oap:
-    image: apache/skywalking-oap-server:8.4.0-es7
+    image: apache/skywalking-oap-server:8.5.0-es7
     depends_on:
       - elasticsearch
     links:
       - elasticsearch
-    restart: always
     ports:
       - 11800:11800
       - 12800:12800
     environment:
       SW_STORAGE: elasticsearch7
       SW_STORAGE_ES_CLUSTER_NODES: elasticsearch:9200
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "/skywalking/bin/swctl"]
       interval: 30s
@@ -52,12 +52,11 @@ services:
       - consul
       - elasticsearch
   ui:
-    image: apache/skywalking-ui:8.4.0
+    image: apache/skywalking-ui:8.5.0
     depends_on:
       - oap
     links:
       - oap
-    restart: always
     ports:
       - 8080:8080
     environment:

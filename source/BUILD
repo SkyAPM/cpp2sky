@@ -36,33 +36,6 @@ cc_library(
   visibility = ["//visibility:public"],
 )
 
-# TODO(shikugawa): This is a terrible hack to disable unexpected behavior for 
-# test that has introduced GRPC_TEST.
-cc_library(
-  name = "async_client_impl_test",
-  hdrs = [
-    "grpc_async_client_impl.h",
-  ],
-  srcs = [
-    "grpc_async_client_impl.cc",
-  ],
-  deps = [
-    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
-    "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
-    "@com_github_grpc_grpc//:grpc++",
-    "@com_github_gabime_spdlog//:spdlog",
-    "@com_google_absl//absl/strings:strings",
-    "//cpp2sky/internal:async_client_interface",
-    "//cpp2sky/internal:stream_builder_interface",
-    "//cpp2sky/internal:matcher_interface",
-    "//cpp2sky:cpp2sky_interface",
-    "//source/utils:util_lib",
-    "//source/matchers:suffix_matcher_lib",
-  ],
-  copts = ["-DGRPC_TEST"],
-  visibility = ["//visibility:public"],
-)
-
 cc_library(
   name = "cpp2sky_data_lib",
   hdrs  =[
