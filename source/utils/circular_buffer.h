@@ -16,6 +16,7 @@
 
 #include <deque>
 #include <mutex>
+#include <optional>
 
 namespace cpp2sky {
 
@@ -84,6 +85,14 @@ class CircularBuffer {
    * Get item count
    */
   size_t size() const { return item_count_; }
+
+  /**
+   * Clear buffer
+   */
+  void clear() {
+    buf_.clear();
+    item_count_ = 0;
+  }
 
   // Used for test
   size_t frontIdx() { return front_; }

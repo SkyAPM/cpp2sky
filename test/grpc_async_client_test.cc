@@ -57,18 +57,4 @@ TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
   client_->sendMessage(fake_message);
 }
 
-TEST_F(GrpcAsyncSegmentReporterClientTest, MessageDrainTest) {
-  std::queue<TracerRequestType> fake_pending_messages;
-  for (int i = 0; i < 3; ++i) {
-    fake_pending_messages.emplace(skywalking::v3::SegmentObject());
-  }
-  while (fake_pending_messages.size() != 0) {
-    auto msg = fake_pending_messages.front();
-    fake_pending_messages.pop();
-    client_->drainPendingMessage(msg);
-  }
-  EXPECT_EQ(fake_pending_messages.size(), 0);
-  EXPECT_EQ(client_->numOfMessages(), 3);
-}
-
 }  // namespace cpp2sky

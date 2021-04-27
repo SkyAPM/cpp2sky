@@ -20,6 +20,8 @@
 
 #include <memory>
 
+#include "source/utils/circular_buffer.h"
+
 using google::protobuf::Message;
 
 namespace cpp2sky {
@@ -30,14 +32,14 @@ class AsyncClient {
   virtual ~AsyncClient() = default;
 
   /**
-   * Send the specified protobuf message
+   * Send the specified protobuf message.
    */
   virtual void sendMessage(RequestType message) = 0;
 
   /**
-   * Drain pending message.
+   * Pending message queue reference.
    */
-  virtual void drainPendingMessage(RequestType message) = 0;
+  virtual CircularBuffer<RequestType>& pendingMessages() = 0;
 
   /**
    * Start stream if there is no living stream.

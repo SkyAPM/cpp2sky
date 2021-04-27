@@ -37,8 +37,8 @@ class GrpcAsyncConfigDiscoveryServiceClient final
   ~GrpcAsyncConfigDiscoveryServiceClient();
 
   void sendMessage(CdsRequest request);
-  void drainPendingMessage(CdsRequest pending_message) override {}
   void startStream() override {}
+  CircularBuffer<CdsRequest>& pendingMessages() override { assert(false); }
   grpc::CompletionQueue& completionQueue() override { return cq_; }
   grpc::TemplatedGenericStub<CdsRequest, CdsResponse>& stub() override {
     return stub_;
