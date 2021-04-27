@@ -1,3 +1,5 @@
-build --cxxopt=-std=c++17
+build --enable_platform_specific_config
+build:linux --cxxopt=-std=c++17
+build:windows --cxxopt=-std:c++17
 
 try-import %workspace%/user.bazelrc
