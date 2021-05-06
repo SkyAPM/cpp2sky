@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include "external/skywalking_data_collect_protocol/language-agent/Tracing.pb.h"
 #include "mocks.h"
@@ -189,12 +190,24 @@ TEST_F(TracingContextTest, ChildSegmentContext) {
   span_child->setPeer("localhost:9000");
   span_child->addTag("category", "database");
 
+  std::string_view key = "method";
+  std::string_view value = "GETxxxx";
+  value.remove_suffix(4);
+  span_child->addTag(key, value);
+
   std::string log_key = "service_0";
   std::string log_value = "error";
-
   auto t3 = TimePoint<SystemTime>(
       SystemTime(std::chrono::duration<int, std::milli>(300)));
   span_child->addLog(log_key, log_value, t3);
+
+  std::string_view log_key2 = "service_1";
+  std::string_view log_value2 = "succeeded\x01\x03";
+  log_value2.remove_suffix(2);
+
+  auto t4 = TimePoint<SystemTime>(
+      SystemTime(std::chrono::duration<int, std::milli>(300)));
+  span_child->addLog(log_key2, log_value2, t4);
 
   span_child->endSpan(t2);
 
@@ -219,17 +232,32 @@ TEST_F(TracingContextTest, ChildSegmentContext) {
     "spanLayer": "Http",
     "componentId": "9000",
     "skipAnalysis": "false",
-    "tags": {
-      "key": "category",
-      "value": "database"
-    },
-    "logs": {
-      "time": "300",
-      "data": {
-        "key": "service_0",
-        "value": "error"
+    "tags": [
+      {
+        "key": "category",
+        "value": "database"
+      },
+      {
+        "key": "method",
+        "value": "GET"
       }
-    },
+    ],
+    "logs": [
+      {
+        "time": "300",
+        "data": {
+          "key": "service_0",
+          "value": "error"
+        }
+      },
+      {
+        "time": "300",
+        "data": {
+          "key": "service_1",
+          "value": "succeeded"
+        }
+      }
+    ],
     "operationName": "sample1",
   }
   )EOF";

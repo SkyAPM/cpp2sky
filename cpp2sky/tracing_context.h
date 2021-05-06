@@ -88,8 +88,8 @@ class TracingSpan {
   /**
    * Get tags.
    */
-  virtual const std::vector<std::pair<std::string, std::string>>& tags()
-      const = 0;
+  virtual const std::vector<std::pair<std::string_view, std::string_view>>&
+  tags() const = 0;
 
   /**
    * Get logs.
@@ -109,10 +109,10 @@ class TracingSpan {
   /**
    * Set start time to calculate execution time.
    */
-  virtual void startSpan(std::string operation_name) = 0;
-  virtual void startSpan(std::string operation_name,
+  virtual void startSpan(std::string_view operation_name) = 0;
+  virtual void startSpan(std::string_view operation_name,
                          TimePoint<SystemTime> current_time) = 0;
-  virtual void startSpan(std::string operation_name,
+  virtual void startSpan(std::string_view operation_name,
                          TimePoint<SteadyTime> current_time) = 0;
 
   /**
@@ -158,15 +158,15 @@ class TracingSpan {
   /**
    * Set tag to current span.
    */
-  virtual void addTag(std::string key, std::string value) = 0;
+  virtual void addTag(std::string_view key, std::string_view value) = 0;
 
   /**
    * Add log related with current span.
    */
-  virtual void addLog(std::string key, std::string value) = 0;
-  virtual void addLog(std::string key, std::string value,
+  virtual void addLog(std::string_view key, std::string_view value) = 0;
+  virtual void addLog(std::string_view key, std::string_view value,
                       TimePoint<SystemTime> current_time) = 0;
-  virtual void addLog(std::string key, std::string value,
+  virtual void addLog(std::string_view key, std::string_view value,
                       TimePoint<SteadyTime> current_time) = 0;
 
   /**

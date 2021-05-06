@@ -15,6 +15,7 @@
 #include "source/tracing_context_impl.h"
 
 #include <string>
+#include <string_view>
 
 #include "cpp2sky/exception.h"
 #include "cpp2sky/time.h"
@@ -61,8 +62,8 @@ skywalking::v3::SpanObject TracingSpanImpl::createSpanObject() {
 
   for (auto& tag : tags_) {
     auto* entry = obj.mutable_tags()->Add();
-    entry->set_key(tag.first);
-    entry->set_value(tag.second);
+    entry->set_key(std::string(tag.first));
+    entry->set_value(std::string(tag.second));
   }
 
   for (auto& log : logs_) {
@@ -73,46 +74,46 @@ skywalking::v3::SpanObject TracingSpanImpl::createSpanObject() {
   return obj;
 }
 
-void TracingSpanImpl::addLog(std::string key, std::string value) {
+void TracingSpanImpl::addLog(std::string_view key, std::string_view value) {
   assert(!finished_);
   auto now = TimePoint<SystemTime>();
   addLog(key, value, now);
 }
 
-void TracingSpanImpl::addLog(std::string key, std::string value,
+void TracingSpanImpl::addLog(std::string_view key, std::string_view value,
                              TimePoint<SystemTime> current_time) {
   assert(!finished_);
   skywalking::v3::Log l;
   l.set_time(current_time.fetch());
   auto* entry = l.add_data();
-  entry->set_key(key);
-  entry->set_value(value);
+  entry->set_key(std::string(key));
+  entry->set_value(std::string(value));
   logs_.emplace_back(l);
 }
 
-void TracingSpanImpl::addLog(std::string key, std::string value,
+void TracingSpanImpl::addLog(std::string_view key, std::string_view value,
                              TimePoint<SteadyTime> current_time) {
   assert(!finished_);
   skywalking::v3::Log l;
   l.set_time(current_time.fetch());
   auto* entry = l.add_data();
-  entry->set_key(key);
-  entry->set_value(value);
+  entry->set_key(std::string(key));
+  entry->set_value(std::string(value));
   logs_.emplace_back(l);
 }
 
-void TracingSpanImpl::startSpan(std::string operation_name) {
+void TracingSpanImpl::startSpan(std::string_view operation_name) {
   auto now = TimePoint<SystemTime>();
   startSpan(operation_name, now);
 }
 
-void TracingSpanImpl::startSpan(std::string operation_name,
+void TracingSpanImpl::startSpan(std::string_view operation_name,
                                 TimePoint<SystemTime> current_time) {
   operation_name_ = operation_name;
   start_time_ = current_time.fetch();
 }
 
-void TracingSpanImpl::startSpan(std::string operation_name,
+void TracingSpanImpl::startSpan(std::string_view operation_name,
                                 TimePoint<SteadyTime> current_time) {
   operation_name_ = operation_name;
   start_time_ = current_time.fetch();
