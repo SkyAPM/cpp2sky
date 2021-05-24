@@ -50,7 +50,7 @@ class MockAsyncClient : public AsyncClient<RequestType, ResponseType> {
 
   MOCK_METHOD(void, sendMessage, (RequestType));
   MOCK_METHOD(GenericStub&, stub, ());
-  MOCK_METHOD(void, drainPendingMessage, (RequestType));
+  MOCK_METHOD(CircularBuffer<RequestType>&, pendingMessages, ());
   MOCK_METHOD(void, startStream, ());
   MOCK_METHOD(grpc::CompletionQueue&, completionQueue, ());
 };

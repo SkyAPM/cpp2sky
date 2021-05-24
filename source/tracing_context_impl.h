@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <string_view>
+
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/tracing_context.h"
@@ -37,7 +39,7 @@ class TracingSpanImpl : public TracingSpan {
   bool errorStatus() const override { return is_error_; }
   bool skipAnalysis() const override { return skip_analysis_; }
   int32_t componentId() const override { return component_id_; }
-  const std::vector<std::pair<std::string, std::string>>& tags()
+  const std::vector<std::pair<std::string_view, std::string_view>>& tags()
       const override {
     return tags_;
   }
@@ -51,10 +53,10 @@ class TracingSpanImpl : public TracingSpan {
     assert(!finished_);
     parent_span_id_ = span_id;
   }
-  void startSpan(std::string operation_name) override;
-  void startSpan(std::string operation_name,
+  void startSpan(std::string_view operation_name) override;
+  void startSpan(std::string_view operation_name,
                  TimePoint<SystemTime> current_time) override;
-  void startSpan(std::string operation_name,
+  void startSpan(std::string_view operation_name,
                  TimePoint<SteadyTime> current_time) override;
   void endSpan() override;
   void endSpan(TimePoint<SystemTime> current_time) override;
@@ -73,14 +75,14 @@ class TracingSpanImpl : public TracingSpan {
   }
   void setErrorStatus() override { is_error_ = true; }
   void setSkipAnalysis() override { skip_analysis_ = true; }
-  void addTag(std::string key, std::string value) override {
+  void addTag(std::string_view key, std::string_view value) override {
     assert(!finished_);
     tags_.emplace_back(key, value);
   }
-  void addLog(std::string key, std::string value) override;
-  void addLog(std::string key, std::string value,
+  void addLog(std::string_view key, std::string_view value) override;
+  void addLog(std::string_view key, std::string_view value,
               TimePoint<SystemTime> current_time) override;
-  void addLog(std::string key, std::string value,
+  void addLog(std::string_view key, std::string_view value,
               TimePoint<SteadyTime> current_time) override;
   void setComponentId(int32_t component_id) override;
 
@@ -100,7 +102,7 @@ class TracingSpanImpl : public TracingSpan {
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
   int32_t component_id_ = 9000;
   bool is_error_ = false;
-  std::vector<std::pair<std::string, std::string>> tags_;
+  std::vector<std::pair<std::string_view, std::string_view>> tags_;
   std::vector<skywalking::v3::Log> logs_;
   bool skip_analysis_ = false;
   bool finished_ = false;

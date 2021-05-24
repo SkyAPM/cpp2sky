@@ -41,37 +41,30 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
 }
 
 GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
-  // It will wait until there is no drained messages.
-  // There are no timeout option to handle this, so if you would like to stop
-  // them, you should send signals like SIGTERM.
-  // If server stopped with accidental issue, the event loop handle that it
-  // failed to send message and close stream, then recreate new stream and try
-  // to do it. This process will continue forever without sending explicit
-  // signal.
-  // TODO(shikugawa): Block to wait drained messages to be clear with createing
-  // condition variable wrapper.
-#ifndef GRPC_TEST
+  // It will wait until there is no drained messages with 5 second timeout.
   if (stream_) {
     std::unique_lock<std::mutex> lck(mux_);
-    while (!drained_messages_.empty()) {
-      cv_.wait(lck);
+    while (!pending_messages_.empty()) {
+      cv_.wait_for(lck, std::chrono::seconds(5));
+      pending_messages_.clear();
     }
   }
-#endif
 
   resetStream();
 }
 
 void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
+  pending_messages_.push(message);
+
   if (!stream_) {
-    drained_messages_.push(message);
     info(
-        "[Reporter] No active stream, inserted message into draining message "
+        "[Reporter] No active stream, inserted message into pending message "
         "queue. "
         "pending message size: {}",
-        drained_messages_.size());
+        pending_messages_.size());
     return;
   }
+
   stream_->sendMessage(message);
 }
 
@@ -80,19 +73,6 @@ void GrpcAsyncSegmentReporterClient::startStream() {
 
   stream_ = factory_->create(*this, cv_);
   info("[Reporter] Stream {} had created.", fmt::ptr(stream_.get()));
-
-  const auto drained_messages_size = drained_messages_.size();
-
-  while (!drained_messages_.empty()) {
-    auto msg = drained_messages_.front();
-    drained_messages_.pop();
-    if (msg.has_value()) {
-      stream_->sendMessage(msg.value());
-    }
-  }
-
-  info("[Reporter] {} drained messages inserted into pending messages.",
-       drained_messages_size);
 }
 
 void GrpcAsyncSegmentReporterClient::resetStream() {
@@ -121,28 +101,15 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
   request_writer_->StartCall(reinterpret_cast<void*>(&ready_));
 }
 
-GrpcAsyncSegmentReporterStream::~GrpcAsyncSegmentReporterStream() {
-  const auto pending_messages_size = pending_messages_.size();
-  while (!pending_messages_.empty()) {
-    auto msg = pending_messages_.front();
-    pending_messages_.pop();
-    if (msg.has_value()) {
-      client_.drainPendingMessage(msg.value());
-    }
-  }
-  info("[Reporter] {} pending messages drained.", pending_messages_size);
-}
-
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
-  pending_messages_.push(message);
   clearPendingMessage();
 }
 
 bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
-  if (state_ != StreamState::Idle || pending_messages_.empty()) {
+  if (state_ != StreamState::Idle || client_.pendingMessages().empty()) {
     return false;
   }
-  auto message = pending_messages_.front();
+  auto message = client_.pendingMessages().front();
   if (!message.has_value()) {
     return false;
   }
@@ -164,9 +131,7 @@ void GrpcAsyncSegmentReporterStream::onIdle() {
 
   // Release pending messages which are inserted when stream is not ready
   // to write.
-  clearPendingMessage();
-
-  if (pending_messages_.empty()) {
+  if (!clearPendingMessage()) {
     cv_.notify_all();
   }
 }
@@ -174,11 +139,11 @@ void GrpcAsyncSegmentReporterStream::onIdle() {
 void GrpcAsyncSegmentReporterStream::onWriteDone() {
   info("[Reporter] Write finished");
 
-  // Enqueue message after sending message finished.
+  // Dequeue message after sending message finished.
   // With this, messages which failed to sent never lost even if connection
   // was closed. because pending messages with messages which failed to send
   // will drained and resend another stream.
-  pending_messages_.pop();
+  client_.pendingMessages().pop();
   state_ = StreamState::Idle;
 
   onIdle();
