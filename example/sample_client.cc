@@ -68,11 +68,11 @@ int main() {
     StartEntrySpan entry_span(tracing_context, "sample_op1");
 
     {
-      std::string target_address = "remote:8082";
+      std::string target_address = "127.0.0.1:8081";
       StartExitSpan exit_span(tracing_context, entry_span.get(), "sample_op2");
       exit_span.get()->setPeer(target_address);
 
-      httplib::Client cli("remote", 8082);
+      httplib::Client cli("127.0.0.1", 8081);
       httplib::Headers headers = {
           {kPropagationHeader.data(), *tracing_context->createSW8HeaderValue(
                                           exit_span.get(), target_address)}};
