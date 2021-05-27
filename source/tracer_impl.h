@@ -62,6 +62,4 @@ class TracerImpl : public Tracer {
   std::list<MatcherPtr> op_name_matchers_;
 };
 
-TracerPtr createInsecureGrpcTracer(TracerConfig& cfg);
-
 }  // namespace cpp2sky
