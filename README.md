@@ -166,7 +166,7 @@ cpp2sky implements to output logs which is the key to integrate with actual trac
 
 - [spdlog](https://github.com/gabime/spdlog)
 
-```
+```cpp
 #include <spdlog/spdlog.h>
 #include <cpp2sky/trace_log.h>
 
