@@ -372,4 +372,12 @@ TEST_F(TracingContextTest, ReadyToSendTest) {
   EXPECT_FALSE(sc->readyToSend());
 }
 
+TEST_F(TracingContextTest, TraceLogTest) {
+  TracingContextImpl sc(config_.service_name(), config_.instance_name(),
+                        span_ctx_, span_ext_ctx_, random_);
+  EXPECT_EQ(
+      "test\", \"SW_CTX\": [\"mesh\",\"service_0\",\"1\",\"uuid\",\"-1\"]}",
+      sc.logMessage("test"));
+}
+
 }  // namespace cpp2sky

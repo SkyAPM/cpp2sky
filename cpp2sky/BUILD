@@ -23,6 +23,8 @@ cc_library(
     "well_known_names.h",
     "exception.h",
     "time.h",
+    "assert.h",
+    "trace_log.h",
   ],
   deps = [
     ":config_cc_proto",
@@ -38,6 +40,7 @@ cc_library(
     "well_known_names.h",
     "exception.h",
     "time.h",
+    "assert.h",
   ],
   deps = [
     ":config_cc_proto",

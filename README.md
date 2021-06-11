@@ -158,6 +158,31 @@ After setup configurations, try to put values with
 curl --request PUT --data-binary "@./config.yaml" http://localhost:8500/v1/kv/configuration-discovery.default.agentConfigurations
 ```
 
+## Trace and Log integration
+
+cpp2sky implements to output logs which is the key to integrate with actual tracing context.
+
+#### Supported Logger
+
+- [spdlog](https://github.com/gabime/spdlog)
+
+```
+#include <spdlog/spdlog.h>
+#include <cpp2sky/trace_log.h>
+
+int main() {
+  auto logger = spdlog::default_logger();
+  // set_pattern must be called.
+  logger->set_pattern(logFormat<decltype(logger)::element_type>());
+
+  // It will generate log message as follows.
+  //
+  // {"level": "warning", "msg": "sample", "SW_CTX": ["service","instance","trace_id","segment_id","span_id"]}
+  //
+  logger->warn(tracing_context->logMessage("sample"));
+}
+```
+
 ## Security
 
 If you've found any security issues, please read [Security Reporting Process](https://github.com/SkyAPM/cpp2sky/blob/main/SECURITY.md) and take described steps.

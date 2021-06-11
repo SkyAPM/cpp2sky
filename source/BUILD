@@ -8,7 +8,7 @@ cc_library(
     "grpc_async_client_impl.h",
     "tracer_impl.h",
     "cds_impl.h",
-    "dynamic_config.h"
+    "dynamic_config.h",
   ],
   srcs = [
     "propagation_impl.cc",

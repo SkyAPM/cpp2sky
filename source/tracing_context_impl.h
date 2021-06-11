@@ -155,6 +155,7 @@ class TracingContextImpl : public TracingContext {
   void setSkipAnalysis() override { should_skip_analysis_ = true; }
   bool skipAnalysis() override { return should_skip_analysis_; }
   bool readyToSend() override;
+  std::string logMessage(std::string_view message) const override;
 
  private:
   std::string encodeSpan(TracingSpanPtr parent_span,
