@@ -264,6 +264,13 @@ class TracingContext {
    * Determine whether to send this segment or not.
    */
   virtual bool readyToSend() = 0;
+
+  /**
+   * Get log message. Output value of this function is based on default cpp2sky
+   * logging format following with any format extracted with
+   * cpp2sky::logFormat().
+   */
+  virtual std::string logMessage(std::string_view message) const = 0;
 };
 
 using TracingContextPtr = std::shared_ptr<TracingContext>;

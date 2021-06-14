@@ -267,6 +267,23 @@ bool TracingContextImpl::readyToSend() {
   return true;
 }
 
+std::string TracingContextImpl::logMessage(std::string_view message) const {
+  std::string output = message.data();
+  output += "\", \"SW_CTX\": [";
+  output += "\"" + service_ + "\",";
+  output += "\"" + service_instance_ + "\",";
+  output += "\"" + trace_id_ + "\",";
+  output += "\"" + trace_segment_id_ + "\",";
+
+  if (!spans_.empty()) {
+    output += "\"" + std::to_string(spans_.back()->spanId()) + "\"]}";
+  } else {
+    output += "\"-1\"]}";
+  }
+
+  return output;
+}
+
 TracingContextFactory::TracingContextFactory(const TracerConfig& config)
     : service_name_(config.service_name()),
       instance_name_(config.instance_name()) {}

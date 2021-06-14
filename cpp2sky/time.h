@@ -16,17 +16,16 @@
 
 #include <chrono>
 
+#include "cpp2sky/assert.h"
+
 namespace cpp2sky {
 
 using SystemTime = std::chrono::system_clock::time_point;
 using SteadyTime = std::chrono::steady_clock::time_point;
 
 template <class T>
-static constexpr bool false_v = false;
-
-template <class T>
 class TimePoint {
-  static_assert(false_v<T>, "Invalid time type");
+  CPP2SKY_STATIC_ASSERT(T, "Invalid time type");
 };
 
 template <>
