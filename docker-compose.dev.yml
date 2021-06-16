@@ -30,7 +30,7 @@ services:
       - '8600:8600'
       - '8600:8600/udp'
   oap:
-    image: apache/skywalking-oap-server:8.5.0-es7
+    image: apache/skywalking-oap-server:8.6.0-es7
     depends_on:
       - elasticsearch
     links:
@@ -52,7 +52,7 @@ services:
       - consul
       - elasticsearch
   ui:
-    image: apache/skywalking-ui:8.5.0
+    image: apache/skywalking-ui:8.6.0
     depends_on:
       - oap
     links:
