@@ -39,7 +39,7 @@ class TracingSpanImpl : public TracingSpan {
   bool errorStatus() const override { return is_error_; }
   bool skipAnalysis() const override { return skip_analysis_; }
   int32_t componentId() const override { return component_id_; }
-  const std::vector<std::pair<std::string_view, std::string_view>>& tags()
+  const std::vector<std::pair<std::string, std::string>>& tags()
       const override {
     return tags_;
   }
@@ -102,7 +102,7 @@ class TracingSpanImpl : public TracingSpan {
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
   int32_t component_id_ = 9000;
   bool is_error_ = false;
-  std::vector<std::pair<std::string_view, std::string_view>> tags_;
+  std::vector<std::pair<std::string, std::string>> tags_;
   std::vector<skywalking::v3::Log> logs_;
   bool skip_analysis_ = false;
   bool finished_ = false;
