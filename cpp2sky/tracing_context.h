@@ -88,8 +88,8 @@ class TracingSpan {
   /**
    * Get tags.
    */
-  virtual const std::vector<std::pair<std::string_view, std::string_view>>&
-  tags() const = 0;
+  virtual const std::vector<std::pair<std::string, std::string>>& tags()
+      const = 0;
 
   /**
    * Get logs.
