@@ -342,6 +342,26 @@ TEST_F(TracingContextTest, SW8CreateTest) {
       "1-MQ==-dXVpZA==-1-bWVzaA==-c2VydmljZV8w-c2FtcGxlMQ==-MTAuMC4wLjE6NDQz");
 
   EXPECT_EQ(expect_sw8, *sc.createSW8HeaderValue(span2, target_address));
+
+  std::vector<char> target_address_based_vector;
+  target_address_based_vector.reserve(target_address.size() * 2);
+
+  target_address_based_vector = {'1', '0', '.', '0', '.', '0',
+                                 '.', '1', ':', '4', '4', '3'};
+
+  std::string_view target_address_based_vector_view{
+      target_address_based_vector.data(), target_address_based_vector.size()};
+
+  EXPECT_EQ(target_address_based_vector.size(), target_address.size());
+  EXPECT_EQ(expect_sw8,
+            *sc.createSW8HeaderValue(span2, target_address_based_vector_view));
+
+  // Make sure that the end of target_address_based_vector_view is not '\0'. We
+  // reserve enough memory for target_address_based_vector, so push back will
+  // not cause content to be re-allocated.
+  target_address_based_vector.push_back('x');
+  EXPECT_EQ(expect_sw8,
+            *sc.createSW8HeaderValue(span2, target_address_based_vector_view));
 }
 
 TEST_F(TracingContextTest, ReadyToSendTest) {
