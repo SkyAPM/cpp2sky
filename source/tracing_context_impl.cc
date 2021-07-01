@@ -224,7 +224,8 @@ std::string TracingContextImpl::encodeSpan(
   header_value += Base64::encode(service_) + "-";
   header_value += Base64::encode(service_instance_) + "-";
   header_value += Base64::encode(endpoint) + "-";
-  header_value += Base64::encode(target_address.data());
+  header_value +=
+      Base64::encode(target_address.data(), target_address.length());
 
   return header_value;
 }
