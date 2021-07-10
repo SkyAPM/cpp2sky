@@ -76,7 +76,7 @@ void TracerImpl::run() {
   void* got_tag;
   bool ok = false;
   while (true) {
-    if (cds_alarm_ != nullptr && cds_alarm_->check()) {
+    if (cds_timer_ != nullptr && cds_timer_->check()) {
       cdsRequest();
     }
 
@@ -124,8 +124,8 @@ void TracerImpl::init(TracerConfig& config,
         config.address(), cq_,
         std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(config_),
         cred);
-    cds_alarm_ =
-        std::make_unique<Alarm>(config_.tracerConfig().cds_request_interval());
+    cds_timer_ =
+        std::make_unique<Timer>(config_.tracerConfig().cds_request_interval());
   }
 }
 

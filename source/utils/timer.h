@@ -19,9 +19,9 @@
 #include "cpp2sky/time.h"
 
 namespace cpp2sky {
-class Alarm {
+class Timer {
  public:
-  Alarm(int64_t interval_sec) {
+  Timer(int64_t interval_sec) {
     interval_ = interval_sec * 1000;
     prev_time_ = TimePoint<SteadyTime>().fetch();
   }

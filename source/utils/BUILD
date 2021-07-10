@@ -6,7 +6,7 @@ cc_library(
     "base64.h",
     "random_generator.h",
     "circular_buffer.h",
-    "alarm.h",
+    "timer.h",
   ],
   srcs = [
     "random_generator.cc",
