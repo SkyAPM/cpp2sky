@@ -9,6 +9,7 @@ cc_library(
     "tracer_impl.h",
     "cds_impl.h",
     "dynamic_config.h",
+    "alarm.h",
   ],
   srcs = [
     "propagation_impl.cc",
