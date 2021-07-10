@@ -20,10 +20,10 @@
 #include "cpp2sky/internal/matcher.h"
 #include "cpp2sky/tracer.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
-#include "source/alarm.h"
 #include "source/cds_impl.h"
 #include "source/grpc_async_client_impl.h"
 #include "source/tracing_context_impl.h"
+#include "source/utils/alarm.h"
 
 namespace cpp2sky {
 
