@@ -23,6 +23,7 @@
 #include "source/cds_impl.h"
 #include "source/grpc_async_client_impl.h"
 #include "source/tracing_context_impl.h"
+#include "source/utils/timer.h"
 
 namespace cpp2sky {
 
@@ -50,14 +51,14 @@ class TracerImpl : public Tracer {
   void init(TracerConfig& config,
             std::shared_ptr<grpc::ChannelCredentials> cred);
   void run();
-  void startCds(std::chrono::seconds seconds);
+  void cdsRequest();
 
+  std::unique_ptr<Timer> cds_timer_;
   DynamicConfig config_;
   AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client_;
   AsyncClientPtr<CdsRequest, CdsResponse> cds_client_;
   grpc::CompletionQueue cq_;
-  std::thread grpc_callback_thread_;
-  std::thread cds_thread_;
+  std::thread evloop_thread_;
   TracingContextFactory segment_factory_;
   std::list<MatcherPtr> op_name_matchers_;
 };

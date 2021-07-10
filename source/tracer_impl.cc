@@ -28,7 +28,7 @@ namespace cpp2sky {
 TracerImpl::TracerImpl(TracerConfig& config,
                        std::shared_ptr<grpc::ChannelCredentials> cred)
     : config_(config),
-      grpc_callback_thread_([this] { this->run(); }),
+      evloop_thread_([this] { this->run(); }),
       segment_factory_(config) {
   init(config, cred);
 }
@@ -38,7 +38,7 @@ TracerImpl::TracerImpl(
     AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client)
     : config_(config),
       reporter_client_(std::move(reporter_client)),
-      grpc_callback_thread_([this] { this->run(); }),
+      evloop_thread_([this] { this->run(); }),
       segment_factory_(config) {
   init(config, nullptr);
 }
@@ -47,11 +47,7 @@ TracerImpl::~TracerImpl() {
   reporter_client_.reset();
   cds_client_.reset();
   cq_.Shutdown();
-  grpc_callback_thread_.join();
-
-  if (cds_thread_.joinable()) {
-    cds_thread_.join();
-  }
+  evloop_thread_.join();
 }
 
 TracingContextPtr TracerImpl::newContext() { return segment_factory_.create(); }
@@ -80,23 +76,28 @@ void TracerImpl::run() {
   void* got_tag;
   bool ok = false;
   while (true) {
-    grpc::CompletionQueue::NextStatus status =
-        cq_.AsyncNext(&got_tag, &ok, gpr_inf_future(GPR_CLOCK_REALTIME));
-    if (status == grpc::CompletionQueue::SHUTDOWN) {
-      return;
+    // TODO(shikugawa): cleanup evloop handler.
+    if (cds_timer_ != nullptr && cds_timer_->check()) {
+      cdsRequest();
+    }
+
+    grpc::CompletionQueue::NextStatus status = cq_.AsyncNext(
+        &got_tag, &ok, gpr_time_from_nanos(0, GPR_CLOCK_REALTIME));
+    switch (status) {
+      case grpc::CompletionQueue::TIMEOUT:
+        continue;
+      case grpc::CompletionQueue::SHUTDOWN:
+        return;
     }
     static_cast<StreamCallbackTag*>(got_tag)->callback(!ok);
   }
 }
 
-void TracerImpl::startCds(std::chrono::seconds seconds) {
-  while (true) {
-    skywalking::v3::ConfigurationSyncRequest request;
-    request.set_service(config_.tracerConfig().service_name());
-    request.set_uuid(config_.uuid());
-    cds_client_->sendMessage(request);
-    std::this_thread::sleep_for(seconds);
-  }
+void TracerImpl::cdsRequest() {
+  skywalking::v3::ConfigurationSyncRequest request;
+  request.set_service(config_.tracerConfig().service_name());
+  request.set_uuid(config_.uuid());
+  cds_client_->sendMessage(request);
 }
 
 void TracerImpl::init(TracerConfig& config,
@@ -124,10 +125,8 @@ void TracerImpl::init(TracerConfig& config,
         config.address(), cq_,
         std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(config_),
         cred);
-    cds_thread_ = std::thread([this] {
-      this->startCds(
-          std::chrono::seconds(config_.tracerConfig().cds_request_interval()));
-    });
+    cds_timer_ =
+        std::make_unique<Timer>(config_.tracerConfig().cds_request_interval());
   }
 }
 
