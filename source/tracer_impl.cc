@@ -76,6 +76,7 @@ void TracerImpl::run() {
   void* got_tag;
   bool ok = false;
   while (true) {
+    // TODO(shikugawa): cleanup evloop handler.
     if (cds_timer_ != nullptr && cds_timer_->check()) {
       cdsRequest();
     }
