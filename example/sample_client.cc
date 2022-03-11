@@ -56,7 +56,7 @@ int main() {
    * httplib::Client cli("remote", 8082);
    * httplib::Headers headers = {
    *   {kPropagationHeader.data(),
-   *   tracing_context->createSW8HeaderValue(current_span, "remote:8082")}};
+   *   tracing_context->createSW8HeaderValue("remote:8082")}};
    *
    * auto res = cli.Get("/ping", headers);
    *
@@ -74,8 +74,8 @@ int main() {
 
       httplib::Client cli("127.0.0.1", 8081);
       httplib::Headers headers = {
-          {kPropagationHeader.data(), *tracing_context->createSW8HeaderValue(
-                                          exit_span.get(), target_address)}};
+          {kPropagationHeader.data(),
+           *tracing_context->createSW8HeaderValue(target_address)}};
 
       auto res = cli.Get("/ping", headers);
     }

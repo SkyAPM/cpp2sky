@@ -145,11 +145,6 @@ class TracingContextImpl : public TracingContext {
 
   TracingSpanPtr createEntrySpan() override;
   std::optional<std::string> createSW8HeaderValue(
-      const std::string_view target_address) override {
-    return createSW8HeaderValue(nullptr, target_address);
-  }
-  std::optional<std::string> createSW8HeaderValue(
-      TracingSpanPtr parent_span,
       const std::string_view target_address) override;
   skywalking::v3::SegmentObject createSegmentObject() override;
   void setSkipAnalysis() override { should_skip_analysis_ = true; }
