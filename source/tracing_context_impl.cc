@@ -192,16 +192,8 @@ TracingSpanPtr TracingContextImpl::createEntrySpan() {
 }
 
 std::optional<std::string> TracingContextImpl::createSW8HeaderValue(
-    TracingSpanPtr parent_span, const std::string_view target_address) {
-  TracingSpanPtr target_span = parent_span;
-  if (target_span == nullptr) {
-    if (spans_.empty()) {
-      throw TracerException(
-          "Can't create propagation header because current segment has no "
-          "valid span.");
-    }
-    target_span = spans_.back();
-  }
+    const std::string_view target_address) {
+  auto target_span = spans_.back();
   if (target_span->spanType() != skywalking::v3::SpanType::Exit) {
     return std::nullopt;
   }
