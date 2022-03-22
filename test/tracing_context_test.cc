@@ -145,6 +145,7 @@ TEST_F(TracingContextTest, ChildSegmentContext) {
 
   span->startSpan("sample1", t1);
   span->setPeer("localhost:9000");
+  span->setOperationName("sample11");
   span->endSpan(t2);
 
   std::string json = R"EOF(
@@ -168,7 +169,7 @@ TEST_F(TracingContextTest, ChildSegmentContext) {
     "spanLayer": "Http",
     "componentId": "9000",
     "skipAnalysis": "false",
-    "operationName": "sample1",
+    "operationName": "sample11",
   }
   )EOF";
   skywalking::v3::SpanObject expected_obj;
