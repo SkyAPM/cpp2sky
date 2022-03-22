@@ -85,6 +85,7 @@ class TracingSpanImpl : public TracingSpan {
   void addLog(std::string_view key, std::string_view value,
               TimePoint<SteadyTime> current_time) override;
   void setComponentId(int32_t component_id) override;
+  void setOperationName(std::string_view name) override;
 
  private:
   // Based on

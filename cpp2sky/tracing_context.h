@@ -175,6 +175,11 @@ class TracingSpan {
   virtual void setComponentId(int32_t component_id) = 0;
 
   /**
+   * Set operation name.
+   */
+  virtual void setOperationName(std::string_view operation_name) = 0;
+
+  /**
    * This span had finished or not.
    */
   virtual bool finished() const = 0;

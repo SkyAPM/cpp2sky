@@ -144,6 +144,11 @@ void TracingSpanImpl::setComponentId(int32_t component_id) {
   component_id_ = component_id;
 }
 
+void TracingSpanImpl::setOperationName(std::string_view name) {
+  assert(!finished_);
+  operation_name_ = name;
+}
+
 TracingContextImpl::TracingContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
                                        RandomGenerator& random)
