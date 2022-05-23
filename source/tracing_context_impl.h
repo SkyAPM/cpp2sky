@@ -23,35 +23,38 @@
 
 namespace cpp2sky {
 
+class TracingContextImpl;
+
 class TracingSpanImpl : public TracingSpan {
  public:
-  TracingSpanImpl(int32_t span_id, TracingContext& parent_tracing_context);
+  TracingSpanImpl(int32_t span_id, TracingContextImpl& parent_tracing_context);
 
-  skywalking::v3::SpanObject createSpanObject() override;
-
-  int32_t spanId() const override { return span_id_; }
-  int32_t parentSpanId() const override { return parent_span_id_; }
-  int64_t startTime() const override { return start_time_; }
-  int64_t endTime() const override { return end_time_; }
-  const std::string& peer() const override { return peer_; }
-  skywalking::v3::SpanType spanType() const override { return type_; }
-  skywalking::v3::SpanLayer spanLayer() const override { return layer_; }
-  bool errorStatus() const override { return is_error_; }
-  bool skipAnalysis() const override { return skip_analysis_; }
-  int32_t componentId() const override { return component_id_; }
-  const std::vector<std::pair<std::string, std::string>>& tags()
-      const override {
-    return tags_;
+  skywalking::v3::SpanObject createSpanObject() override {
+    // Create an copy of current span object. This is only be used for test for
+    // now.
+    return span_store_;
   }
-  const std::vector<skywalking::v3::Log>& logs() const override {
-    return logs_;
+  int32_t spanId() const override { return span_store_.spanid(); }
+  int32_t parentSpanId() const override { return span_store_.parentspanid(); }
+  int64_t startTime() const override { return span_store_.starttime(); }
+  int64_t endTime() const override { return span_store_.endtime(); }
+  std::string_view peer() const override { return span_store_.peer(); }
+  skywalking::v3::SpanType spanType() const override {
+    return span_store_.spantype();
   }
-  bool finished() const override { return finished_; }
-  std::string operationName() const override { return operation_name_; }
+  skywalking::v3::SpanLayer spanLayer() const override {
+    return span_store_.spanlayer();
+  }
+  bool errorStatus() const override { return span_store_.iserror(); }
+  bool skipAnalysis() const override { return span_store_.skipanalysis(); }
+  int32_t componentId() const override { return span_store_.componentid(); }
+  std::string_view operationName() const override {
+    return span_store_.operationname();
+  }
 
   void setParentSpanId(int32_t span_id) override {
     assert(!finished_);
-    parent_span_id_ = span_id;
+    span_store_.set_parentspanid(span_id);
   }
   void startSpan(std::string_view operation_name) override;
   void startSpan(std::string_view operation_name,
@@ -61,24 +64,19 @@ class TracingSpanImpl : public TracingSpan {
   void endSpan() override;
   void endSpan(TimePoint<SystemTime> current_time) override;
   void endSpan(TimePoint<SteadyTime> current_time) override;
-  void setPeer(const std::string& remote_address) override {
+  void setPeer(std::string_view remote_address) override {
     assert(!finished_);
-    peer_ = remote_address;
+    span_store_.set_peer(std::string(remote_address));
   }
-  void setPeer(std::string&& remote_address) override {
-    assert(!finished_);
-    peer_ = std::move(remote_address);
+  void setSpanType(skywalking::v3::SpanType type) override {
+    span_store_.set_spantype(type);
   }
-  void setSpanType(skywalking::v3::SpanType type) override { type_ = type; }
   void setSpanLayer(skywalking::v3::SpanLayer layer) override {
-    layer_ = layer;
+    span_store_.set_spanlayer(layer);
   }
-  void setErrorStatus() override { is_error_ = true; }
-  void setSkipAnalysis() override { skip_analysis_ = true; }
-  void addTag(std::string_view key, std::string_view value) override {
-    assert(!finished_);
-    tags_.emplace_back(key, value);
-  }
+  void setErrorStatus() override { span_store_.set_iserror(true); }
+  void setSkipAnalysis() override { span_store_.set_skipanalysis(true); }
+  void addTag(std::string_view key, std::string_view value) override;
   void addLog(std::string_view key, std::string_view value) override;
   void addLog(std::string_view key, std::string_view value,
               TimePoint<SystemTime> current_time) override;
@@ -86,29 +84,21 @@ class TracingSpanImpl : public TracingSpan {
               TimePoint<SteadyTime> current_time) override;
   void setComponentId(int32_t component_id) override;
   void setOperationName(std::string_view name) override;
+  void addSegmentRef(const SpanContext& span_context) override;
+  bool finished() const override { return finished_; }
+
+  void addLogImpl(std::string_view key, std::string_view value,
+                  int64_t timestamp);
+  void startSpanImpl(std::string_view operation_name, int64_t timestamp);
+  void endSpanImpl(int64_t timestamp);
 
  private:
-  // Based on
-  // https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto
-  int32_t span_id_;
-  int32_t parent_span_id_;
-  int64_t start_time_ = 0;
-  int64_t end_time_ = 0;
-  std::string operation_name_;
-  std::string peer_;
-  skywalking::v3::SpanType type_;
-  skywalking::v3::SpanLayer layer_;
-  // ComponentId is predefined by SkyWalking OAP. The range of id is 9000~9999
-  // on C++ language SDK. Based on
-  // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
-  int32_t component_id_ = 9000;
-  bool is_error_ = false;
-  std::vector<std::pair<std::string, std::string>> tags_;
-  std::vector<skywalking::v3::Log> logs_;
-  bool skip_analysis_ = false;
   bool finished_ = false;
 
-  TracingContext& parent_tracing_context_;
+  // Parent segment owns all span objects and we only keep a ref in the tracing
+  // span.
+  skywalking::v3::SpanObject& span_store_;
+  TracingContextImpl& parent_tracing_context_;
 };
 
 class TracingContextImpl : public TracingContext {
@@ -126,13 +116,17 @@ class TracingContextImpl : public TracingContext {
                      SpanContextExtensionPtr parent_ext_span_context,
                      RandomGenerator& random);
 
-  const std::string& traceId() const override { return trace_id_; }
-  const std::string& traceSegmentId() const override {
-    return trace_segment_id_;
+  const std::string& traceId() const override {
+    return segment_store_.traceid();
   }
-  const std::string& service() const override { return service_; }
+  const std::string& traceSegmentId() const override {
+    return segment_store_.tracesegmentid();
+  }
+  const std::string& service() const override {
+    return segment_store_.service();
+  }
   const std::string& serviceInstance() const override {
-    return service_instance_;
+    return segment_store_.serviceinstance();
   }
   const std::list<TracingSpanPtr>& spans() const override { return spans_; }
   SpanContextPtr parentSpanContext() const override {
@@ -154,6 +148,8 @@ class TracingContextImpl : public TracingContext {
   std::string logMessage(std::string_view message) const override;
 
  private:
+  friend class TracingSpanImpl;
+
   std::string encodeSpan(TracingSpanPtr parent_span,
                          const std::string_view target_address);
   TracingSpanPtr createSpan();
@@ -163,12 +159,7 @@ class TracingContextImpl : public TracingContext {
 
   std::list<TracingSpanPtr> spans_;
 
-  // Based on
-  // https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto
-  std::string trace_id_;
-  std::string trace_segment_id_;
-  std::string service_;
-  std::string service_instance_;
+  skywalking::v3::SegmentObject segment_store_;
 
   bool should_skip_analysis_ = false;
 };

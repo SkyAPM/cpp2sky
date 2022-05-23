@@ -58,7 +58,7 @@ class TracingSpan {
   /**
    * Get peer address.
    */
-  virtual const std::string& peer() const = 0;
+  virtual std::string_view peer() const = 0;
 
   /**
    * Get span type.
@@ -86,20 +86,9 @@ class TracingSpan {
   virtual int32_t componentId() const = 0;
 
   /**
-   * Get tags.
-   */
-  virtual const std::vector<std::pair<std::string, std::string>>& tags()
-      const = 0;
-
-  /**
-   * Get logs.
-   */
-  virtual const std::vector<skywalking::v3::Log>& logs() const = 0;
-
-  /**
    * Get operation name.
    */
-  virtual std::string operationName() const = 0;
+  virtual std::string_view operationName() const = 0;
 
   /**
    * Set parent span ID of this span.
@@ -125,12 +114,7 @@ class TracingSpan {
   /**
    * Set peer address for this span (lvalue)
    */
-  virtual void setPeer(const std::string& remote_address) = 0;
-
-  /**
-   * Set peer address for this span (rvalue)
-   */
-  virtual void setPeer(std::string&& remote_address) = 0;
+  virtual void setPeer(std::string_view remote_address) = 0;
 
   /**
    * Set span type. Entry or Exit. Entry span means origin span which doesn't
@@ -178,6 +162,11 @@ class TracingSpan {
    * Set operation name.
    */
   virtual void setOperationName(std::string_view operation_name) = 0;
+
+  /**
+   * Add parent segment reference to current span.
+   */
+  virtual void addSegmentRef(const SpanContext& span_context) = 0;
 
   /**
    * This span had finished or not.
@@ -246,7 +235,8 @@ class TracingContext {
       const std::string_view target_address) = 0;
 
   /**
-   * Generate Apache SkyWalking native segment object.
+   * Generate Apache SkyWalking native segment object. This method **MUST** can
+   * only be called once.
    */
   virtual skywalking::v3::SegmentObject createSegmentObject() = 0;
 
@@ -274,6 +264,7 @@ class TracingContext {
 };
 
 using TracingContextPtr = std::shared_ptr<TracingContext>;
+
 /**
  * RAII based span creation. It acquired then create new span with required
  * properties. The span wiil be closed and set end time when called destructor.
