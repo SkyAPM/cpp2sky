@@ -26,113 +26,82 @@
 namespace cpp2sky {
 
 TracingSpanImpl::TracingSpanImpl(int32_t span_id,
-                                 TracingContext& parent_tracing_context)
-    : span_id_(span_id), parent_tracing_context_(parent_tracing_context) {}
+                                 TracingContextImpl& parent_tracing_context)
+    : span_store_(
+          *parent_tracing_context.segment_store_.mutable_spans()->Add()),
+      parent_tracing_context_(parent_tracing_context) {
+  span_store_.set_spanid(span_id);
+  // Default component id for historical reason.
+  span_store_.set_componentid(9000);
+}
 
-skywalking::v3::SpanObject TracingSpanImpl::createSpanObject() {
-  skywalking::v3::SpanObject obj;
-
-  obj.set_spanid(span_id_);
-  obj.set_parentspanid(parent_span_id_);
-  obj.set_starttime(start_time_);
-  obj.set_endtime(end_time_);
-  obj.set_operationname(operation_name_);
-  obj.set_spantype(type_);
-  obj.set_spanlayer(layer_);
-  obj.set_componentid(component_id_);
-  obj.set_iserror(is_error_);
-  obj.set_peer(peer_);
-  obj.set_skipanalysis(skip_analysis_);
-
-  auto parent_span = parent_tracing_context_.parentSpanContext();
-  // Inject request parent to the current segment.
-  if (parent_span != nullptr) {
-    auto* entry = obj.mutable_refs()->Add();
-    // TODO(shikugawa): cpp2sky only supports cross process propagation right
-    // now. So It is correct to specify this.
-    entry->set_reftype(skywalking::v3::RefType::CrossProcess);
-    entry->set_traceid(parent_span->traceId());
-    entry->set_parenttracesegmentid(parent_span->traceSegmentId());
-    entry->set_parentservice(parent_span->service());
-    entry->set_parentserviceinstance(parent_span->serviceInstance());
-    entry->set_parentspanid(parent_span->spanId());
-    entry->set_parentendpoint(parent_span->endpoint());
-    entry->set_networkaddressusedatpeer(parent_span->targetAddress());
-  }
-
-  for (auto& tag : tags_) {
-    auto* entry = obj.mutable_tags()->Add();
-    entry->set_key(std::string(tag.first));
-    entry->set_value(std::string(tag.second));
-  }
-
-  for (auto& log : logs_) {
-    auto* entry = obj.mutable_logs()->Add();
-    *entry = log;
-  }
-
-  return obj;
+void TracingSpanImpl::addLogImpl(std::string_view key, std::string_view value,
+                                 int64_t timestamp) {
+  assert(!finished_);
+  auto* l = span_store_.add_logs();
+  l->set_time(timestamp);
+  auto* e = l->add_data();
+  e->set_key(std::string(key));
+  e->set_value(std::string(value));
 }
 
 void TracingSpanImpl::addLog(std::string_view key, std::string_view value) {
-  assert(!finished_);
-  auto now = TimePoint<SystemTime>();
-  addLog(key, value, now);
+  addLogImpl(key, value, TimePoint<SystemTime>().fetch());
 }
 
 void TracingSpanImpl::addLog(std::string_view key, std::string_view value,
                              TimePoint<SystemTime> current_time) {
-  assert(!finished_);
-  skywalking::v3::Log l;
-  l.set_time(current_time.fetch());
-  auto* entry = l.add_data();
-  entry->set_key(std::string(key));
-  entry->set_value(std::string(value));
-  logs_.emplace_back(l);
+  addLogImpl(key, value, current_time.fetch());
 }
 
 void TracingSpanImpl::addLog(std::string_view key, std::string_view value,
                              TimePoint<SteadyTime> current_time) {
+  addLogImpl(key, value, current_time.fetch());
+}
+
+void TracingSpanImpl::addTag(std::string_view key, std::string_view value) {
   assert(!finished_);
-  skywalking::v3::Log l;
-  l.set_time(current_time.fetch());
-  auto* entry = l.add_data();
-  entry->set_key(std::string(key));
-  entry->set_value(std::string(value));
-  logs_.emplace_back(l);
+  auto* kv = span_store_.add_tags();
+  kv->set_key(std::string(key));
+  kv->set_value(std::string(value));
+}
+
+void TracingSpanImpl::startSpanImpl(std::string_view operation_name,
+                                    int64_t timestamp) {
+  span_store_.set_operationname(std::string(operation_name));
+  span_store_.set_starttime(timestamp);
 }
 
 void TracingSpanImpl::startSpan(std::string_view operation_name) {
-  auto now = TimePoint<SystemTime>();
-  startSpan(operation_name, now);
+  startSpanImpl(operation_name, TimePoint<SystemTime>().fetch());
 }
 
 void TracingSpanImpl::startSpan(std::string_view operation_name,
                                 TimePoint<SystemTime> current_time) {
-  operation_name_ = operation_name;
-  start_time_ = current_time.fetch();
+  startSpanImpl(operation_name, current_time.fetch());
 }
 
 void TracingSpanImpl::startSpan(std::string_view operation_name,
                                 TimePoint<SteadyTime> current_time) {
-  operation_name_ = operation_name;
-  start_time_ = current_time.fetch();
+  startSpanImpl(operation_name, current_time.fetch());
+}
+
+void TracingSpanImpl::endSpanImpl(int64_t timestamp) {
+  assert(!finished_);
+  span_store_.set_endtime(timestamp);
+  finished_ = true;
 }
 
 void TracingSpanImpl::endSpan() {
-  assert(!finished_);
-  auto now = TimePoint<SystemTime>();
-  endSpan(now);
+  endSpanImpl(TimePoint<SystemTime>().fetch());
 }
 
 void TracingSpanImpl::endSpan(TimePoint<SystemTime> current_time) {
-  end_time_ = current_time.fetch();
-  finished_ = true;
+  endSpanImpl(current_time.fetch());
 }
 
 void TracingSpanImpl::endSpan(TimePoint<SteadyTime> current_time) {
-  end_time_ = current_time.fetch();
-  finished_ = true;
+  endSpanImpl(current_time.fetch());
 }
 
 void TracingSpanImpl::setComponentId(int32_t component_id) {
@@ -141,42 +110,53 @@ void TracingSpanImpl::setComponentId(int32_t component_id) {
   // Component ID is reserved on Skywalking spec.
   // For more details here:
   // https://github.com/apache/skywalking/blob/master/docs/en/guides/Component-library-settings.md
-  component_id_ = component_id;
+  span_store_.set_componentid(component_id);
 }
 
 void TracingSpanImpl::setOperationName(std::string_view name) {
   assert(!finished_);
-  operation_name_ = name;
+  span_store_.set_operationname(std::string(name));
 }
 
-TracingContextImpl::TracingContextImpl(const std::string& service_name,
-                                       const std::string& instance_name,
-                                       RandomGenerator& random)
-    : trace_id_(random.uuid()),
-      trace_segment_id_(random.uuid()),
-      service_(service_name),
-      service_instance_(instance_name) {}
+void TracingSpanImpl::addSegmentRef(const SpanContext& span_context) {
+  // TODO(shikugawa): cpp2sky only supports cross process propagation right now.
+  // So It is correct to specify this.
+  auto* entry = span_store_.add_refs();
+
+  entry->set_reftype(skywalking::v3::RefType::CrossProcess);
+  entry->set_traceid(span_context.traceId());
+  entry->set_parenttracesegmentid(span_context.traceSegmentId());
+  entry->set_parentservice(span_context.service());
+  entry->set_parentserviceinstance(span_context.serviceInstance());
+  entry->set_parentspanid(span_context.spanId());
+  entry->set_parentendpoint(span_context.endpoint());
+  entry->set_networkaddressusedatpeer(span_context.targetAddress());
+}
 
 TracingContextImpl::TracingContextImpl(
     const std::string& service_name, const std::string& instance_name,
     SpanContextPtr parent_span_context,
     SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
-      parent_ext_span_context_(std::move(parent_ext_span_context)),
-      trace_id_(parent_span_context_->traceId()),
-      trace_segment_id_(random.uuid()),
-      service_(service_name),
-      service_instance_(instance_name) {}
+      parent_ext_span_context_(std::move(parent_ext_span_context)) {
+  segment_store_.set_traceid(random.uuid());
+  segment_store_.set_tracesegmentid(random.uuid());
+  segment_store_.set_service(service_name);
+  segment_store_.set_serviceinstance(instance_name);
+}
+
+TracingContextImpl::TracingContextImpl(const std::string& service_name,
+                                       const std::string& instance_name,
+                                       RandomGenerator& random)
+    : TracingContextImpl(service_name, instance_name, nullptr, nullptr,
+                         random) {}
 
 TracingContextImpl::TracingContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
                                        SpanContextPtr parent_span_context,
                                        RandomGenerator& random)
-    : parent_span_context_(std::move(parent_span_context)),
-      trace_id_(parent_span_context_->traceId()),
-      trace_segment_id_(random.uuid()),
-      service_(service_name),
-      service_instance_(instance_name) {}
+    : TracingContextImpl(service_name, instance_name,
+                         std::move(parent_span_context), nullptr, random) {}
 
 TracingSpanPtr TracingContextImpl::createExitSpan(TracingSpanPtr parent_span) {
   auto current_span = createSpan();
@@ -193,6 +173,11 @@ TracingSpanPtr TracingContextImpl::createEntrySpan() {
   auto current_span = createSpan();
   current_span->setParentSpanId(-1);
   current_span->setSpanType(skywalking::v3::SpanType::Entry);
+
+  if (parent_span_context_ != nullptr) {
+    current_span->addSegmentRef(*parent_span_context_);
+  }
+
   return current_span;
 }
 
@@ -215,12 +200,12 @@ std::string TracingContextImpl::encodeSpan(
 
   // always send to OAP
   header_value += "1-";
-  header_value += Base64::encode(trace_id_) + "-";
-  header_value += Base64::encode(trace_segment_id_) + "-";
+  header_value += Base64::encode(segment_store_.traceid()) + "-";
+  header_value += Base64::encode(segment_store_.tracesegmentid()) + "-";
   header_value += parent_spanid + "-";
-  header_value += Base64::encode(service_) + "-";
-  header_value += Base64::encode(service_instance_) + "-";
-  header_value += Base64::encode(endpoint) + "-";
+  header_value += Base64::encode(segment_store_.service()) + "-";
+  header_value += Base64::encode(segment_store_.serviceinstance()) + "-";
+  header_value += Base64::encode(endpoint.data(), endpoint.size()) + "-";
   header_value +=
       Base64::encode(target_address.data(), target_address.length());
 
@@ -241,19 +226,8 @@ TracingSpanPtr TracingContextImpl::createSpan() {
 }
 
 skywalking::v3::SegmentObject TracingContextImpl::createSegmentObject() {
-  skywalking::v3::SegmentObject obj;
-
-  obj.set_traceid(trace_id_);
-  obj.set_tracesegmentid(trace_segment_id_);
-  obj.set_service(service_);
-  obj.set_serviceinstance(service_instance_);
-
-  for (auto& span : spans_) {
-    auto* entry = obj.mutable_spans()->Add();
-    *entry = span->createSpanObject();
-  }
-
-  return obj;
+  spans_.clear();
+  return std::move(segment_store_);
 }
 
 bool TracingContextImpl::readyToSend() {
@@ -268,10 +242,10 @@ bool TracingContextImpl::readyToSend() {
 std::string TracingContextImpl::logMessage(std::string_view message) const {
   std::string output = message.data();
   output += "\", \"SW_CTX\": [";
-  output += "\"" + service_ + "\",";
-  output += "\"" + service_instance_ + "\",";
-  output += "\"" + trace_id_ + "\",";
-  output += "\"" + trace_segment_id_ + "\",";
+  output += "\"" + segment_store_.service() + "\",";
+  output += "\"" + segment_store_.serviceinstance() + "\",";
+  output += "\"" + segment_store_.traceid() + "\",";
+  output += "\"" + segment_store_.tracesegmentid() + "\",";
 
   if (!spans_.empty()) {
     output += "\"" + std::to_string(spans_.back()->spanId()) + "\"]}";
