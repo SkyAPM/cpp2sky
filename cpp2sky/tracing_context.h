@@ -235,7 +235,7 @@ class TracingContext {
       const std::string_view target_address) = 0;
 
   /**
-   * Generate Apache SkyWalking native segment object. This method **MUST** can
+   * Generate Apache SkyWalking native segment object. This method **SHOULD**
    * only be called once.
    */
   virtual skywalking::v3::SegmentObject createSegmentObject() = 0;
