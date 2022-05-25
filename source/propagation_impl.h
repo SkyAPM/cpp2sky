@@ -26,7 +26,7 @@ class SpanContextImpl : public SpanContext {
  public:
   SpanContextImpl(std::string_view header_value);
 
-  bool sample() const override { return sample_; }
+  bool sampled() const override { return sampled_; }
   const std::string& traceId() const override { return trace_id_; }
   const std::string& traceSegmentId() const override {
     return trace_segment_id_;
@@ -42,7 +42,7 @@ class SpanContextImpl : public SpanContext {
  private:
   // Based on
   // https://github.com/apache/skywalking/blob/master/docs/en/protocols/Skywalking-Cross-Process-Propagation-Headers-Protocol-v3.md
-  bool sample_ = true;
+  bool sampled_ = true;
   std::string trace_id_;
   std::string trace_segment_id_;
   int32_t span_id_;

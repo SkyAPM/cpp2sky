@@ -35,6 +35,10 @@ static constexpr std::string_view sample_ctx =
     "1-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
 
+static constexpr std::string_view false_sample_ctx =
+    "0-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
+    "ZXhhbXBsZS5jb206ODA4MA==";
+
 class TracingContextTest : public testing::Test {
  public:
   TracingContextTest() {
@@ -58,7 +62,7 @@ class TracingContextTest : public testing::Test {
 };
 
 TEST_F(TracingContextTest, BasicTest) {
-  auto sc = factory_->create();
+  auto sc = factory_->create(true);
   EXPECT_EQ(sc->service(), "mesh");
   EXPECT_EQ(sc->serviceInstance(), "service_0");
 
@@ -126,6 +130,11 @@ TEST_F(TracingContextTest, BasicTest) {
   JsonStringToMessage(json2, &expected_obj2);
   EXPECT_EQ(expected_obj2.DebugString(),
             span_child->createSpanObject().DebugString());
+}
+
+TEST_F(TracingContextTest, BasicTestWithFalseSample) {
+  auto sc = factory_->create(false);
+  EXPECT_FALSE(sc->sampled());
 }
 
 TEST_F(TracingContextTest, ChildSegmentContext) {
@@ -258,6 +267,12 @@ TEST_F(TracingContextTest, ChildSegmentContext) {
             span_child->createSpanObject().DebugString());
 }
 
+TEST_F(TracingContextTest, ChildSegmentContextWithFalseSample) {
+  span_ctx_ = std::make_shared<SpanContextImpl>(false_sample_ctx);
+  auto sc = factory_->create(span_ctx_);
+  EXPECT_FALSE(sc->sampled());
+}
+
 TEST_F(TracingContextTest, SkipAnalysisSegment) {
   auto sc = factory_->create(span_ctx_, span_ext_ctx_);
   EXPECT_TRUE(sc->skipAnalysis());
@@ -307,7 +322,7 @@ TEST_F(TracingContextTest, SkipAnalysisSegment) {
 
 TEST_F(TracingContextTest, SW8CreateTest) {
   TracingContextImpl sc(config_.service_name(), config_.instance_name(),
-                        span_ctx_, span_ext_ctx_, random_);
+                        span_ctx_, span_ext_ctx_, random_, true);
   EXPECT_EQ(sc.service(), "mesh");
   EXPECT_EQ(sc.serviceInstance(), "service_0");
 
@@ -356,8 +371,60 @@ TEST_F(TracingContextTest, SW8CreateTest) {
             *sc.createSW8HeaderValue(target_address_based_vector_view));
 }
 
+TEST_F(TracingContextTest, SW8CreateTestWithFalseSample) {
+  span_ctx_ = std::make_shared<SpanContextImpl>(false_sample_ctx);
+  TracingContextImpl sc(config_.service_name(), config_.instance_name(),
+                        span_ctx_, span_ext_ctx_, random_, false);
+  EXPECT_EQ(sc.service(), "mesh");
+  EXPECT_EQ(sc.serviceInstance(), "service_0");
+
+  auto span = sc.createEntrySpan();
+  EXPECT_EQ(sc.spans().size(), 1);
+  EXPECT_EQ(span->spanId(), 0);
+  span->startSpan("sample1");
+  span->endSpan();
+
+  std::string target_address("10.0.0.1:443");
+
+  // Entry span should be rejected as propagation context
+  EXPECT_FALSE(sc.createSW8HeaderValue(target_address).has_value());
+
+  auto span2 = sc.createExitSpan(span);
+
+  EXPECT_EQ(sc.spans().size(), 2);
+  EXPECT_EQ(span2->spanId(), 1);
+  span2->startSpan("sample2");
+  span2->endSpan();
+
+  std::string expect_sw8(
+      "0-dXVpZA==-dXVpZA==-1-bWVzaA==-c2VydmljZV8w-c2FtcGxlMQ==-"
+      "MTAuMC4wLjE6NDQz");
+
+  EXPECT_EQ(expect_sw8, *sc.createSW8HeaderValue(target_address));
+
+  std::vector<char> target_address_based_vector;
+  target_address_based_vector.reserve(target_address.size() * 2);
+
+  target_address_based_vector = {'1', '0', '.', '0', '.', '0',
+                                 '.', '1', ':', '4', '4', '3'};
+
+  std::string_view target_address_based_vector_view{
+      target_address_based_vector.data(), target_address_based_vector.size()};
+
+  EXPECT_EQ(target_address_based_vector.size(), target_address.size());
+  EXPECT_EQ(expect_sw8,
+            *sc.createSW8HeaderValue(target_address_based_vector_view));
+
+  // Make sure that the end of target_address_based_vector_view is not '\0'. We
+  // reserve enough memory for target_address_based_vector, so push back will
+  // not cause content to be re-allocated.
+  target_address_based_vector.push_back('x');
+  EXPECT_EQ(expect_sw8,
+            *sc.createSW8HeaderValue(target_address_based_vector_view));
+}
+
 TEST_F(TracingContextTest, ReadyToSendTest) {
-  auto sc = factory_->create();
+  auto sc = factory_->create(true);
 
   // No parent span
   auto span = sc->createEntrySpan();
@@ -386,7 +453,7 @@ TEST_F(TracingContextTest, ReadyToSendTest) {
 
 TEST_F(TracingContextTest, TraceLogTest) {
   TracingContextImpl sc(config_.service_name(), config_.instance_name(),
-                        span_ctx_, span_ext_ctx_, random_);
+                        span_ctx_, span_ext_ctx_, random_, true);
   EXPECT_EQ(
       "test\", \"SW_CTX\": [\"mesh\",\"service_0\",\"uuid\",\"uuid\",\"-1\"]}",
       sc.logMessage("test"));

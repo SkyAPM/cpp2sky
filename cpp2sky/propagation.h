@@ -27,7 +27,7 @@ class SpanContext {
    * Get the status of sample on SKyWalking.
    * It indicates whether current context should send or not.
    */
-  virtual bool sample() const = 0;
+  virtual bool sampled() const = 0;
 
   /**
    * Get parent's trace ID. This value must be unique globally.

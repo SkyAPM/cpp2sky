@@ -56,13 +56,15 @@ SpanContextImpl::SpanContextImpl(std::string_view header_value) {
         "Invalid span context format. It must have 8 fields.");
   }
 
-  if (fields[0] != "0" && fields[0] != "1") {
+  if (fields[0] == "0") {
+    sampled_ = false;
+  } else if (fields[0] == "1") {
+    sampled_ = true;
+  } else {
     throw TracerException(
         "Invalid span context format. sample field must be 0 or 1.");
   }
 
-  // Sampling is always true
-  sample_ = true;
   trace_id_ = Base64::decodeWithoutPadding(std::string_view(fields[1]));
   trace_segment_id_ = Base64::decodeWithoutPadding(std::string_view(fields[2]));
   span_id_ = std::stoi(fields[3]);

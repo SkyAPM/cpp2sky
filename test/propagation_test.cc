@@ -37,10 +37,13 @@ static constexpr std::string_view invalid_sample =
     "3-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
 
+static constexpr std::string_view false_sample =
+    "0-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
+    "ZXhhbXBsZS5jb206ODA4MA==";
+
 TEST(TestSpanContext, Basic) {
-  auto data = std::string(sample.data());
-  SpanContextImpl sc(data);
-  EXPECT_TRUE(sc.sample());
+  SpanContextImpl sc(sample);
+  EXPECT_TRUE(sc.sampled());
   EXPECT_EQ(sc.traceId(), "1");
   EXPECT_EQ(sc.traceSegmentId(), "5");
   EXPECT_EQ(sc.spanId(), 3);
@@ -63,6 +66,11 @@ TEST(TestSpanContext, MalformedSpanContext) {
     auto data = std::string(invalid_sample.data());
     EXPECT_THROW(SpanContextImpl{data}, TracerException);
   }
+}
+
+TEST(TestSpanContext, FalseSample) {
+  SpanContextImpl sc(false_sample);
+  EXPECT_FALSE(sc.sampled());
 }
 
 }  // namespace cpp2sky

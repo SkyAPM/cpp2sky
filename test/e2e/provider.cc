@@ -38,7 +38,7 @@ int main() {
 
   // C++
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    auto tracing_context = tracer->newContext();
+    auto tracing_context = tracer->newContext(true);
 
     {
       StartEntrySpan entry_span(tracing_context, "/ping");
@@ -62,7 +62,7 @@ int main() {
 
   // Python
   svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
-    auto tracing_context = tracer->newContext();
+    auto tracing_context = tracer->newContext(true);
 
     {
       StartEntrySpan entry_span(tracing_context, "/ping2");

@@ -241,6 +241,13 @@ class TracingContext {
   virtual skywalking::v3::SegmentObject createSegmentObject() = 0;
 
   /**
+   * Whether current segment is sampled or not. This is important flag that
+   * would be used to determine should we report current segment to the
+   * skywalking server.
+   */
+  virtual bool sampled() const = 0;
+
+  /**
    * If called, all spans belongs to this segment will be skipped analysis.
    */
   virtual void setSkipAnalysis() = 0;

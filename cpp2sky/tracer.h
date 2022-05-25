@@ -29,7 +29,7 @@ class Tracer {
   /**
    * Start new segment. It will be called per request, for example.
    */
-  virtual TracingContextPtr newContext() = 0;
+  virtual TracingContextPtr newContext(bool sampled) = 0;
   virtual TracingContextPtr newContext(SpanContextPtr span) = 0;
 
   /**

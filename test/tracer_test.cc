@@ -29,7 +29,7 @@ TEST(TracerTest, MatchedOpShouldIgnored) {
   TracerImpl tracer(
       config, std::make_unique<
                   MockAsyncClient<TracerRequestType, TracerResponseType>>());
-  auto context = tracer.newContext();
+  auto context = tracer.newContext(true);
   auto span = context->createEntrySpan();
 
   span->startSpan("/hoge/ignored");
@@ -44,7 +44,7 @@ TEST(TracerTest, NotClosedSpanExists) {
   TracerImpl tracer(
       config, std::make_unique<
                   MockAsyncClient<TracerRequestType, TracerResponseType>>());
-  auto context = tracer.newContext();
+  auto context = tracer.newContext(true);
   auto span = context->createEntrySpan();
 
   span->startSpan("/hoge");
@@ -60,7 +60,7 @@ TEST(TracerTest, Success) {
   EXPECT_CALL(*mock_reporter, sendMessage(_));
 
   TracerImpl tracer(config, std::move(mock_reporter));
-  auto context = tracer.newContext();
+  auto context = tracer.newContext(true);
   auto span = context->createEntrySpan();
 
   span->startSpan("/hoge");

@@ -50,7 +50,9 @@ TracerImpl::~TracerImpl() {
   evloop_thread_.join();
 }
 
-TracingContextPtr TracerImpl::newContext() { return segment_factory_.create(); }
+TracingContextPtr TracerImpl::newContext(bool sampled) {
+  return segment_factory_.create(sampled);
+}
 
 TracingContextPtr TracerImpl::newContext(SpanContextPtr span) {
   return segment_factory_.create(span);

@@ -105,16 +105,17 @@ class TracingContextImpl : public TracingContext {
  public:
   // This constructor is called when there is no parent SpanContext.
   TracingContextImpl(const std::string& service_name,
-                     const std::string& instance_name, RandomGenerator& random);
+                     const std::string& instance_name, RandomGenerator& random,
+                     bool sampled);
   TracingContextImpl(const std::string& service_name,
                      const std::string& instance_name,
                      SpanContextPtr parent_span_context,
-                     RandomGenerator& random);
+                     RandomGenerator& random, bool sampled);
   TracingContextImpl(const std::string& service_name,
                      const std::string& instance_name,
                      SpanContextPtr parent_span_context,
                      SpanContextExtensionPtr parent_ext_span_context,
-                     RandomGenerator& random);
+                     RandomGenerator& random, bool sampled);
 
   const std::string& traceId() const override {
     return segment_store_.traceid();
@@ -142,6 +143,7 @@ class TracingContextImpl : public TracingContext {
   std::optional<std::string> createSW8HeaderValue(
       const std::string_view target_address) override;
   skywalking::v3::SegmentObject createSegmentObject() override;
+  bool sampled() const override { return sampled_; }
   void setSkipAnalysis() override { should_skip_analysis_ = true; }
   bool skipAnalysis() override { return should_skip_analysis_; }
   bool readyToSend() override;
@@ -161,6 +163,7 @@ class TracingContextImpl : public TracingContext {
 
   skywalking::v3::SegmentObject segment_store_;
 
+  bool sampled_{};
   bool should_skip_analysis_ = false;
 };
 
@@ -168,7 +171,7 @@ class TracingContextFactory {
  public:
   TracingContextFactory(const TracerConfig& config);
 
-  TracingContextPtr create();
+  TracingContextPtr create(bool sampled);
   TracingContextPtr create(SpanContextPtr span_context);
   TracingContextPtr create(SpanContextPtr span_context,
                            SpanContextExtensionPtr ext_span_context);
