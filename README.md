@@ -2,7 +2,7 @@
 
 ![cpp2sky test](https://github.com/SkyAPM/cpp2sky/workflows/cpp2sky%20test/badge.svg)
 
-Distributed tracing and monitor SDK in CPP for Apache SkyWalking APM
+Distributed tracing and monitor SDK in CPP for Apache SkyWalking APM. This SDK is compatible with C++ 17, C++ 14, and C++ 11.
 
 ## Build
 
@@ -152,7 +152,7 @@ configurations:
     ignore_suffix: '/ignore, /hoge'
 ```
 
-After setup configurations, try to put values with 
+After setup configurations, try to put values with
 
 ```
 curl --request PUT --data-binary "@./config.yaml" http://localhost:8500/v1/kv/configuration-discovery.default.agentConfigurations
