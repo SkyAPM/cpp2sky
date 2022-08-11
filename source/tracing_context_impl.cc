@@ -28,8 +28,7 @@ namespace cpp2sky {
 TracingSpanImpl::TracingSpanImpl(int32_t span_id,
                                  TracingContextImpl& parent_tracing_context)
     : span_store_(
-          *parent_tracing_context.segment_store_.mutable_spans()->Add()),
-      parent_tracing_context_(parent_tracing_context) {
+          *parent_tracing_context.segment_store_.mutable_spans()->Add()) {
   span_store_.set_spanid(span_id);
   // Default component id for historical reason.
   span_store_.set_componentid(9000);

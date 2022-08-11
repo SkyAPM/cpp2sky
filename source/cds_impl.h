@@ -36,7 +36,7 @@ class GrpcAsyncConfigDiscoveryServiceClient final
       std::shared_ptr<grpc::ChannelCredentials> cred);
   ~GrpcAsyncConfigDiscoveryServiceClient();
 
-  void sendMessage(CdsRequest request);
+  void sendMessage(CdsRequest request) override;
   void startStream() override {}
   CircularBuffer<CdsRequest>& pendingMessages() override { assert(false); }
   grpc::CompletionQueue& completionQueue() override { return cq_; }
@@ -63,7 +63,7 @@ class GrpcAsyncConfigDiscoveryServiceStream final
       DynamicConfig& config);
 
   // AsyncStream
-  void sendMessage(CdsRequest request);
+  void sendMessage(CdsRequest request) override;
 
   // AsyncStreamCallback
   void onReady() override {}
@@ -80,7 +80,6 @@ class GrpcAsyncConfigDiscoveryServiceStream final
   CdsResponse commands_;
   grpc::Status status_;
   grpc::ClientContext ctx_;
-  StreamState state_{StreamState::Initialized};
   DynamicConfig& config_;
 
   StreamCallbackTag read_done_{StreamState::ReadDone, this};

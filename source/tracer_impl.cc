@@ -88,6 +88,8 @@ void TracerImpl::run() {
         continue;
       case grpc::CompletionQueue::SHUTDOWN:
         return;
+      case grpc::CompletionQueue::GOT_EVENT:
+        break;
     }
     static_cast<StreamCallbackTag*>(got_tag)->callback(!ok);
   }

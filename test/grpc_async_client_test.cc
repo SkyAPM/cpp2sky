@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/grpc_async_client_impl.h"
 #include "test/mocks.h"

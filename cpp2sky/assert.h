@@ -17,8 +17,10 @@
 namespace cpp2sky {
 
 template <class T>
-static constexpr bool false_v = false;
+class FalseValue {
+  static constexpr bool value = false;
+};
 
-#define CPP2SKY_STATIC_ASSERT(T, m) static_assert(false_v<T>, m)
+#define CPP2SKY_STATIC_ASSERT(T, m) static_assert(FalseValue<T>::value, m)
 
 }  // namespace cpp2sky

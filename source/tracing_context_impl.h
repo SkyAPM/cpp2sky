@@ -97,7 +97,6 @@ class TracingSpanImpl : public TracingSpan {
   // Parent segment owns all span objects and we only keep a ref in the tracing
   // span.
   skywalking::v3::SpanObject& span_store_;
-  TracingContextImpl& parent_tracing_context_;
 };
 
 class TracingContextImpl : public TracingContext {
