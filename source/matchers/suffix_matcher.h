@@ -25,7 +25,7 @@ class SuffixMatcher : public Matcher {
   explicit SuffixMatcher(std::vector<std::string>&& target_suffixes)
       : target_suffixes_(std::move(target_suffixes)) {}
 
-  bool match(std::string_view target) override;
+  bool match(absl::string_view target) override;
 
  private:
   std::vector<std::string> target_suffixes_;

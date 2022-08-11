@@ -30,10 +30,10 @@ class Base64 {
   static std::string encode(const char* input, uint64_t length) {
     return encode(input, length, true);
   }
-  static std::string encode(std::string_view input) {
+  static std::string encode(absl::string_view input) {
     return encode(input.data(), input.size());
   }
-  static std::string decodeWithoutPadding(std::string_view input);
+  static std::string decodeWithoutPadding(absl::string_view input);
 };
 
 // clang-format off
@@ -163,7 +163,7 @@ inline std::string Base64::encode(const char* input, uint64_t length,
   return ret;
 }
 
-inline std::string Base64::decodeWithoutPadding(std::string_view input) {
+inline std::string Base64::decodeWithoutPadding(absl::string_view input) {
   if (input.empty()) {
     return "";
   }

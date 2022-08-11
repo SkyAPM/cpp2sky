@@ -44,6 +44,9 @@ cc_library(
   ],
   deps = [
     ":config_cc_proto",
+    "@com_google_absl//absl/memory:memory",
+    "@com_google_absl//absl/strings:strings",
+    "@com_google_absl//absl/types:optional",
   ],
   visibility = ["//visibility:public"],
 )

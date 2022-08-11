@@ -47,6 +47,7 @@ cc_library(
     "tracing_context_impl.cc",
   ],
   deps = [
+    "@com_google_absl//absl/memory:memory",
     "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     "//cpp2sky:config_cc_proto",
     "//cpp2sky:cpp2sky_data_interface",

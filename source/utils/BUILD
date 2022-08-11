@@ -13,6 +13,7 @@ cc_library(
   ],
   deps = [
     "//cpp2sky/internal:random_generator_interface",
+    "@com_google_absl//absl/strings:strings",
   ],
   visibility = ["//visibility:public"],
 )

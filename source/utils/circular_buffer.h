@@ -16,7 +16,8 @@
 
 #include <deque>
 #include <mutex>
-#include <optional>
+
+#include "absl/types/optional.h"
 
 namespace cpp2sky {
 
@@ -32,16 +33,16 @@ class CircularBuffer {
 
   struct Buffer {
     T value;
-    bool is_destroyed_ = false;
+    bool is_destroyed_;
   };
 
   /**
    * Get value which inserted older than any other values.
    * It will return nullopt if buffer is empty.
    */
-  std::optional<T> front() {
+  absl::optional<T> front() {
     if (empty()) {
-      return std::nullopt;
+      return absl::nullopt;
     }
     return buf_[front_].value;
   }

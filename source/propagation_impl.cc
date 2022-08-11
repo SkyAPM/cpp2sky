@@ -15,8 +15,10 @@
 #include "source/propagation_impl.h"
 
 #include <array>
-#include <string_view>
+#include <memory>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 #include "cpp2sky/exception.h"
 #include "source/utils/base64.h"
 
@@ -31,7 +33,7 @@ static constexpr size_t EXPECTED_FIELD_COUNT = 8;
 static constexpr size_t EXPECTED_EXTENSION_FIELD_COUNT = 1;
 }  // namespace
 
-SpanContextImpl::SpanContextImpl(std::string_view header_value) {
+SpanContextImpl::SpanContextImpl(absl::string_view header_value) {
   std::array<std::string, EXPECTED_FIELD_COUNT> fields;
   size_t current_field_idx = 0;
   std::string value;
@@ -63,17 +65,19 @@ SpanContextImpl::SpanContextImpl(std::string_view header_value) {
 
   // Sampling is always true
   sample_ = true;
-  trace_id_ = Base64::decodeWithoutPadding(std::string_view(fields[1]));
-  trace_segment_id_ = Base64::decodeWithoutPadding(std::string_view(fields[2]));
+  trace_id_ = Base64::decodeWithoutPadding(absl::string_view(fields[1]));
+  trace_segment_id_ =
+      Base64::decodeWithoutPadding(absl::string_view(fields[2]));
   span_id_ = std::stoi(fields[3]);
-  service_ = Base64::decodeWithoutPadding(std::string_view(fields[4]));
-  service_instance_ = Base64::decodeWithoutPadding(std::string_view(fields[5]));
-  endpoint_ = Base64::decodeWithoutPadding(std::string_view(fields[6]));
-  target_address_ = Base64::decodeWithoutPadding(std::string_view(fields[7]));
+  service_ = Base64::decodeWithoutPadding(absl::string_view(fields[4]));
+  service_instance_ =
+      Base64::decodeWithoutPadding(absl::string_view(fields[5]));
+  endpoint_ = Base64::decodeWithoutPadding(absl::string_view(fields[6]));
+  target_address_ = Base64::decodeWithoutPadding(absl::string_view(fields[7]));
 }
 
 SpanContextExtensionImpl::SpanContextExtensionImpl(
-    std::string_view header_value) {
+    absl::string_view header_value) {
   std::array<std::string, EXPECTED_EXTENSION_FIELD_COUNT> fields;
   size_t current_field_idx = 0;
   std::string value;
@@ -108,12 +112,12 @@ SpanContextExtensionImpl::SpanContextExtensionImpl(
   }
 }
 
-SpanContextPtr createSpanContext(std::string_view ctx) {
-  return std::make_unique<SpanContextImpl>(ctx);
+SpanContextPtr createSpanContext(absl::string_view ctx) {
+  return absl::make_unique<SpanContextImpl>(ctx);
 }
 
-SpanContextExtensionPtr createSpanContextExtension(std::string_view ctx) {
-  return std::make_unique<SpanContextExtensionImpl>(ctx);
+SpanContextExtensionPtr createSpanContextExtension(absl::string_view ctx) {
+  return absl::make_unique<SpanContextExtensionImpl>(ctx);
 }
 
 }  // namespace cpp2sky

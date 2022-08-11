@@ -16,9 +16,10 @@
 
 #include <list>
 #include <memory>
-#include <optional>
-#include <string_view>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/time.h"
@@ -58,7 +59,7 @@ class TracingSpan {
   /**
    * Get peer address.
    */
-  virtual std::string_view peer() const = 0;
+  virtual absl::string_view peer() const = 0;
 
   /**
    * Get span type.
@@ -88,7 +89,7 @@ class TracingSpan {
   /**
    * Get operation name.
    */
-  virtual std::string_view operationName() const = 0;
+  virtual absl::string_view operationName() const = 0;
 
   /**
    * Set parent span ID of this span.
@@ -98,10 +99,10 @@ class TracingSpan {
   /**
    * Set start time to calculate execution time.
    */
-  virtual void startSpan(std::string_view operation_name) = 0;
-  virtual void startSpan(std::string_view operation_name,
+  virtual void startSpan(absl::string_view operation_name) = 0;
+  virtual void startSpan(absl::string_view operation_name,
                          TimePoint<SystemTime> current_time) = 0;
-  virtual void startSpan(std::string_view operation_name,
+  virtual void startSpan(absl::string_view operation_name,
                          TimePoint<SteadyTime> current_time) = 0;
 
   /**
@@ -114,7 +115,7 @@ class TracingSpan {
   /**
    * Set peer address for this span (lvalue)
    */
-  virtual void setPeer(std::string_view remote_address) = 0;
+  virtual void setPeer(absl::string_view remote_address) = 0;
 
   /**
    * Set span type. Entry or Exit. Entry span means origin span which doesn't
@@ -142,15 +143,15 @@ class TracingSpan {
   /**
    * Set tag to current span.
    */
-  virtual void addTag(std::string_view key, std::string_view value) = 0;
+  virtual void addTag(absl::string_view key, absl::string_view value) = 0;
 
   /**
    * Add log related with current span.
    */
-  virtual void addLog(std::string_view key, std::string_view value) = 0;
-  virtual void addLog(std::string_view key, std::string_view value,
+  virtual void addLog(absl::string_view key, absl::string_view value) = 0;
+  virtual void addLog(absl::string_view key, absl::string_view value,
                       TimePoint<SystemTime> current_time) = 0;
-  virtual void addLog(std::string_view key, std::string_view value,
+  virtual void addLog(absl::string_view key, absl::string_view value,
                       TimePoint<SteadyTime> current_time) = 0;
 
   /**
@@ -161,7 +162,7 @@ class TracingSpan {
   /**
    * Set operation name.
    */
-  virtual void setOperationName(std::string_view operation_name) = 0;
+  virtual void setOperationName(absl::string_view operation_name) = 0;
 
   /**
    * Add parent segment reference to current span.
@@ -231,8 +232,8 @@ class TracingContext {
    * @param target_address Target address to send request. For more detail:
    * https://github.com/apache/skywalking-data-collect-protocol/blob/master/language-agent/Tracing.proto#L97-L101
    */
-  virtual std::optional<std::string> createSW8HeaderValue(
-      const std::string_view target_address) = 0;
+  virtual absl::optional<std::string> createSW8HeaderValue(
+      const absl::string_view target_address) = 0;
 
   /**
    * Generate Apache SkyWalking native segment object. This method **SHOULD**
@@ -260,7 +261,7 @@ class TracingContext {
    * logging format following with any format extracted with
    * cpp2sky::logFormat().
    */
-  virtual std::string logMessage(std::string_view message) const = 0;
+  virtual std::string logMessage(absl::string_view message) const = 0;
 };
 
 using TracingContextPtr = std::shared_ptr<TracingContext>;
@@ -272,7 +273,7 @@ using TracingContextPtr = std::shared_ptr<TracingContext>;
 class StartEntrySpan {
  public:
   StartEntrySpan(TracingContextPtr tracing_context,
-                 std::string_view operation_name)
+                 absl::string_view operation_name)
       : span_(tracing_context->createEntrySpan()) {
     span_->startSpan(operation_name.data());
   }
@@ -291,7 +292,7 @@ class StartEntrySpan {
 class StartExitSpan {
  public:
   StartExitSpan(TracingContextPtr tracing_context, TracingSpanPtr parent_span,
-                std::string_view operation_name)
+                absl::string_view operation_name)
       : span_(tracing_context->createExitSpan(parent_span)) {
     span_->startSpan(operation_name.data());
   }

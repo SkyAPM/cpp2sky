@@ -16,14 +16,14 @@
 
 #include <spdlog/logger.h>
 
-#include <string_view>
 #include <type_traits>
 
+#include "absl/strings/string_view.h"
 #include "cpp2sky/assert.h"
 
 namespace cpp2sky {
 
-static constexpr std::string_view SPDLOG_LOG_FORMAT =
+static constexpr absl::string_view SPDLOG_LOG_FORMAT =
     "{\"level\": \"%^%l%$\", \"msg\": \"%v";
 
 template <class T>

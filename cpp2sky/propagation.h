@@ -15,7 +15,8 @@
 #pragma once
 
 #include <memory>
-#include <string_view>
+
+#include "absl/strings/string_view.h"
 
 namespace cpp2sky {
 
@@ -86,8 +87,8 @@ class SpanContextExtension {
 
 using SpanContextExtensionPtr = std::shared_ptr<SpanContextExtension>;
 
-SpanContextPtr createSpanContext(std::string_view ctx);
+SpanContextPtr createSpanContext(absl::string_view ctx);
 
-SpanContextExtensionPtr createSpanContextExtension(std::string_view ctx);
+SpanContextExtensionPtr createSpanContextExtension(absl::string_view ctx);
 
 }  // namespace cpp2sky

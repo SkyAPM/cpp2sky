@@ -15,7 +15,8 @@
 #pragma once
 
 #include <memory>
-#include <string_view>
+
+#include "absl/strings/string_view.h"
 
 namespace cpp2sky {
 
@@ -26,7 +27,7 @@ class Matcher {
   /**
    * Check whether to match rule.
    */
-  virtual bool match(std::string_view target) = 0;
+  virtual bool match(absl::string_view target) = 0;
 };
 
 using MatcherPtr = std::unique_ptr<Matcher>;

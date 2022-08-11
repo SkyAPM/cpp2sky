@@ -17,6 +17,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/memory/memory.h"
 #include "common/Common.pb.h"
 
 namespace cpp2sky {
@@ -42,7 +43,7 @@ class DynamicConfigTest : public testing::Test {
     init_cfg_.set_service_name("mesh");
     init_cfg_.set_instance_name("instance_default");
 
-    dcfg_ = std::make_unique<DynamicConfig>(init_cfg_);
+    dcfg_ = absl::make_unique<DynamicConfig>(init_cfg_);
   }
 
   void update(skywalking::v3::Commands& commands) {

@@ -15,8 +15,8 @@
 #include "source/tracing_context_impl.h"
 
 #include <string>
-#include <string_view>
 
+#include "absl/strings/string_view.h"
 #include "cpp2sky/exception.h"
 #include "cpp2sky/time.h"
 #include "language-agent/Tracing.pb.h"
@@ -35,7 +35,7 @@ TracingSpanImpl::TracingSpanImpl(int32_t span_id,
   span_store_.set_componentid(9000);
 }
 
-void TracingSpanImpl::addLogImpl(std::string_view key, std::string_view value,
+void TracingSpanImpl::addLogImpl(absl::string_view key, absl::string_view value,
                                  int64_t timestamp) {
   assert(!finished_);
   auto* l = span_store_.add_logs();
@@ -45,43 +45,43 @@ void TracingSpanImpl::addLogImpl(std::string_view key, std::string_view value,
   e->set_value(std::string(value));
 }
 
-void TracingSpanImpl::addLog(std::string_view key, std::string_view value) {
+void TracingSpanImpl::addLog(absl::string_view key, absl::string_view value) {
   addLogImpl(key, value, TimePoint<SystemTime>().fetch());
 }
 
-void TracingSpanImpl::addLog(std::string_view key, std::string_view value,
+void TracingSpanImpl::addLog(absl::string_view key, absl::string_view value,
                              TimePoint<SystemTime> current_time) {
   addLogImpl(key, value, current_time.fetch());
 }
 
-void TracingSpanImpl::addLog(std::string_view key, std::string_view value,
+void TracingSpanImpl::addLog(absl::string_view key, absl::string_view value,
                              TimePoint<SteadyTime> current_time) {
   addLogImpl(key, value, current_time.fetch());
 }
 
-void TracingSpanImpl::addTag(std::string_view key, std::string_view value) {
+void TracingSpanImpl::addTag(absl::string_view key, absl::string_view value) {
   assert(!finished_);
   auto* kv = span_store_.add_tags();
   kv->set_key(std::string(key));
   kv->set_value(std::string(value));
 }
 
-void TracingSpanImpl::startSpanImpl(std::string_view operation_name,
+void TracingSpanImpl::startSpanImpl(absl::string_view operation_name,
                                     int64_t timestamp) {
   span_store_.set_operationname(std::string(operation_name));
   span_store_.set_starttime(timestamp);
 }
 
-void TracingSpanImpl::startSpan(std::string_view operation_name) {
+void TracingSpanImpl::startSpan(absl::string_view operation_name) {
   startSpanImpl(operation_name, TimePoint<SystemTime>().fetch());
 }
 
-void TracingSpanImpl::startSpan(std::string_view operation_name,
+void TracingSpanImpl::startSpan(absl::string_view operation_name,
                                 TimePoint<SystemTime> current_time) {
   startSpanImpl(operation_name, current_time.fetch());
 }
 
-void TracingSpanImpl::startSpan(std::string_view operation_name,
+void TracingSpanImpl::startSpan(absl::string_view operation_name,
                                 TimePoint<SteadyTime> current_time) {
   startSpanImpl(operation_name, current_time.fetch());
 }
@@ -113,7 +113,7 @@ void TracingSpanImpl::setComponentId(int32_t component_id) {
   span_store_.set_componentid(component_id);
 }
 
-void TracingSpanImpl::setOperationName(std::string_view name) {
+void TracingSpanImpl::setOperationName(absl::string_view name) {
   assert(!finished_);
   span_store_.set_operationname(std::string(name));
 }
@@ -181,17 +181,17 @@ TracingSpanPtr TracingContextImpl::createEntrySpan() {
   return current_span;
 }
 
-std::optional<std::string> TracingContextImpl::createSW8HeaderValue(
-    const std::string_view target_address) {
+absl::optional<std::string> TracingContextImpl::createSW8HeaderValue(
+    const absl::string_view target_address) {
   auto target_span = spans_.back();
   if (target_span->spanType() != skywalking::v3::SpanType::Exit) {
-    return std::nullopt;
+    return absl::nullopt;
   }
   return encodeSpan(target_span, target_address);
 }
 
 std::string TracingContextImpl::encodeSpan(
-    TracingSpanPtr parent_span, const std::string_view target_address) {
+    TracingSpanPtr parent_span, const absl::string_view target_address) {
   assert(parent_span);
   std::string header_value;
 
@@ -239,7 +239,7 @@ bool TracingContextImpl::readyToSend() {
   return true;
 }
 
-std::string TracingContextImpl::logMessage(std::string_view message) const {
+std::string TracingContextImpl::logMessage(absl::string_view message) const {
   std::string output = message.data();
   output += "\", \"SW_CTX\": [";
   output += "\"" + segment_store_.service() + "\",";
@@ -261,18 +261,18 @@ TracingContextFactory::TracingContextFactory(const TracerConfig& config)
       instance_name_(config.instance_name()) {}
 
 TracingContextPtr TracingContextFactory::create() {
-  return std::make_unique<TracingContextImpl>(service_name_, instance_name_,
-                                              random_generator_);
+  return absl::make_unique<TracingContextImpl>(service_name_, instance_name_,
+                                               random_generator_);
 }
 
 TracingContextPtr TracingContextFactory::create(SpanContextPtr span_context) {
-  return std::make_unique<TracingContextImpl>(service_name_, instance_name_,
-                                              span_context, random_generator_);
+  return absl::make_unique<TracingContextImpl>(service_name_, instance_name_,
+                                               span_context, random_generator_);
 }
 
 TracingContextPtr TracingContextFactory::create(
     SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
-  auto context = std::make_unique<TracingContextImpl>(
+  auto context = absl::make_unique<TracingContextImpl>(
       service_name_, instance_name_, span_context, ext_span_context,
       random_generator_);
   if (ext_span_context->tracingMode() == TracingMode::Skip) {
