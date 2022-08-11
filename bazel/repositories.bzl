@@ -14,11 +14,11 @@ def cpp2sky_dependencies():
 def skywalking_data_collect_protocol():
   http_archive(
     name = "skywalking_data_collect_protocol",
-    sha256 = "49bd689b9c1c0ea12064bd35581689cef7835e5ac15d335dc425fbfc2029aa90",
+    sha256 = "4cf7cf84a9478a09429a7fbc6ad1e1b10c70eb54999438a36eacaf539a39d343",
     urls = [
-      "https://github.com/apache/skywalking-data-collect-protocol/archive/v8.9.1.tar.gz"
+      "https://github.com/apache/skywalking-data-collect-protocol/archive/v9.1.0.tar.gz"
     ],
-    strip_prefix = "skywalking-data-collect-protocol-8.9.1",
+    strip_prefix = "skywalking-data-collect-protocol-9.1.0",
   )
 
 def com_github_grpc_grpc():
