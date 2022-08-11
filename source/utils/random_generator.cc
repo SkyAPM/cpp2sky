@@ -89,7 +89,7 @@ std::string RandomGeneratorImpl::uuid() {
 void RandomGeneratorImpl::randomBuffer(char* ch, size_t len) {
   std::random_device engine;
   std::uniform_int_distribution<std::size_t> dist(0, CHARS.size() - 1);
-  for (auto i = 0; i < len; ++i) {
+  for (size_t i = 0; i < len; ++i) {
     ch[i] = CHARS[dist(engine)];
   }
 }
