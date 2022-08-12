@@ -20,15 +20,15 @@
 #include <cassert>
 #include <random>
 #include <string>
-#include <string_view>
 
+#include "absl/strings/string_view.h"
 #include "cpp2sky/internal/random_generator.h"
 
 namespace cpp2sky {
 
 namespace {
 static constexpr size_t UUID_LENGTH = 36;
-static constexpr std::string_view CHARS =
+static constexpr absl::string_view CHARS =
     "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
 }  // namespace
 

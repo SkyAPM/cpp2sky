@@ -27,7 +27,7 @@ TEST(TracerTest, MatchedOpShouldIgnored) {
   *config.add_ignore_operation_name_suffix() = "/ignored";
 
   TracerImpl tracer(
-      config, std::make_unique<
+      config, absl::make_unique<
                   MockAsyncClient<TracerRequestType, TracerResponseType>>());
   auto context = tracer.newContext();
   auto span = context->createEntrySpan();
@@ -42,7 +42,7 @@ TEST(TracerTest, NotClosedSpanExists) {
   TracerConfig config;
 
   TracerImpl tracer(
-      config, std::make_unique<
+      config, absl::make_unique<
                   MockAsyncClient<TracerRequestType, TracerResponseType>>());
   auto context = tracer.newContext();
   auto span = context->createEntrySpan();
@@ -55,7 +55,7 @@ TEST(TracerTest, NotClosedSpanExists) {
 TEST(TracerTest, Success) {
   TracerConfig config;
 
-  auto mock_reporter = std::make_unique<
+  auto mock_reporter = absl::make_unique<
       MockAsyncClient<TracerRequestType, TracerResponseType>>();
   EXPECT_CALL(*mock_reporter, sendMessage(_));
 

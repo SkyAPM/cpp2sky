@@ -15,6 +15,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/memory/memory.h"
 #include "source/utils/circular_buffer.h"
 
 namespace cpp2sky {
@@ -22,7 +23,7 @@ namespace cpp2sky {
 class CircularBufferTest : public testing::Test {
  protected:
   void setup(size_t size) {
-    buf_ = std::make_unique<CircularBuffer<int>>(size);
+    buf_ = absl::make_unique<CircularBuffer<int>>(size);
   }
 
   void evaluate(size_t expect_front, size_t expect_back, bool expect_empty) {

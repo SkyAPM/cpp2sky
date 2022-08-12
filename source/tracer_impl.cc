@@ -88,6 +88,8 @@ void TracerImpl::run() {
         continue;
       case grpc::CompletionQueue::SHUTDOWN:
         return;
+      case grpc::CompletionQueue::GOT_EVENT:
+        break;
     }
     static_cast<StreamCallbackTag*>(got_tag)->callback(!ok);
   }
@@ -106,9 +108,9 @@ void TracerImpl::init(TracerConfig& config,
 
   if (reporter_client_ == nullptr) {
     if (config.protocol() == Protocol::GRPC) {
-      reporter_client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
+      reporter_client_ = absl::make_unique<GrpcAsyncSegmentReporterClient>(
           config.address(), cq_,
-          std::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(
+          absl::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(
               config.token()),
           cred);
     } else {
@@ -116,22 +118,23 @@ void TracerImpl::init(TracerConfig& config,
     }
   }
 
-  op_name_matchers_.emplace_back(std::make_unique<SuffixMatcher>(
+  op_name_matchers_.emplace_back(absl::make_unique<SuffixMatcher>(
       std::vector<std::string>(config.ignore_operation_name_suffix().begin(),
                                config.ignore_operation_name_suffix().end())));
 
   if (config_.tracerConfig().cds_request_interval() != 0) {
-    cds_client_ = std::make_unique<GrpcAsyncConfigDiscoveryServiceClient>(
+    cds_client_ = absl::make_unique<GrpcAsyncConfigDiscoveryServiceClient>(
         config.address(), cq_,
-        std::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(config_),
+        absl::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(
+            config_),
         cred);
     cds_timer_ =
-        std::make_unique<Timer>(config_.tracerConfig().cds_request_interval());
+        absl::make_unique<Timer>(config_.tracerConfig().cds_request_interval());
   }
 }
 
 TracerPtr createInsecureGrpcTracer(TracerConfig& cfg) {
-  return std::make_unique<TracerImpl>(cfg, grpc::InsecureChannelCredentials());
+  return absl::make_unique<TracerImpl>(cfg, grpc::InsecureChannelCredentials());
 }
 
 }  // namespace cpp2sky

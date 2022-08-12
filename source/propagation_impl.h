@@ -16,15 +16,15 @@
 
 #include <memory>
 #include <string>
-#include <string_view>
 
+#include "absl/strings/string_view.h"
 #include "cpp2sky/propagation.h"
 
 namespace cpp2sky {
 
 class SpanContextImpl : public SpanContext {
  public:
-  SpanContextImpl(std::string_view header_value);
+  SpanContextImpl(absl::string_view header_value);
 
   bool sample() const override { return sample_; }
   const std::string& traceId() const override { return trace_id_; }
@@ -54,7 +54,7 @@ class SpanContextImpl : public SpanContext {
 
 class SpanContextExtensionImpl : public SpanContextExtension {
  public:
-  SpanContextExtensionImpl(std::string_view header_value);
+  SpanContextExtensionImpl(absl::string_view header_value);
 
   TracingMode tracingMode() const override { return tracing_mode_; }
 

@@ -1,7 +1,7 @@
 build --enable_platform_specific_config
 build --features=-supports_dynamic_linker
-build --cxxopt=-std=c++17
-build:windows --cxxopt=-std:c++17
+build --copt="-Wall"
+build --copt="-Werror"
 build:windows --copt=/wd4716
 
 try-import %workspace%/user.bazelrc

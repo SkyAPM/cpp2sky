@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "language-agent/Tracing.pb.h"
 #include "source/grpc_async_client_impl.h"
 #include "test/mocks.h"
@@ -30,11 +31,11 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
   GrpcAsyncSegmentReporterClientTest() {
     stream_ = std::make_shared<
         MockAsyncStream<TracerRequestType, TracerResponseType>>();
-    factory_ = std::make_unique<MockClientStreamingStreamBuilder<
+    factory_ = absl::make_unique<MockClientStreamingStreamBuilder<
         TracerRequestType, TracerResponseType>>(stream_);
     EXPECT_CALL(*factory_, create(_, _));
 
-    client_ = std::make_unique<GrpcAsyncSegmentReporterClient>(
+    client_ = absl::make_unique<GrpcAsyncSegmentReporterClient>(
         address_, cq_, std::move(factory_), grpc::InsecureChannelCredentials());
   }
 

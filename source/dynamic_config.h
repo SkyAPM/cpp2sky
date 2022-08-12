@@ -16,8 +16,8 @@
 
 #include <mutex>
 #include <set>
-#include <string_view>
 
+#include "absl/strings/string_view.h"
 #include "cpp2sky/config.pb.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
 

@@ -14,8 +14,7 @@
 
 #pragma once
 
-#include <string_view>
-
+#include "absl/strings/string_view.h"
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/propagation.h"
 #include "cpp2sky/tracing_context.h"
@@ -38,7 +37,7 @@ class TracingSpanImpl : public TracingSpan {
   int32_t parentSpanId() const override { return span_store_.parentspanid(); }
   int64_t startTime() const override { return span_store_.starttime(); }
   int64_t endTime() const override { return span_store_.endtime(); }
-  std::string_view peer() const override { return span_store_.peer(); }
+  absl::string_view peer() const override { return span_store_.peer(); }
   skywalking::v3::SpanType spanType() const override {
     return span_store_.spantype();
   }
@@ -48,7 +47,7 @@ class TracingSpanImpl : public TracingSpan {
   bool errorStatus() const override { return span_store_.iserror(); }
   bool skipAnalysis() const override { return span_store_.skipanalysis(); }
   int32_t componentId() const override { return span_store_.componentid(); }
-  std::string_view operationName() const override {
+  absl::string_view operationName() const override {
     return span_store_.operationname();
   }
 
@@ -56,15 +55,15 @@ class TracingSpanImpl : public TracingSpan {
     assert(!finished_);
     span_store_.set_parentspanid(span_id);
   }
-  void startSpan(std::string_view operation_name) override;
-  void startSpan(std::string_view operation_name,
+  void startSpan(absl::string_view operation_name) override;
+  void startSpan(absl::string_view operation_name,
                  TimePoint<SystemTime> current_time) override;
-  void startSpan(std::string_view operation_name,
+  void startSpan(absl::string_view operation_name,
                  TimePoint<SteadyTime> current_time) override;
   void endSpan() override;
   void endSpan(TimePoint<SystemTime> current_time) override;
   void endSpan(TimePoint<SteadyTime> current_time) override;
-  void setPeer(std::string_view remote_address) override {
+  void setPeer(absl::string_view remote_address) override {
     assert(!finished_);
     span_store_.set_peer(std::string(remote_address));
   }
@@ -76,20 +75,20 @@ class TracingSpanImpl : public TracingSpan {
   }
   void setErrorStatus() override { span_store_.set_iserror(true); }
   void setSkipAnalysis() override { span_store_.set_skipanalysis(true); }
-  void addTag(std::string_view key, std::string_view value) override;
-  void addLog(std::string_view key, std::string_view value) override;
-  void addLog(std::string_view key, std::string_view value,
+  void addTag(absl::string_view key, absl::string_view value) override;
+  void addLog(absl::string_view key, absl::string_view value) override;
+  void addLog(absl::string_view key, absl::string_view value,
               TimePoint<SystemTime> current_time) override;
-  void addLog(std::string_view key, std::string_view value,
+  void addLog(absl::string_view key, absl::string_view value,
               TimePoint<SteadyTime> current_time) override;
   void setComponentId(int32_t component_id) override;
-  void setOperationName(std::string_view name) override;
+  void setOperationName(absl::string_view name) override;
   void addSegmentRef(const SpanContext& span_context) override;
   bool finished() const override { return finished_; }
 
-  void addLogImpl(std::string_view key, std::string_view value,
+  void addLogImpl(absl::string_view key, absl::string_view value,
                   int64_t timestamp);
-  void startSpanImpl(std::string_view operation_name, int64_t timestamp);
+  void startSpanImpl(absl::string_view operation_name, int64_t timestamp);
   void endSpanImpl(int64_t timestamp);
 
  private:
@@ -98,7 +97,6 @@ class TracingSpanImpl : public TracingSpan {
   // Parent segment owns all span objects and we only keep a ref in the tracing
   // span.
   skywalking::v3::SpanObject& span_store_;
-  TracingContextImpl& parent_tracing_context_;
 };
 
 class TracingContextImpl : public TracingContext {
@@ -139,19 +137,19 @@ class TracingContextImpl : public TracingContext {
   TracingSpanPtr createExitSpan(TracingSpanPtr parent_span) override;
 
   TracingSpanPtr createEntrySpan() override;
-  std::optional<std::string> createSW8HeaderValue(
-      const std::string_view target_address) override;
+  absl::optional<std::string> createSW8HeaderValue(
+      const absl::string_view target_address) override;
   skywalking::v3::SegmentObject createSegmentObject() override;
   void setSkipAnalysis() override { should_skip_analysis_ = true; }
   bool skipAnalysis() override { return should_skip_analysis_; }
   bool readyToSend() override;
-  std::string logMessage(std::string_view message) const override;
+  std::string logMessage(absl::string_view message) const override;
 
  private:
   friend class TracingSpanImpl;
 
   std::string encodeSpan(TracingSpanPtr parent_span,
-                         const std::string_view target_address);
+                         const absl::string_view target_address);
   TracingSpanPtr createSpan();
 
   SpanContextPtr parent_span_context_;

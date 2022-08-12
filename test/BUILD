@@ -46,6 +46,7 @@ cc_test(
     "grpc_async_client_test.cc",
   ],
   deps = [
+    "@com_google_absl//absl/memory:memory",
     "@com_google_googletest//:gtest_main",
     "//source:cpp2sky_lib",
     ":mocks",
@@ -59,6 +60,7 @@ cc_test(
     "buffer_test.cc",
   ],
   deps = [
+    "@com_google_absl//absl/memory:memory",
     "@com_google_googletest//:gtest_main",
     "//source:cpp2sky_lib",
     ":mocks",
@@ -72,6 +74,7 @@ cc_test(
     "dynamic_config_test.cc",
   ],
   deps = [
+    "@com_google_absl//absl/memory:memory",
     "@com_google_googletest//:gtest_main",
     "//source:cpp2sky_lib",
     ":mocks",

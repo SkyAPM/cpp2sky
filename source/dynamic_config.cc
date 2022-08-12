@@ -23,9 +23,9 @@
 namespace cpp2sky {
 
 namespace {  // well known fields on response commands.
-static constexpr std::string_view UUID_FIELD = "UUID";
-static constexpr std::string_view SERIAL_NUMBER_FIELD = "SerialNumber";
-static constexpr std::string_view IGNORE_SUFFIX = "ignore_suffix";
+static constexpr absl::string_view UUID_FIELD = "UUID";
+static constexpr absl::string_view SERIAL_NUMBER_FIELD = "SerialNumber";
+static constexpr absl::string_view IGNORE_SUFFIX = "ignore_suffix";
 }  // namespace
 
 using namespace spdlog;
@@ -69,12 +69,13 @@ void DynamicConfig::onConfigChange(skywalking::v3::Commands commands) {
            config_.ignore_operation_name_suffix()) {
         will_destroy_suffixes += current_suffix + ",";
       }
-      will_destroy_suffixes = absl::StripSuffix(will_destroy_suffixes, ",");
+      will_destroy_suffixes =
+          std::string(absl::StripSuffix(will_destroy_suffixes, ","));
 
       config_.clear_ignore_operation_name_suffix();
 
       for (const auto& next_suffix : absl::StrSplit(target.value(), ",")) {
-        *config_.add_ignore_operation_name_suffix() = next_suffix;
+        *config_.add_ignore_operation_name_suffix() = std::string(next_suffix);
       }
 
       info("{} updated from {} to {}", IGNORE_SUFFIX.data(),

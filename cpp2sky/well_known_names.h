@@ -14,11 +14,11 @@
 
 #pragma once
 
-#include <string_view>
+#include "absl/strings/string_view.h"
 
 namespace cpp2sky {
 
-static constexpr std::string_view kPropagationHeader = "sw8";
-static constexpr std::string_view kPropagationExtensionHeader = "sw8-x";
+static constexpr absl::string_view kPropagationHeader = "sw8";
+static constexpr absl::string_view kPropagationExtensionHeader = "sw8-x";
 
 }  // namespace cpp2sky

@@ -18,7 +18,7 @@
 
 namespace cpp2sky {
 
-bool SuffixMatcher::match(std::string_view target) {
+bool SuffixMatcher::match(absl::string_view target) {
   for (const auto& ignore_suffix : target_suffixes_) {
     if (absl::EndsWith(target, ignore_suffix)) {
       return true;

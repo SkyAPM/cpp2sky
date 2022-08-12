@@ -15,16 +15,16 @@
 #include "grpc_async_client_impl.h"
 
 #include <chrono>
-#include <string_view>
 #include <thread>
 
+#include "absl/strings/string_view.h"
 #include "cpp2sky/exception.h"
 #include "spdlog/spdlog.h"
 
 namespace cpp2sky {
 
 namespace {
-static constexpr std::string_view authenticationKey = "authentication";
+static constexpr absl::string_view authenticationKey = "authentication";
 }
 
 using namespace spdlog;

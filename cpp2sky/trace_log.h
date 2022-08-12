@@ -16,23 +16,20 @@
 
 #include <spdlog/logger.h>
 
-#include <string_view>
 #include <type_traits>
 
-#include "cpp2sky/assert.h"
+#include "absl/strings/string_view.h"
 
 namespace cpp2sky {
 
-static constexpr std::string_view SPDLOG_LOG_FORMAT =
+static constexpr absl::string_view SPDLOG_LOG_FORMAT =
     "{\"level\": \"%^%l%$\", \"msg\": \"%v";
 
 template <class T>
 std::string logFormat() {
-  if constexpr (std::is_same_v<T, spdlog::logger>) {
-    return SPDLOG_LOG_FORMAT.data();
-  } else {
-    CPP2SKY_STATIC_ASSERT(T, "non-supported logger type");
-  }
+  static_assert(std::is_same<T, spdlog::logger>::value,
+                "non-supported logger type");
+  return SPDLOG_LOG_FORMAT.data();
 }
 
 }  // namespace cpp2sky

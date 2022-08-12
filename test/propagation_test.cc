@@ -15,25 +15,24 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <string_view>
-
+#include "absl/strings/string_view.h"
 #include "cpp2sky/exception.h"
 #include "source/propagation_impl.h"
 
 namespace cpp2sky {
 
-static constexpr std::string_view sample =
+static constexpr absl::string_view sample =
     "1-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
 
-static constexpr std::string_view less_field =
+static constexpr absl::string_view less_field =
     "1-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=";
 
-static constexpr std::string_view more_field =
+static constexpr absl::string_view more_field =
     "1-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==-hogehoge";
 
-static constexpr std::string_view invalid_sample =
+static constexpr absl::string_view invalid_sample =
     "3-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
 
