@@ -138,7 +138,8 @@ TracingContextImpl::TracingContextImpl(
     SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       parent_ext_span_context_(std::move(parent_ext_span_context)) {
-  segment_store_.set_traceid(random.uuid());
+  segment_store_.set_traceid(
+      parent_span_context_ ? parent_span_context_->traceId() : random.uuid());
   segment_store_.set_tracesegmentid(random.uuid());
   segment_store_.set_service(service_name);
   segment_store_.set_serviceinstance(instance_name);

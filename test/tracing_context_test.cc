@@ -330,7 +330,7 @@ TEST_F(TracingContextTest, SW8CreateTest) {
   span2->endSpan();
 
   std::string expect_sw8(
-      "1-dXVpZA==-dXVpZA==-1-bWVzaA==-c2VydmljZV8w-c2FtcGxlMQ==-"
+      "1-MQ==-dXVpZA==-1-bWVzaA==-c2VydmljZV8w-c2FtcGxlMQ==-"
       "MTAuMC4wLjE6NDQz");
 
   EXPECT_EQ(expect_sw8, *sc.createSW8HeaderValue(target_address));
@@ -388,7 +388,7 @@ TEST_F(TracingContextTest, TraceLogTest) {
   TracingContextImpl sc(config_.service_name(), config_.instance_name(),
                         span_ctx_, span_ext_ctx_, random_);
   EXPECT_EQ(
-      "test\", \"SW_CTX\": [\"mesh\",\"service_0\",\"uuid\",\"uuid\",\"-1\"]}",
+      "test\", \"SW_CTX\": [\"mesh\",\"service_0\",\"1\",\"uuid\",\"-1\"]}",
       sc.logMessage("test"));
 }
 
