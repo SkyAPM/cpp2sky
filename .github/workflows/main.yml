@@ -13,20 +13,20 @@ env:
   CLANG_LINK: https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz
 
 jobs:
-  # code_format_check:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - run: |
-  #         echo "/opt/llvm/bin" >> $GITHUB_PATH
-  #     - uses: actions/checkout@v3
-  #     - name: Setup clang-format
-  #       run: |
-  #         sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
-  #         sudo mkdir -p /opt/llvm
-  #         sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
-  #         git clone https://github.com/Sarcasm/run-clang-format.git
-  #     - name: Run clang-format
-  #       run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
+  code_format_check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "/opt/llvm/bin" >> $GITHUB_PATH
+      - uses: actions/checkout@v3
+      - name: Setup clang-format
+        run: |
+          sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
+          sudo mkdir -p /opt/llvm
+          sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
+          git clone https://github.com/Sarcasm/run-clang-format.git
+      - name: Run clang-format
+        run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
 
   code_build_and_test:
     runs-on: ubuntu-latest
@@ -43,18 +43,18 @@ jobs:
           sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
           sudo mkdir -p /opt/llvm
           sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
-      # - name: Run bazel test with GCC c++11
-      #   run: |
-      #     bazel test --cxxopt=-std=c++0x //...
-      # - name: Run bazel test with GCC c++17
-      #   run: |
-      #     bazel test  --cxxopt=-std=c++17 //...
-      # - name: Run bazel test with CLANG c++11
-      #   run: |
-      #     bazel test --config=clang --cxxopt=-std=c++0x //...
-      # - name: Run bazel test with CLANG c++17
-      #   run: |
-      #     bazel test --config=clang --cxxopt=-std=c++17 //...
+      - name: Run bazel test with GCC c++11
+        run: |
+          bazel test --cxxopt=-std=c++0x //...
+      - name: Run bazel test with GCC c++17
+        run: |
+          bazel test  --cxxopt=-std=c++17 //...
+      - name: Run bazel test with CLANG c++11
+        run: |
+          bazel test --config=clang --cxxopt=-std=c++0x //...
+      - name: Run bazel test with CLANG c++17
+        run: |
+          bazel test --config=clang --cxxopt=-std=c++17 //...
       - name: Install lcov and genhtml
         run: |
           sudo apt update
@@ -70,30 +70,30 @@ jobs:
           name: codecov-cpp2sky
           verbose: true
 
-  # e2e-cpp:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: Prepare service container
-  #       run: |
-  #         docker-compose -f test/e2e/docker/docker-compose.e2e.yml up -d
-  #     - name: Run e2e
-  #       run: |
-  #         pip3 install --upgrade pip
-  #         pip3 install setuptools
-  #         pip3 install -r requirements.txt
-  #         python3 test/e2e/main.py --expected_file=test/e2e/data/expected.yaml --max_retry_times=3 --target_path=/ping
+  e2e-cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Prepare service container
+        run: |
+          docker-compose -f test/e2e/docker/docker-compose.e2e.yml up -d
+      - name: Run e2e
+        run: |
+          pip3 install --upgrade pip
+          pip3 install setuptools
+          pip3 install -r requirements.txt
+          python3 test/e2e/main.py --expected_file=test/e2e/data/expected.yaml --max_retry_times=3 --target_path=/ping
 
-  # e2e-python:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: Prepare service container
-  #       run: |
-  #         docker-compose -f test/e2e/docker/docker-compose.e2e-python.yml up -d
-  #     - name: Run e2e
-  #       run: |
-  #         pip3 install --upgrade pip
-  #         pip3 install setuptools
-  #         pip3 install -r requirements.txt
-  #         python3 test/e2e/main.py --expected_file=test/e2e/data/expected-python.yaml --max_retry_times=3 --target_path=/ping2
+  e2e-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Prepare service container
+        run: |
+          docker-compose -f test/e2e/docker/docker-compose.e2e-python.yml up -d
+      - name: Run e2e
+        run: |
+          pip3 install --upgrade pip
+          pip3 install setuptools
+          pip3 install -r requirements.txt
+          python3 test/e2e/main.py --expected_file=test/e2e/data/expected-python.yaml --max_retry_times=3 --target_path=/ping2
