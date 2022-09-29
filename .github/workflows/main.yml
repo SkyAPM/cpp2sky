@@ -15,9 +15,9 @@ env:
 jobs:
   code_format_check:
     runs-on: ubuntu-latest
-    env:
-      PATH: $PATH:/opt/llvm/bin
     steps:
+      - run: |
+          echo "/opt/llvm/bin" >> $GITHUB_PATH
       - uses: actions/checkout@v3
       - name: Setup clang-format
         run: |
@@ -30,9 +30,9 @@ jobs:
 
   code_build_and_test:
     runs-on: ubuntu-latest
-    env:
-      PATH: $PATH:/opt/llvm/bin
     steps:
+      - run: |
+          echo "/opt/llvm/bin" >> $GITHUB_PATH
       - uses: actions/checkout@v3
       - name: Install Bazel
         run: |
