@@ -1,6 +1,7 @@
 # cpp2sky
 
 ![cpp2sky test](https://github.com/SkyAPM/cpp2sky/workflows/cpp2sky%20test/badge.svg)
+![codecov test](https://codecov.io/gh/SkyAPM/cpp2sky/branch/main/graph/badge.svg)
 
 Distributed tracing and monitor SDK in CPP for Apache SkyWalking APM. This SDK is compatible with C++ 17, C++ 14, and C++ 11.
 
