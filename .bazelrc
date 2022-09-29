@@ -15,6 +15,7 @@ build:clang --linkopt=-fuse-ld=lld
 # Coverage options
 coverage --config=coverage
 coverage --build_tests_only
+build:coverage --config=clang
 build:coverage --action_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1
 build:coverage --action_env=GCOV=llvm-profdata
 build:coverage --combined_report=lcov

@@ -6,7 +6,7 @@ set -e
 
 OUTPUT_DIR="./coverage_report/"
 DATA_DIR="${SRCDIR}/bazel-testlogs/"
-PROJECT=`basename "${SRCDIR}"`
+PROJECT=$(basename "${SRCDIR}")
 
 # This is the target that will be run to generate coverage data. It can be overridden
 # by consumer projects that want to run coverage on a different/combined target.
@@ -19,16 +19,17 @@ else
   COVERAGE_TARGETS=//test/...
 fi
 
-
 echo "Starting gen_coverage.sh..."
 echo "    PWD=$(pwd)"
 echo "    OUTPUT_DIR=${OUTPUT_DIR}"
 echo "    DATA_DIR=${DATA_DIR}"
 echo "    TARGETS=${COVERAGE_TARGETS}"
 
-
 echo "Generating coverage data..."
 bazel coverage ${COVERAGE_TARGETS} --test_output=errors
+
+rm -rf ${OUTPUT_DIR}
+mkdir -p ${OUTPUT_DIR}
 
 COVERAGE_DATA="${OUTPUT_DIR}/coverage.dat"
 cp bazel-out/_coverage/_coverage_report.dat "${COVERAGE_DATA}"
