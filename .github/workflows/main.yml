@@ -13,7 +13,7 @@ env:
   CLANG_LINK: https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz
 
 jobs:
-  code_format_check:
+  format:
     runs-on: ubuntu-latest
     steps:
       - run: |
@@ -28,7 +28,7 @@ jobs:
       - name: Run clang-format
         run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
 
-  code_build_and_test:
+  test:
     runs-on: ubuntu-latest
     steps:
       - run: |
