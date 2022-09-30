@@ -45,3 +45,5 @@ user.bazelrc
 
 .clangd/
 compile_commands.json
+
+coverage_report
