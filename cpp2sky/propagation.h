@@ -69,7 +69,7 @@ class SpanContext {
   virtual const std::string& targetAddress() const = 0;
 };
 
-using SpanContextPtr = std::shared_ptr<SpanContext>;
+using SpanContextSharedPtr = std::shared_ptr<SpanContext>;
 
 enum class TracingMode {
   Default,
@@ -85,10 +85,10 @@ class SpanContextExtension {
   virtual TracingMode tracingMode() const = 0;
 };
 
-using SpanContextExtensionPtr = std::shared_ptr<SpanContextExtension>;
+using SpanContextExtensionSharedPtr = std::shared_ptr<SpanContextExtension>;
 
-SpanContextPtr createSpanContext(absl::string_view ctx);
+SpanContextSharedPtr createSpanContext(absl::string_view ctx);
 
-SpanContextExtensionPtr createSpanContextExtension(absl::string_view ctx);
+SpanContextExtensionSharedPtr createSpanContextExtension(absl::string_view ctx);
 
 }  // namespace cpp2sky

@@ -134,8 +134,9 @@ void TracingSpanImpl::addSegmentRef(const SpanContext& span_context) {
 
 TracingContextImpl::TracingContextImpl(
     const std::string& service_name, const std::string& instance_name,
-    SpanContextPtr parent_span_context,
-    SpanContextExtensionPtr parent_ext_span_context, RandomGenerator& random)
+    SpanContextSharedPtr parent_span_context,
+    SpanContextExtensionSharedPtr parent_ext_span_context,
+    RandomGenerator& random)
     : parent_span_context_(std::move(parent_span_context)),
       parent_ext_span_context_(std::move(parent_ext_span_context)) {
   segment_store_.set_traceid(
@@ -153,19 +154,20 @@ TracingContextImpl::TracingContextImpl(const std::string& service_name,
 
 TracingContextImpl::TracingContextImpl(const std::string& service_name,
                                        const std::string& instance_name,
-                                       SpanContextPtr parent_span_context,
+                                       SpanContextSharedPtr parent_span_context,
                                        RandomGenerator& random)
     : TracingContextImpl(service_name, instance_name,
                          std::move(parent_span_context), nullptr, random) {}
 
-TracingSpanPtr TracingContextImpl::createExitSpan(TracingSpanPtr parent_span) {
+TracingSpanSharedPtr TracingContextImpl::createExitSpan(
+    TracingSpanSharedPtr parent_span) {
   auto current_span = createSpan();
   current_span->setParentSpanId(parent_span->spanId());
   current_span->setSpanType(skywalking::v3::SpanType::Exit);
   return current_span;
 }
 
-TracingSpanPtr TracingContextImpl::createEntrySpan() {
+TracingSpanSharedPtr TracingContextImpl::createEntrySpan() {
   if (!spans_.empty()) {
     return nullptr;
   }
@@ -191,7 +193,7 @@ absl::optional<std::string> TracingContextImpl::createSW8HeaderValue(
 }
 
 std::string TracingContextImpl::encodeSpan(
-    TracingSpanPtr parent_span, const absl::string_view target_address) {
+    TracingSpanSharedPtr parent_span, const absl::string_view target_address) {
   assert(parent_span);
   std::string header_value;
 
@@ -212,7 +214,7 @@ std::string TracingContextImpl::encodeSpan(
   return header_value;
 }
 
-TracingSpanPtr TracingContextImpl::createSpan() {
+TracingSpanSharedPtr TracingContextImpl::createSpan() {
   auto current_span = std::make_shared<TracingSpanImpl>(spans_.size(), *this);
 
   // It supports only HTTP request tracing.
@@ -260,19 +262,21 @@ TracingContextFactory::TracingContextFactory(const TracerConfig& config)
     : service_name_(config.service_name()),
       instance_name_(config.instance_name()) {}
 
-TracingContextPtr TracingContextFactory::create() {
-  return absl::make_unique<TracingContextImpl>(service_name_, instance_name_,
-                                               random_generator_);
+TracingContextSharedPtr TracingContextFactory::create() {
+  return std::make_shared<TracingContextImpl>(service_name_, instance_name_,
+                                              random_generator_);
 }
 
-TracingContextPtr TracingContextFactory::create(SpanContextPtr span_context) {
-  return absl::make_unique<TracingContextImpl>(service_name_, instance_name_,
-                                               span_context, random_generator_);
+TracingContextSharedPtr TracingContextFactory::create(
+    SpanContextSharedPtr span_context) {
+  return std::make_shared<TracingContextImpl>(service_name_, instance_name_,
+                                              span_context, random_generator_);
 }
 
-TracingContextPtr TracingContextFactory::create(
-    SpanContextPtr span_context, SpanContextExtensionPtr ext_span_context) {
-  auto context = absl::make_unique<TracingContextImpl>(
+TracingContextSharedPtr TracingContextFactory::create(
+    SpanContextSharedPtr span_context,
+    SpanContextExtensionSharedPtr ext_span_context) {
+  auto context = std::make_shared<TracingContextImpl>(
       service_name_, instance_name_, span_context, ext_span_context,
       random_generator_);
   if (ext_span_context->tracingMode() == TracingMode::Skip) {

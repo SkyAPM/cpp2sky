@@ -87,7 +87,7 @@ Tracing span will be delivered from `sw8` and `sw8-x` HTTP headers. For more det
 Then, you can create propagated span object by decoding these items.
 
 ```cpp
-SpanContextPtr parent_span = createSpanContext(parent);
+SpanContextSharedPtr parent_span = createSpanContext(parent);
 ```
 
 #### Create span
@@ -95,15 +95,15 @@ SpanContextPtr parent_span = createSpanContext(parent);
 First, you must create tracing context that holds all spans, then crete initial entry span.
 
 ```cpp
-TracingContextPtr tracing_context = tracer->newContext();
-TracingSpanPtr tracing_span = tracing_context->createEntrySpan();
+TracingContextSharedPtr tracing_context = tracer->newContext();
+TracingSpanSharedPtr tracing_span = tracing_context->createEntrySpan();
 ```
 
 After that, you can create another span to trace another workload, such as RPC to other services.
 Note that you must have parent span to create secondary span. It will construct parent-child relation when analysis.
 
 ```cpp
-TracingSpanPtr current_span = tracing_context->createExitSpan(current_span);
+TracingSpanSharedPtr current_span = tracing_context->createExitSpan(current_span);
 ```
 
 Alternative approach is RAII based one. It is used like below,
@@ -125,8 +125,8 @@ Note that TracingContext is unique pointer. So when you'd like to send data, you
 to avoid undefined behavior.
 
 ```cpp
-TracingContextPtr tracing_context = tracer->newContext();
-TracingSpanPtr tracing_span = tracing_context->createEntrySpan();
+TracingContextSharedPtr tracing_context = tracer->newContext();
+TracingSpanSharedPtr tracing_span = tracing_context->createEntrySpan();
 
 tracing_span->startSpan("sample_workload");
 tracing_span->endSpan();

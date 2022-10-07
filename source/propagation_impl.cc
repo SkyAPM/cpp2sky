@@ -112,12 +112,13 @@ SpanContextExtensionImpl::SpanContextExtensionImpl(
   }
 }
 
-SpanContextPtr createSpanContext(absl::string_view ctx) {
-  return absl::make_unique<SpanContextImpl>(ctx);
+SpanContextSharedPtr createSpanContext(absl::string_view ctx) {
+  return std::make_shared<SpanContextImpl>(ctx);
 }
 
-SpanContextExtensionPtr createSpanContextExtension(absl::string_view ctx) {
-  return absl::make_unique<SpanContextExtensionImpl>(ctx);
+SpanContextExtensionSharedPtr createSpanContextExtension(
+    absl::string_view ctx) {
+  return std::make_shared<SpanContextExtensionImpl>(ctx);
 }
 
 }  // namespace cpp2sky

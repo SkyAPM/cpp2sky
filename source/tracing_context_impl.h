@@ -106,12 +106,12 @@ class TracingContextImpl : public TracingContext {
                      const std::string& instance_name, RandomGenerator& random);
   TracingContextImpl(const std::string& service_name,
                      const std::string& instance_name,
-                     SpanContextPtr parent_span_context,
+                     SpanContextSharedPtr parent_span_context,
                      RandomGenerator& random);
   TracingContextImpl(const std::string& service_name,
                      const std::string& instance_name,
-                     SpanContextPtr parent_span_context,
-                     SpanContextExtensionPtr parent_ext_span_context,
+                     SpanContextSharedPtr parent_span_context,
+                     SpanContextExtensionSharedPtr parent_ext_span_context,
                      RandomGenerator& random);
 
   const std::string& traceId() const override {
@@ -126,17 +126,20 @@ class TracingContextImpl : public TracingContext {
   const std::string& serviceInstance() const override {
     return segment_store_.serviceinstance();
   }
-  const std::list<TracingSpanPtr>& spans() const override { return spans_; }
-  SpanContextPtr parentSpanContext() const override {
+  const std::list<TracingSpanSharedPtr>& spans() const override {
+    return spans_;
+  }
+  SpanContextSharedPtr parentSpanContext() const override {
     return parent_span_context_;
   }
-  SpanContextExtensionPtr parentSpanContextExtension() const override {
+  SpanContextExtensionSharedPtr parentSpanContextExtension() const override {
     return parent_ext_span_context_;
   }
 
-  TracingSpanPtr createExitSpan(TracingSpanPtr parent_span) override;
+  TracingSpanSharedPtr createExitSpan(
+      TracingSpanSharedPtr parent_span) override;
 
-  TracingSpanPtr createEntrySpan() override;
+  TracingSpanSharedPtr createEntrySpan() override;
   absl::optional<std::string> createSW8HeaderValue(
       const absl::string_view target_address) override;
   skywalking::v3::SegmentObject createSegmentObject() override;
@@ -148,14 +151,14 @@ class TracingContextImpl : public TracingContext {
  private:
   friend class TracingSpanImpl;
 
-  std::string encodeSpan(TracingSpanPtr parent_span,
+  std::string encodeSpan(TracingSpanSharedPtr parent_span,
                          const absl::string_view target_address);
-  TracingSpanPtr createSpan();
+  TracingSpanSharedPtr createSpan();
 
-  SpanContextPtr parent_span_context_;
-  SpanContextExtensionPtr parent_ext_span_context_;
+  SpanContextSharedPtr parent_span_context_;
+  SpanContextExtensionSharedPtr parent_ext_span_context_;
 
-  std::list<TracingSpanPtr> spans_;
+  std::list<TracingSpanSharedPtr> spans_;
 
   skywalking::v3::SegmentObject segment_store_;
 
@@ -166,10 +169,11 @@ class TracingContextFactory {
  public:
   TracingContextFactory(const TracerConfig& config);
 
-  TracingContextPtr create();
-  TracingContextPtr create(SpanContextPtr span_context);
-  TracingContextPtr create(SpanContextPtr span_context,
-                           SpanContextExtensionPtr ext_span_context);
+  TracingContextSharedPtr create();
+  TracingContextSharedPtr create(SpanContextSharedPtr span_context);
+  TracingContextSharedPtr create(
+      SpanContextSharedPtr span_context,
+      SpanContextExtensionSharedPtr ext_span_context);
 
  private:
   std::string service_name_;

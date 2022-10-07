@@ -60,7 +60,8 @@ class MockClientStreamingStreamBuilder final
     : public ClientStreamingStreamBuilder<RequestType, ResponseType> {
  public:
   using AsyncClientType = AsyncClient<RequestType, ResponseType>;
-  using AsyncStreamPtrType = AsyncStreamPtr<RequestType, ResponseType>;
+  using AsyncStreamSharedPtrType =
+      AsyncStreamSharedPtr<RequestType, ResponseType>;
 
   MockClientStreamingStreamBuilder(
       std::shared_ptr<MockAsyncStream<RequestType, ResponseType>> stream)
@@ -68,7 +69,7 @@ class MockClientStreamingStreamBuilder final
     ON_CALL(*this, create(_, _)).WillByDefault(Return(stream_));
   }
 
-  MOCK_METHOD(AsyncStreamPtrType, create,
+  MOCK_METHOD(AsyncStreamSharedPtrType, create,
               (AsyncClientType&, std::condition_variable&));
 
  private:
