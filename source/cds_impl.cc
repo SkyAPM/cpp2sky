@@ -76,7 +76,7 @@ void GrpcAsyncConfigDiscoveryServiceStream::onReadDone() {
   // But it will be destroyed when new stream created.
 }
 
-AsyncStreamPtr<CdsRequest, CdsResponse>
+AsyncStreamSharedPtr<CdsRequest, CdsResponse>
 GrpcAsyncConfigDiscoveryServiceStreamBuilder::create(
     AsyncClient<CdsRequest, CdsResponse>& client, CdsRequest request) {
   return std::make_shared<GrpcAsyncConfigDiscoveryServiceStream>(

@@ -71,7 +71,7 @@ class GrpcAsyncSegmentReporterClient final
       factory_;
   grpc::CompletionQueue& cq_;
   grpc::TemplatedGenericStub<TracerRequestType, TracerResponseType> stub_;
-  AsyncStreamPtr<TracerRequestType, TracerResponseType> stream_;
+  AsyncStreamSharedPtr<TracerRequestType, TracerResponseType> stream_;
   CircularBuffer<TracerRequestType> pending_messages_{
       pending_message_buffer_size};
 
@@ -122,7 +122,7 @@ class GrpcAsyncSegmentReporterStreamBuilder final
       : token_(token) {}
 
   // ClientStreamingStreamBuilder
-  AsyncStreamPtr<TracerRequestType, TracerResponseType> create(
+  AsyncStreamSharedPtr<TracerRequestType, TracerResponseType> create(
       AsyncClient<TracerRequestType, TracerResponseType>& client,
       std::condition_variable& cv) override;
 

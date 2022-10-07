@@ -42,10 +42,10 @@ class TracerImpl : public Tracer {
       AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client);
   ~TracerImpl();
 
-  TracingContextPtr newContext() override;
-  TracingContextPtr newContext(SpanContextPtr span) override;
+  TracingContextSharedPtr newContext() override;
+  TracingContextSharedPtr newContext(SpanContextSharedPtr span) override;
 
-  bool report(TracingContextPtr obj) override;
+  bool report(TracingContextSharedPtr obj) override;
 
  private:
   void init(TracerConfig& config,
