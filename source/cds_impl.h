@@ -51,7 +51,7 @@ class GrpcAsyncConfigDiscoveryServiceClient final
   UnaryStreamBuilderPtr<CdsRequest, CdsResponse> builder_;
   grpc::CompletionQueue& cq_;
   grpc::TemplatedGenericStub<CdsRequest, CdsResponse> stub_;
-  AsyncStreamPtr<CdsRequest, CdsResponse> stream_;
+  AsyncStreamSharedPtr<CdsRequest, CdsResponse> stream_;
 };
 
 class GrpcAsyncConfigDiscoveryServiceStream final
@@ -92,7 +92,7 @@ class GrpcAsyncConfigDiscoveryServiceStreamBuilder final
       : config_(config) {}
 
   // AsyncStreamFactory
-  AsyncStreamPtr<CdsRequest, CdsResponse> create(
+  AsyncStreamSharedPtr<CdsRequest, CdsResponse> create(
       AsyncClient<CdsRequest, CdsResponse>& client,
       CdsRequest request) override;
 

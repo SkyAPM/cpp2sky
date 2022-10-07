@@ -42,7 +42,7 @@ int main() {
   svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
     std::string context = req.get_header_value(kPropagationHeader.data());
 
-    TracingContextPtr tracing_context;
+    TracingContextSharedPtr tracing_context;
 
     if (!context.empty()) {
       // 2. Create tracing context with propagated information.

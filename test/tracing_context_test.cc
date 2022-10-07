@@ -52,8 +52,8 @@ class TracingContextTest : public testing::Test {
   std::string service_name_ = "mesh";
   std::string instance_name_ = "service_0";
   TracerConfig config_;
-  SpanContextPtr span_ctx_;
-  SpanContextExtensionPtr span_ext_ctx_;
+  SpanContextSharedPtr span_ctx_;
+  SpanContextExtensionSharedPtr span_ext_ctx_;
   std::unique_ptr<TracingContextFactory> factory_;
 };
 

@@ -50,13 +50,15 @@ TracerImpl::~TracerImpl() {
   evloop_thread_.join();
 }
 
-TracingContextPtr TracerImpl::newContext() { return segment_factory_.create(); }
+TracingContextSharedPtr TracerImpl::newContext() {
+  return segment_factory_.create();
+}
 
-TracingContextPtr TracerImpl::newContext(SpanContextPtr span) {
+TracingContextSharedPtr TracerImpl::newContext(SpanContextSharedPtr span) {
   return segment_factory_.create(span);
 }
 
-bool TracerImpl::report(TracingContextPtr obj) {
+bool TracerImpl::report(TracingContextSharedPtr obj) {
   if (!obj || !obj->readyToSend()) {
     return false;
   }

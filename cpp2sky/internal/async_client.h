@@ -138,6 +138,7 @@ struct StreamCallbackTag {
 };
 
 template <class RequestType, class ResponseType>
-using AsyncStreamPtr = std::shared_ptr<AsyncStream<RequestType, ResponseType>>;
+using AsyncStreamSharedPtr =
+    std::shared_ptr<AsyncStream<RequestType, ResponseType>>;
 
 }  // namespace cpp2sky
