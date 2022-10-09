@@ -1,0 +1,16 @@
+PyYAML==5.3.1
+requests==2.24.0
+apache-skywalking==0.5.0
+protobuf==3.12.4
+tornado==6.0.4
+sanic==20.9.1
+Flask==1.1.2
+Jinja2==2.11.2
+pymongo==3.11.0
+PyMySQL==0.10.0
+pyramid==1.10.5
+pika==1.1.0
+redis==3.5.3
+MarkupSafe==1.1.1
+itsdangerous==1.1.0
+Werkzeug==1.0.1
