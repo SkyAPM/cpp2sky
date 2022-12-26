@@ -102,7 +102,10 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
 }
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
-  clearPendingMessage();
+    //  clearPendingMessage();
+    if (state_ == StreamState::Idle && client_.pendingMessages().empty()) {
+        clearPendingMessage();
+    }
 }
 
 bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
@@ -121,7 +124,7 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
 
 void GrpcAsyncSegmentReporterStream::onReady() {
   info("[Reporter] Stream ready");
-
+  clearPendingMessage();
   state_ = StreamState::Idle;
   onIdle();
 }
