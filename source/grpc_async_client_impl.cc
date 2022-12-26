@@ -103,7 +103,8 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
     //  clearPendingMessage();
-    if (state_ == StreamState::Idle && client_.pendingMessages().empty()) {
+    if (state_ == StreamState::Idle && client_.pendingMessages().size() == 1 &&  clear_flag == 1)  {
+        clear_flag = 0;
         clearPendingMessage();
     }
 }
@@ -136,6 +137,7 @@ void GrpcAsyncSegmentReporterStream::onIdle() {
   // to write.
   if (!clearPendingMessage()) {
     cv_.notify_all();
+    clear_flag = 1;
   }
 }
 
