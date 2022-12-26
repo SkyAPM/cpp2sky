@@ -112,6 +112,7 @@ class GrpcAsyncSegmentReporterStream final
   StreamCallbackTag write_done_{StreamState::WriteDone, this};
 
   std::condition_variable& cv_;
+  int clear_flag = 0;
 };
 
 class GrpcAsyncSegmentReporterStreamBuilder final
