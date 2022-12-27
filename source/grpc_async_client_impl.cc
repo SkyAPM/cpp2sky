@@ -33,9 +33,10 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     const std::string& address, grpc::CompletionQueue& cq,
     ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
         factory,
-    std::shared_ptr<grpc::ChannelCredentials> cred)
+    std::shared_ptr<grpc::ChannelCredentials> cred, uint32_t delayed_buffer_size)
     : factory_(std::move(factory)),
       cq_(cq),
+      pending_messages_(static_cast<size_t>(delayed_buffer_size)),
       stub_(grpc::CreateChannel(address, cred)) {
   startStream();
 }

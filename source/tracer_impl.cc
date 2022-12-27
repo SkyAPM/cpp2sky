@@ -114,7 +114,8 @@ void TracerImpl::init(TracerConfig& config,
           config.address(), cq_,
           absl::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(
               config.token()),
-          cred);
+          cred,
+          config.delayed_buffer_size());
     } else {
       throw TracerException("REST is not supported.");
     }
