@@ -55,9 +55,13 @@ class TracerImpl : public Tracer {
 
   std::unique_ptr<Timer> cds_timer_;
   DynamicConfig config_;
+
+  grpc::CompletionQueue cq_;
+  StreamCallbackTag shutdown_alarm_tag_;
+  std::unique_ptr<grpc::Alarm> shutdown_alarm_;
+
   AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client_;
   AsyncClientPtr<CdsRequest, CdsResponse> cds_client_;
-  grpc::CompletionQueue cq_;
   std::thread evloop_thread_;
   TracingContextFactory segment_factory_;
   std::list<MatcherPtr> op_name_matchers_;

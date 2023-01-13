@@ -38,7 +38,6 @@ class GrpcAsyncConfigDiscoveryServiceClient final
 
   void sendMessage(CdsRequest request) override;
   void startStream() override {}
-  CircularBuffer<CdsRequest>& pendingMessages() override { assert(false); }
   grpc::CompletionQueue& completionQueue() override { return cq_; }
   grpc::TemplatedGenericStub<CdsRequest, CdsResponse>& stub() override {
     return stub_;
@@ -55,34 +54,25 @@ class GrpcAsyncConfigDiscoveryServiceClient final
 };
 
 class GrpcAsyncConfigDiscoveryServiceStream final
-    : public AsyncStream<CdsRequest, CdsResponse>,
-      public AsyncStreamCallback {
+    : public AsyncStream<CdsRequest, CdsResponse> {
  public:
   explicit GrpcAsyncConfigDiscoveryServiceStream(
-      AsyncClient<CdsRequest, CdsResponse>& parent, CdsRequest request,
-      DynamicConfig& config);
+      AsyncClient<CdsRequest, CdsResponse>& parent, DynamicConfig& config);
 
   // AsyncStream
   void sendMessage(CdsRequest request) override;
-
-  // AsyncStreamCallback
-  void onReady() override {}
-  void onIdle() override {}
-  void onWriteDone() override {}
-  void onReadDone() override;
-  void onStreamFinish() override { delete this; }
 
  private:
   AsyncClient<CdsRequest, CdsResponse>& client_;
   std::unique_ptr<grpc::ClientAsyncResponseReader<CdsResponse>>
       response_reader_;
-  CdsRequest request_;
+
   CdsResponse commands_;
   grpc::Status status_;
   grpc::ClientContext ctx_;
   DynamicConfig& config_;
 
-  StreamCallbackTag read_done_{StreamState::ReadDone, this};
+  StreamCallbackTag read_tag_;
 };
 
 class GrpcAsyncConfigDiscoveryServiceStreamBuilder final
@@ -93,8 +83,7 @@ class GrpcAsyncConfigDiscoveryServiceStreamBuilder final
 
   // AsyncStreamFactory
   AsyncStreamSharedPtr<CdsRequest, CdsResponse> create(
-      AsyncClient<CdsRequest, CdsResponse>& client,
-      CdsRequest request) override;
+      AsyncClient<CdsRequest, CdsResponse>& client) override;
 
  private:
   DynamicConfig& config_;

@@ -37,11 +37,6 @@ class AsyncClient {
   virtual void sendMessage(RequestType message) = 0;
 
   /**
-   * Pending message queue reference.
-   */
-  virtual CircularBuffer<RequestType>& pendingMessages() = 0;
-
-  /**
    * Start stream if there is no living stream.
    */
   virtual void startStream() = 0;
@@ -66,75 +61,29 @@ class AsyncStream {
   virtual ~AsyncStream() = default;
 
   /**
-   * Send message. It will move the state from Init to Write.
+   * Send messages to server.
    */
   virtual void sendMessage(RequestType message) = 0;
 };
 
-enum class StreamState : uint8_t {
-  Initialized = 0,
-  Ready = 1,
-  Idle = 2,
-  WriteDone = 3,
-  ReadDone = 4,
-};
-
-class AsyncStreamCallback {
+class StreamCallbackTag {
  public:
-  /**
-   * Callback when stream ready event occured.
-   */
-  virtual void onReady() = 0;
+  StreamCallbackTag() = default;
+
+  StreamCallbackTag(std::function<bool(bool)> cb) : cb_{std::move(cb)} {}
 
   /**
-   * Callback when idle event occured.
+   * @return continue event loop or not.
    */
-  virtual void onIdle() = 0;
-
-  /**
-   * Callback when write done event occured.
-   */
-  virtual void onWriteDone() = 0;
-
-  /**
-   * Callback when read done event occured.
-   */
-  virtual void onReadDone() = 0;
-
-  /**
-   * Callback when stream had finished with arbitrary error.
-   */
-  virtual void onStreamFinish() = 0;
-};
-
-struct StreamCallbackTag {
- public:
-  void callback(bool stream_finished) {
-    if (stream_finished) {
-      callback_->onStreamFinish();
-      return;
+  bool callback(bool event_ok) {
+    if (cb_ != nullptr) {
+      return cb_(event_ok);
     }
-
-    switch (state_) {
-      case StreamState::Ready:
-        callback_->onReady();
-        break;
-      case StreamState::WriteDone:
-        callback_->onWriteDone();
-        break;
-      case StreamState::Idle:
-        callback_->onIdle();
-        break;
-      case StreamState::ReadDone:
-        callback_->onReadDone();
-        break;
-      default:
-        break;
-    }
+    return true;
   }
 
-  StreamState state_;
-  AsyncStreamCallback* callback_;
+ private:
+  std::function<bool(bool)> cb_;
 };
 
 template <class RequestType, class ResponseType>

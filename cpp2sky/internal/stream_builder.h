@@ -29,8 +29,7 @@ class ClientStreamingStreamBuilder {
    * Create async stream entity
    */
   virtual AsyncStreamSharedPtr<RequestType, ResponseType> create(
-      AsyncClient<RequestType, ResponseType>& client,
-      std::condition_variable& cv) = 0;
+      AsyncClient<RequestType, ResponseType>& client) = 0;
 };
 
 template <class RequestType, class ResponseType>
@@ -46,7 +45,7 @@ class UnaryStreamBuilder {
    * Create async stream entity
    */
   virtual AsyncStreamSharedPtr<RequestType, ResponseType> create(
-      AsyncClient<RequestType, ResponseType>& client, RequestType request) = 0;
+      AsyncClient<RequestType, ResponseType>& client) = 0;
 };
 
 template <class RequestType, class ResponseType>

@@ -37,8 +37,9 @@ GrpcAsyncConfigDiscoveryServiceClient::
 
 void GrpcAsyncConfigDiscoveryServiceClient::sendMessage(CdsRequest request) {
   resetStream();
-  stream_ = builder_->create(*this, request);
+  stream_ = builder_->create(*this);
   info("[CDS] Stream {} had created", fmt::ptr(stream_.get()));
+  stream_->sendMessage(request);
 }
 
 void GrpcAsyncConfigDiscoveryServiceClient::resetStream() {
@@ -49,10 +50,17 @@ void GrpcAsyncConfigDiscoveryServiceClient::resetStream() {
 }
 
 GrpcAsyncConfigDiscoveryServiceStream::GrpcAsyncConfigDiscoveryServiceStream(
-    AsyncClient<CdsRequest, CdsResponse>& parent, CdsRequest request,
-    DynamicConfig& config)
+    AsyncClient<CdsRequest, CdsResponse>& parent, DynamicConfig& config)
     : client_(parent), config_(config) {
-  sendMessage(request);
+  read_tag_ = StreamCallbackTag([this](bool) {
+    info("[CDS] Stream {} read finished with gRPC status {}", fmt::ptr(this),
+         static_cast<int>(status_.error_code()));
+
+    if (status_.ok()) {
+      config_.onConfigChange(commands_);
+    }
+    return true;
+  });
 }
 
 void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request) {
@@ -60,27 +68,14 @@ void GrpcAsyncConfigDiscoveryServiceStream::sendMessage(CdsRequest request) {
       &ctx_, "/skywalking.v3.ConfigurationDiscoveryService/fetchConfigurations",
       request, &client_.completionQueue());
   response_reader_->StartCall();
-  response_reader_->Finish(&commands_, &status_,
-                           reinterpret_cast<void*>(&read_done_));
-}
-
-void GrpcAsyncConfigDiscoveryServiceStream::onReadDone() {
-  info("[CDS] Stream {} read finished with gRPC status {}", fmt::ptr(this),
-       static_cast<int>(status_.error_code()));
-
-  if (status_.ok()) {
-    config_.onConfigChange(commands_);
-  }
-
-  // Stream which finished to read done won't be destroyed here.
-  // But it will be destroyed when new stream created.
+  response_reader_->Finish(&commands_, &status_, &read_tag_);
 }
 
 AsyncStreamSharedPtr<CdsRequest, CdsResponse>
 GrpcAsyncConfigDiscoveryServiceStreamBuilder::create(
-    AsyncClient<CdsRequest, CdsResponse>& client, CdsRequest request) {
-  return std::make_shared<GrpcAsyncConfigDiscoveryServiceStream>(
-      client, request, config_);
+    AsyncClient<CdsRequest, CdsResponse>& client) {
+  return std::make_shared<GrpcAsyncConfigDiscoveryServiceStream>(client,
+                                                                 config_);
 }
 
 }  // namespace cpp2sky

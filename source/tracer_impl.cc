@@ -44,10 +44,20 @@ TracerImpl::TracerImpl(
 }
 
 TracerImpl::~TracerImpl() {
-  reporter_client_.reset();
-  cds_client_.reset();
+  shutdown_alarm_ = absl::make_unique<grpc::Alarm>();
+  shutdown_alarm_tag_ = StreamCallbackTag([](bool) { return false; });
+
+  shutdown_alarm_->Set(&cq_,
+                       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                    gpr_time_from_millis(10, GPR_TIMESPAN)),
+                       &shutdown_alarm_tag_);
+
+
   cq_.Shutdown();
   evloop_thread_.join();
+
+  reporter_client_.reset();
+  cds_client_.reset();
 }
 
 TracingContextSharedPtr TracerImpl::newContext() {
@@ -93,7 +103,9 @@ void TracerImpl::run() {
       case grpc::CompletionQueue::GOT_EVENT:
         break;
     }
-    static_cast<StreamCallbackTag*>(got_tag)->callback(!ok);
+    if (static_cast<StreamCallbackTag*>(got_tag)->callback(!ok)) {
+      break;
+    }
   }
 }
 
