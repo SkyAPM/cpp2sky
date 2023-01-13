@@ -42,10 +42,10 @@ class SpanContextImpl : public SpanContext {
  private:
   // Based on
   // https://github.com/apache/skywalking/blob/master/docs/en/protocols/Skywalking-Cross-Process-Propagation-Headers-Protocol-v3.md
-  bool sample_ = true;
+  bool sample_{true};
   std::string trace_id_;
   std::string trace_segment_id_;
-  int32_t span_id_;
+  int32_t span_id_{};
   std::string service_;
   std::string service_instance_;
   std::string endpoint_;

@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
 #include "cpp2sky/exception.h"
 #include "source/utils/base64.h"
@@ -60,7 +61,7 @@ SpanContextImpl::SpanContextImpl(absl::string_view header_value) {
 
   if (fields[0] != "0" && fields[0] != "1") {
     throw TracerException(
-        "Invalid span context format. sample field must be 0 or 1.");
+        "Invalid span context format. Sample field must be 0 or 1.");
   }
 
   // Sampling is always true
@@ -68,7 +69,12 @@ SpanContextImpl::SpanContextImpl(absl::string_view header_value) {
   trace_id_ = Base64::decodeWithoutPadding(absl::string_view(fields[1]));
   trace_segment_id_ =
       Base64::decodeWithoutPadding(absl::string_view(fields[2]));
-  span_id_ = std::stoi(fields[3]);
+
+  if (!absl::SimpleAtoi(fields[3], &span_id_)) {
+    throw TracerException(
+        "Invalid span id format. Span id field must be integer number.");
+  }
+
   service_ = Base64::decodeWithoutPadding(absl::string_view(fields[4]));
   service_instance_ =
       Base64::decodeWithoutPadding(absl::string_view(fields[5]));
