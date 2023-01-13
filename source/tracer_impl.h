@@ -46,6 +46,7 @@ class TracerImpl : public Tracer {
   TracingContextSharedPtr newContext(SpanContextSharedPtr span) override;
 
   bool report(TracingContextSharedPtr obj) override;
+  void trigger();
 
  private:
   void init(TracerConfig& config,

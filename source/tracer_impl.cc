@@ -28,9 +28,10 @@ namespace cpp2sky {
 TracerImpl::TracerImpl(TracerConfig& config,
                        std::shared_ptr<grpc::ChannelCredentials> cred)
     : config_(config),
-      evloop_thread_([this] { this->run(); }),
+//      evloop_thread_([this] { this->run(); }),
       segment_factory_(config) {
   init(config, cred);
+  evloop_thread_ = std::thread([this] { this->run(); });
 }
 
 TracerImpl::TracerImpl(
@@ -38,9 +39,10 @@ TracerImpl::TracerImpl(
     AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client)
     : config_(config),
       reporter_client_(std::move(reporter_client)),
-      evloop_thread_([this] { this->run(); }),
+//      evloop_thread_([this] { this->run(); }),
       segment_factory_(config) {
   init(config, nullptr);
+  evloop_thread_ = std::thread([this] { this->run(); });
 }
 
 TracerImpl::~TracerImpl() {
@@ -87,6 +89,7 @@ void TracerImpl::run() {
         &got_tag, &ok, gpr_time_from_nanos(0, GPR_CLOCK_REALTIME));
     switch (status) {
       case grpc::CompletionQueue::TIMEOUT:
+          trigger();
         continue;
       case grpc::CompletionQueue::SHUTDOWN:
         return;
@@ -103,6 +106,13 @@ void TracerImpl::cdsRequest() {
   request.set_uuid(config_.uuid());
   cds_client_->sendMessage(request);
 }
+
+void TracerImpl::trigger() {
+   if (reporter_client_) {
+       reporter_client_->trigger();
+   }
+}
+
 
 void TracerImpl::init(TracerConfig& config,
                       std::shared_ptr<grpc::ChannelCredentials> cred) {

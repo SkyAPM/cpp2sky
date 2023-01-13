@@ -54,19 +54,25 @@ GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
   resetStream();
 }
 
+void GrpcAsyncSegmentReporterClient::trigger() {
+    if (stream_) {
+        stream_->trigger();
+    }
+}
+
 void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
   pending_messages_.push(message);
 
-  if (!stream_) {
-    info(
-        "[Reporter] No active stream, inserted message into pending message "
-        "queue. "
-        "pending message size: {}",
-        pending_messages_.size());
-    return;
-  }
-
-  stream_->sendMessage(message);
+//  if (!stream_) {
+//    info(
+//        "[Reporter] No active stream, inserted message into pending message "
+//        "queue. "
+//        "pending message size: {}",
+//        pending_messages_.size());
+//    return;
+//  }
+//
+//  stream_->sendMessage(message);
 }
 
 void GrpcAsyncSegmentReporterClient::startStream() {
@@ -103,11 +109,12 @@ GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
 }
 
 void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
-    //  clearPendingMessage();
-    if (state_ == StreamState::Idle && client_.pendingMessages().size() == 1 &&  clear_flag == 1)  {
-        clear_flag = 0;
-        clearPendingMessage();
-    }
+    clearPendingMessage();
+}
+
+
+void GrpcAsyncSegmentReporterStream::trigger() {
+   onIdle();
 }
 
 bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
@@ -121,12 +128,12 @@ bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
 
   request_writer_->Write(message.value(),
                          reinterpret_cast<void*>(&write_done_));
+  state_ = StreamState::OnTheWay;
   return true;
 }
 
 void GrpcAsyncSegmentReporterStream::onReady() {
   info("[Reporter] Stream ready");
-  clearPendingMessage();
   state_ = StreamState::Idle;
   onIdle();
 }
@@ -138,7 +145,6 @@ void GrpcAsyncSegmentReporterStream::onIdle() {
   // to write.
   if (!clearPendingMessage()) {
     cv_.notify_all();
-    clear_flag = 1;
   }
 }
 

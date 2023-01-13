@@ -37,6 +37,7 @@ class GrpcAsyncConfigDiscoveryServiceClient final
   ~GrpcAsyncConfigDiscoveryServiceClient();
 
   void sendMessage(CdsRequest request) override;
+  void trigger() override {}
   void startStream() override {}
   CircularBuffer<CdsRequest>& pendingMessages() override { assert(false); }
   grpc::CompletionQueue& completionQueue() override { return cq_; }
@@ -64,6 +65,7 @@ class GrpcAsyncConfigDiscoveryServiceStream final
 
   // AsyncStream
   void sendMessage(CdsRequest request) override;
+  void trigger() override {};
 
   // AsyncStreamCallback
   void onReady() override {}

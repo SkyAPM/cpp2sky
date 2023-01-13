@@ -31,6 +31,7 @@ class AsyncClient {
  public:
   virtual ~AsyncClient() = default;
 
+  virtual void trigger() = 0;
   /**
    * Send the specified protobuf message.
    */
@@ -69,6 +70,7 @@ class AsyncStream {
    * Send message. It will move the state from Init to Write.
    */
   virtual void sendMessage(RequestType message) = 0;
+  virtual void trigger() = 0;
 };
 
 enum class StreamState : uint8_t {
@@ -77,6 +79,7 @@ enum class StreamState : uint8_t {
   Idle = 2,
   WriteDone = 3,
   ReadDone = 4,
+  OnTheWay = 5,
 };
 
 class AsyncStreamCallback {
