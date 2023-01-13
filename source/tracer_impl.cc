@@ -52,7 +52,6 @@ TracerImpl::~TracerImpl() {
                                     gpr_time_from_millis(10, GPR_TIMESPAN)),
                        &shutdown_alarm_tag_);
 
-
   cq_.Shutdown();
   evloop_thread_.join();
 
