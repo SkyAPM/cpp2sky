@@ -8,76 +8,50 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
-  BAZEL_LINK: https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
-  CLANG_LINK: https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.1/clang+llvm-13.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz
-
 jobs:
   format:
     runs-on: ubuntu-20.04
     steps:
-      # - run: |
-      #     echo "/opt/llvm/bin" >> $GITHUB_PATH
       - uses: actions/checkout@v3
       - name: Setup clang-format
         run: |
-          # sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
-          # sudo mkdir -p /opt/llvm
-          # sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
-          # sudo apt install libtinfo5
-          bazel version
-          clang --version
-          which clang-format
-          which clang
-          # ls /usr/bin
-          which llvm-profdata
-          which lcov
           git clone https://github.com/Sarcasm/run-clang-format.git
       - name: Run clang-format
         run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
 
-  # test:
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - run: |
-  #         echo "/opt/llvm/bin" >> $GITHUB_PATH
-  #     - uses: actions/checkout@v3
-  #     - name: Install Bazel
-  #       run: |
-  #         sudo wget -O /usr/local/bin/bazel $BAZEL_LINK
-  #         sudo chmod +x /usr/local/bin/bazel
-  #     - name: Install Clang
-  #       run: |
-  #         sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
-  #         sudo mkdir -p /opt/llvm
-  #         sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
-  #         sudo apt install libtinfo5
-  #     - name: Run bazel test with GCC c++11
-  #       run: |
-  #         bazel test --cxxopt=-std=c++0x //...
-  #     - name: Run bazel test with GCC c++17
-  #       run: |
-  #         bazel test  --cxxopt=-std=c++17 //...
-  #     - name: Run bazel test with CLANG c++11
-  #       run: |
-  #         bazel test --config=clang --cxxopt=-std=c++0x //...
-  #     - name: Run bazel test with CLANG c++17
-  #       run: |
-  #         bazel test --config=clang --cxxopt=-std=c++17 //...
-  #     - name: Install lcov and genhtml
-  #       run: |
-  #         sudo apt update
-  #         sudo apt -y install lcov
-  #     - name: Run coverage test
-  #       run: |
-  #         ./coverage.sh
-  #     - name: upload coverage data to codecov
-  #       uses: codecov/codecov-action@v2
-  #       with:
-  #         fail_ci_if_error: true
-  #         files: ./coverage_report/coverage.dat
-  #         name: codecov-cpp2sky
-  #         verbose: true
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - run: |
+          echo "/opt/llvm/bin" >> $GITHUB_PATH
+      - uses: actions/checkout@v3
+      # - name: Run bazel test with GCC c++11
+      #   run: |
+      #     bazel test --cxxopt=-std=c++0x //...
+      # - name: Run bazel test with GCC c++17
+      #   run: |
+      #     bazel test  --cxxopt=-std=c++17 //...
+      # - name: Run bazel test with CLANG c++11
+      #   run: |
+      #     bazel test --config=clang --cxxopt=-std=c++0x //...
+      # - name: Run bazel test with CLANG c++17
+      #   run: |
+      #     bazel test --config=clang --cxxopt=-std=c++17 //...
+      - name: Install lcov and genhtml and link llvm-profdata
+        run: |
+          sudo apt update
+          sudo apt -y install lcov
+          sudo ln -s /usr/bin/llvm-profdata-11 /usr/bin/llvm-profdata
+      - name: Run coverage test
+        run: |
+          ./coverage.sh
+      - name: upload coverage data to codecov
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
+          files: ./coverage_report/coverage.dat
+          name: codecov-cpp2sky
+          verbose: true
 
   # e2e-cpp:
   #   runs-on: ubuntu-20.04
