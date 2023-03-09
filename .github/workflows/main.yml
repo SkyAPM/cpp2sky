@@ -14,7 +14,7 @@ env:
 
 jobs:
   format:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           echo "/opt/llvm/bin" >> $GITHUB_PATH
@@ -29,7 +29,7 @@ jobs:
         run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           echo "/opt/llvm/bin" >> $GITHUB_PATH
@@ -71,7 +71,7 @@ jobs:
           verbose: true
 
   e2e-cpp:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Prepare service container
@@ -85,7 +85,7 @@ jobs:
           python3 test/e2e/main.py --expected_file=test/e2e/data/expected.yaml --max_retry_times=3 --target_path=/ping
 
   e2e-python:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Prepare service container
