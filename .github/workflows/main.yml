@@ -42,6 +42,7 @@ jobs:
           sudo apt update
           sudo apt -y install lcov
           sudo ln -s /usr/bin/llvm-profdata-11 /usr/bin/llvm-profdata
+          sudo ln -s /usr/bin/llvm-cov-11 /usr/bin/llvm-cov
       - name: Run coverage test
         run: |
           ./coverage.sh
