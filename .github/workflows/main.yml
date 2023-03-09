@@ -14,23 +14,26 @@ env:
 
 jobs:
   format:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
-      - run: |
-          echo "/opt/llvm/bin" >> $GITHUB_PATH
+      # - run: |
+      #     echo "/opt/llvm/bin" >> $GITHUB_PATH
       - uses: actions/checkout@v3
       - name: Setup clang-format
         run: |
-          sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
-          sudo mkdir -p /opt/llvm
-          sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
-          sudo apt install libtinfo5
+          # sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
+          # sudo mkdir -p /opt/llvm
+          # sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
+          # sudo apt install libtinfo5
+          bazel version
+          clang --version
+          which clang-format
           git clone https://github.com/Sarcasm/run-clang-format.git
       - name: Run clang-format
         run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
 
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
       - run: |
           echo "/opt/llvm/bin" >> $GITHUB_PATH
@@ -73,7 +76,7 @@ jobs:
           verbose: true
 
   e2e-cpp:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - name: Prepare service container
@@ -87,7 +90,7 @@ jobs:
           python3 test/e2e/main.py --expected_file=test/e2e/data/expected.yaml --max_retry_times=3 --target_path=/ping
 
   e2e-python:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - name: Prepare service container
