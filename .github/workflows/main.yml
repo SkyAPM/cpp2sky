@@ -24,6 +24,7 @@ jobs:
           sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
           sudo mkdir -p /opt/llvm
           sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
+          sudo apt install libtinfo5
           git clone https://github.com/Sarcasm/run-clang-format.git
       - name: Run clang-format
         run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
@@ -43,6 +44,7 @@ jobs:
           sudo wget -O /tmp/clang-llvm.tar.xz $CLANG_LINK
           sudo mkdir -p /opt/llvm
           sudo tar -xf /tmp/clang-llvm.tar.xz -C /opt/llvm --strip-components 1
+          sudo apt install libtinfo5
       - name: Run bazel test with GCC c++11
         run: |
           bazel test --cxxopt=-std=c++0x //...
