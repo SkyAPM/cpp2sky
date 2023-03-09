@@ -29,7 +29,7 @@ jobs:
           clang --version
           which clang-format
           which clang
-          ls /usr/bin
+          # ls /usr/bin
           which llvm-profdata
           which lcov
           git clone https://github.com/Sarcasm/run-clang-format.git
