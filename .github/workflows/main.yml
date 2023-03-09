@@ -10,7 +10,7 @@ on:
 
 env:
   BAZEL_LINK: https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
-  CLANG_LINK: https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/clang+llvm-10.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz
+  CLANG_LINK: https://github.com/llvm/llvm-project/releases/download/llvmorg-13.0.1/clang+llvm-13.0.1-x86_64-linux-gnu-ubuntu-18.04.tar.xz
 
 jobs:
   format:
