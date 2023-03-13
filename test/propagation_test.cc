@@ -36,6 +36,10 @@ static constexpr absl::string_view invalid_sample =
     "3-MQ==-NQ==-3-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
     "ZXhhbXBsZS5jb206ODA4MA==";
 
+static constexpr absl::string_view invalid_span_id =
+    "1-MQ==-NQ==-abc-bWVzaA==-aW5zdGFuY2U=-L2FwaS92MS9oZWFsdGg=-"
+    "ZXhhbXBsZS5jb206ODA4MA==";
+
 TEST(TestSpanContext, Basic) {
   auto data = std::string(sample.data());
   SpanContextImpl sc(data);
@@ -62,6 +66,7 @@ TEST(TestSpanContext, MalformedSpanContext) {
     auto data = std::string(invalid_sample.data());
     EXPECT_THROW(SpanContextImpl{data}, TracerException);
   }
+  { EXPECT_THROW(SpanContextImpl{invalid_span_id}, TracerException); }
 }
 
 }  // namespace cpp2sky
