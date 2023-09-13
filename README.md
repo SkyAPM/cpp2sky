@@ -35,7 +35,7 @@ cc_binary(
 You can compile this project, according to the following steps:
 ```
 step 01: git clone git@github.com:SkyAPM/cpp2sky.git
-step 02: git submodule update --init
+step 02: cd cpp2sky && mkdir -p 3rdparty && git clone grpc && git clone skywalking-data-collect-protocol
 step 03: cd 3rdparty/grpc && mkdir -p build && cd build && cmake .. && cmake --build . --parallel 8 --target install
 step 04: cd cpp2sky && mkdir -p build && cd build && cmake .. && cmake --build . --parallel 8
 ```
