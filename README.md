@@ -35,9 +35,10 @@ cc_binary(
 You can compile this project, according to the following steps:
 ```
 step 01: git clone git@github.com:SkyAPM/cpp2sky.git
-step 02: cd cpp2sky && mkdir -p 3rdparty && git clone grpc && git clone skywalking-data-collect-protocol
-step 03: cd 3rdparty/grpc && mkdir -p build && cd build && cmake .. && cmake --build . --parallel 8 --target install
-step 04: cd cpp2sky && mkdir -p build && cd build && cmake .. && cmake --build . --parallel 8
+step 02: git clone -b v9.1.0 https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
+step 03: git clone -b v1.46.6 https://github.com/grpc/grpc.git --recursive
+step 04: cmake -S ./grpc -B ./grpc/build && cmake --build ./grpc/build --parallel 8 --target install
+step 05: cmake -S . -B ./build && cmake --build ./build
 ```
 
 You can also use find_package to get target libary in your project. Like this: 

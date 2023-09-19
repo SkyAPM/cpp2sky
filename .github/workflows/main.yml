@@ -37,6 +37,17 @@ jobs:
       - name: Run bazel test with CLANG c++17
         run: |
           bazel test --config=clang --cxxopt=-std=c++17 //...
+                - name: Install cmake and run cmake compile
+      - name: Install cmake dependencies and run cmake compile
+        run: |
+          sudo apt update
+          sudo apt -y install cmake 
+          sudo git clone -b v9.1.0 https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
+          sudo git clone -b v1.46.6 https://github.com/grpc/grpc.git --recursive
+          sudo cmake -S ./grpc -B ./grpc/build 
+          sudo cmake --build ./grpc/build --parallel 8 --target install
+          sudo cmake -S . -B ./build 
+          sudo cmake --build ./build
       - name: Install lcov and genhtml and link llvm
         run: |
           sudo apt update
