@@ -37,7 +37,6 @@ jobs:
       - name: Run bazel test with CLANG c++17
         run: |
           bazel test --config=clang --cxxopt=-std=c++17 //...
-                - name: Install cmake and run cmake compile
       - name: Install cmake dependencies and run cmake compile
         run: |
           sudo apt update
