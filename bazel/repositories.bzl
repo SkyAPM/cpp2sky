@@ -10,6 +10,7 @@ def cpp2sky_dependencies():
     com_github_fmtlib_fmt()
     com_google_abseil()
     com_github_gabime_spdlog()
+    hedron_compile_commands()
 
 def skywalking_data_collect_protocol():
     http_archive(
@@ -88,4 +89,14 @@ def com_google_abseil():
         sha256 = "5ca73792af71ab962ee81cdf575f79480704b8fb87e16ca8f1dc1e9b6822611e",
         strip_prefix = "abseil-cpp-6f43f5bb398b6685575b36874e36cf1695734df1",
         urls = ["https://github.com/abseil/abseil-cpp/archive/6f43f5bb398b6685575b36874e36cf1695734df1.tar.gz"],
+    )
+
+def hedron_compile_commands():
+    # Hedron's Compile Commands Extractor for Bazel
+    # https://github.com/hedronvision/bazel-compile-commands-extractor
+    http_archive(
+        name = "hedron_compile_commands",
+        url = "https://github.com/hedronvision/bazel-compile-commands-extractor/archive/dc36e462a2468bd79843fe5176542883b8ce4abe.tar.gz",
+        sha256 = "d63c1573eb1daa4580155a1f0445992878f4aa8c34eb165936b69504a8407662",
+        strip_prefix = "bazel-compile-commands-extractor-dc36e462a2468bd79843fe5176542883b8ce4abe",
     )
