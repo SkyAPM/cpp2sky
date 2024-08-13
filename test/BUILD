@@ -69,20 +69,6 @@ cc_test(
 )
 
 cc_test(
-    name = "dynamic_config_test",
-    srcs = [
-        "dynamic_config_test.cc",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":mocks",
-        "//source:cpp2sky_lib",
-        "@com_google_absl//absl/memory",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "tracer_test",
     srcs = [
         "tracer_test.cc",
