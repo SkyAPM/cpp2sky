@@ -20,7 +20,6 @@
 #include "cpp2sky/internal/matcher.h"
 #include "cpp2sky/tracer.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
-#include "source/cds_impl.h"
 #include "source/grpc_async_client_impl.h"
 #include "source/tracing_context_impl.h"
 #include "source/utils/timer.h"
@@ -51,12 +50,9 @@ class TracerImpl : public Tracer {
   void init(TracerConfig& config,
             std::shared_ptr<grpc::ChannelCredentials> cred);
   void run();
-  void cdsRequest();
 
-  std::unique_ptr<Timer> cds_timer_;
-  DynamicConfig config_;
+  TracerConfig config_;
   AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client_;
-  AsyncClientPtr<CdsRequest, CdsResponse> cds_client_;
   grpc::CompletionQueue cq_;
   std::thread evloop_thread_;
   TracingContextFactory segment_factory_;

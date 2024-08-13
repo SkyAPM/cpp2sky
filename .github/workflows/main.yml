@@ -40,12 +40,12 @@ jobs:
       - name: Install cmake dependencies and run cmake compile
         run: |
           sudo apt update
-          sudo apt -y install cmake 
+          sudo apt -y install cmake
           sudo git clone -b v9.1.0 https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
           sudo git clone -b v1.46.6 https://github.com/grpc/grpc.git --recursive
-          sudo cmake -S ./grpc -B ./grpc/build 
+          sudo cmake -S ./grpc -B ./grpc/build
           sudo cmake --build ./grpc/build --parallel 8 --target install
-          sudo cmake -S . -B ./build 
+          sudo cmake -S . -B ./build
           sudo cmake --build ./build
       - name: Install lcov and genhtml and link llvm
         run: |
@@ -70,7 +70,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Prepare service container
         run: |
-          docker-compose -f test/e2e/docker/docker-compose.e2e.yml up -d
+          docker compose -f test/e2e/docker/docker-compose.e2e.yml up -d
       - name: Run e2e
         run: |
           pip3 install --upgrade pip
@@ -84,7 +84,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Prepare service container
         run: |
-          docker-compose -f test/e2e/docker/docker-compose.e2e-python.yml up -d
+          docker compose -f test/e2e/docker/docker-compose.e2e-python.yml up -d
       - name: Run e2e
         run: |
           pip3 install --upgrade pip

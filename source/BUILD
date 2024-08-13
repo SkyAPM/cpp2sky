@@ -3,16 +3,12 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "cpp2sky_lib",
     srcs = [
-        "cds_impl.cc",
-        "dynamic_config.cc",
         "grpc_async_client_impl.cc",
         "propagation_impl.cc",
         "tracer_impl.cc",
         "tracing_context_impl.cc",
     ],
     hdrs = [
-        "cds_impl.h",
-        "dynamic_config.h",
         "grpc_async_client_impl.h",
         "propagation_impl.h",
         "tracer_impl.h",
