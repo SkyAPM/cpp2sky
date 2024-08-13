@@ -17,7 +17,6 @@
 #include <chrono>
 #include <thread>
 
-#include "cds_impl.h"
 #include "cpp2sky/exception.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
 #include "matchers/suffix_matcher.h"
@@ -45,7 +44,6 @@ TracerImpl::TracerImpl(
 
 TracerImpl::~TracerImpl() {
   reporter_client_.reset();
-  cds_client_.reset();
   cq_.Shutdown();
   evloop_thread_.join();
 }
@@ -78,11 +76,6 @@ void TracerImpl::run() {
   void* got_tag;
   bool ok = false;
   while (true) {
-    // TODO(shikugawa): cleanup evloop handler.
-    if (cds_timer_ != nullptr && cds_timer_->check()) {
-      cdsRequest();
-    }
-
     grpc::CompletionQueue::NextStatus status = cq_.AsyncNext(
         &got_tag, &ok, gpr_time_from_nanos(0, GPR_CLOCK_REALTIME));
     switch (status) {
@@ -95,13 +88,6 @@ void TracerImpl::run() {
     }
     static_cast<StreamCallbackTag*>(got_tag)->callback(!ok);
   }
-}
-
-void TracerImpl::cdsRequest() {
-  skywalking::v3::ConfigurationSyncRequest request;
-  request.set_service(config_.tracerConfig().service_name());
-  request.set_uuid(config_.uuid());
-  cds_client_->sendMessage(request);
 }
 
 void TracerImpl::init(TracerConfig& config,
@@ -123,16 +109,6 @@ void TracerImpl::init(TracerConfig& config,
   op_name_matchers_.emplace_back(absl::make_unique<SuffixMatcher>(
       std::vector<std::string>(config.ignore_operation_name_suffix().begin(),
                                config.ignore_operation_name_suffix().end())));
-
-  if (config_.tracerConfig().cds_request_interval() != 0) {
-    cds_client_ = absl::make_unique<GrpcAsyncConfigDiscoveryServiceClient>(
-        config.address(), cq_,
-        absl::make_unique<GrpcAsyncConfigDiscoveryServiceStreamBuilder>(
-            config_),
-        cred);
-    cds_timer_ =
-        absl::make_unique<Timer>(config_.tracerConfig().cds_request_interval());
-  }
 }
 
 TracerPtr createInsecureGrpcTracer(TracerConfig& cfg) {
