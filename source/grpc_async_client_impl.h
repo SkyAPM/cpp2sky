@@ -18,116 +18,117 @@
 #include <grpcpp/grpcpp.h>
 
 #include <condition_variable>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <thread>
 
 #include "cpp2sky/config.pb.h"
 #include "cpp2sky/internal/async_client.h"
-#include "cpp2sky/internal/stream_builder.h"
 #include "language-agent/Tracing.grpc.pb.h"
-#include "language-agent/Tracing.pb.h"
+#include "source/utils/buffer.h"
 
 namespace cpp2sky {
 
-namespace {
-static constexpr size_t pending_message_buffer_size = 1024;
-}
-
-using TracerRequestType = skywalking::v3::SegmentObject;
-using TracerResponseType = skywalking::v3::Commands;
-
-class GrpcAsyncSegmentReporterStream;
-
-class GrpcAsyncSegmentReporterClient final
-    : public AsyncClient<TracerRequestType, TracerResponseType> {
+class EventLoopThread {
  public:
-  GrpcAsyncSegmentReporterClient(
-      const std::string& address, grpc::CompletionQueue& cq,
-      ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
-          factory,
-      std::shared_ptr<grpc::ChannelCredentials> cred);
-  ~GrpcAsyncSegmentReporterClient();
+  EventLoopThread() : thread_([this] { this->gogo(); }) {}
+  ~EventLoopThread() { exit(); }
 
-  // AsyncClient
-  void sendMessage(TracerRequestType message) override;
-  CircularBuffer<TracerRequestType>& pendingMessages() override {
-    return pending_messages_;
-  }
-  void startStream() override;
-  grpc::TemplatedGenericStub<TracerRequestType, TracerResponseType>& stub()
-      override {
-    return stub_;
-  }
-  grpc::CompletionQueue& completionQueue() override { return cq_; }
+  grpc::CompletionQueue cq_;
 
-  size_t numOfMessages() { return pending_messages_.size(); }
+  void exit() {
+    if (!exited_) {
+      exited_ = true;
+      cq_.Shutdown();
+      thread_.join();
+    }
+  }
 
  private:
-  void resetStream();
+  bool exited_{false};
+  std::thread thread_;
 
-  std::string address_;
-  ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
-      factory_;
-  grpc::CompletionQueue& cq_;
-  grpc::TemplatedGenericStub<TracerRequestType, TracerResponseType> stub_;
-  AsyncStreamSharedPtr<TracerRequestType, TracerResponseType> stream_;
-  CircularBuffer<TracerRequestType> pending_messages_{
-      pending_message_buffer_size};
-
-  std::mutex mux_;
-  std::condition_variable cv_;
+  void gogo();
 };
 
-class GrpcAsyncSegmentReporterStream final
-    : public AsyncStream<TracerRequestType, TracerResponseType>,
-      public AsyncStreamCallback {
+using CredentialsSharedPtr = std::shared_ptr<grpc::ChannelCredentials>;
+using TracerReaderWriter =
+    grpc::ClientAsyncReaderWriter<TracerRequestType, TracerResponseType>;
+using TraceReaderWriterPtr = std::unique_ptr<TracerReaderWriter>;
+
+class SegmentReporterStream : public AsyncStream {
  public:
-  GrpcAsyncSegmentReporterStream(
-      AsyncClient<TracerRequestType, TracerResponseType>& client,
-      std::condition_variable& cv, const std::string& token);
+  SegmentReporterStream(TraceReaderWriterPtr request_writer,
+                        AsyncEventTag* basic_event_tag,
+                        AsyncEventTag* write_event_tag);
 
   // AsyncStream
   void sendMessage(TracerRequestType message) override;
 
-  // AsyncStreamCallback
-  void onReady() override;
-  void onIdle() override;
-  void onWriteDone() override;
-  void onReadDone() override {}
-  void onStreamFinish() override { client_.startStream(); }
-
  private:
-  bool clearPendingMessage();
+  TraceReaderWriterPtr request_writer_;
 
-  AsyncClient<TracerRequestType, TracerResponseType>& client_;
-  TracerResponseType commands_;
-  grpc::ClientContext ctx_;
-  std::unique_ptr<
-      grpc::ClientAsyncReaderWriter<TracerRequestType, TracerResponseType>>
-      request_writer_;
-  StreamState state_{StreamState::Initialized};
-
-  StreamCallbackTag ready_{StreamState::Ready, this};
-  StreamCallbackTag write_done_{StreamState::WriteDone, this};
-
-  std::condition_variable& cv_;
+  AsyncEventTag* basic_event_tag_;
+  AsyncEventTag* write_event_tag_;
 };
 
-class GrpcAsyncSegmentReporterStreamBuilder final
-    : public ClientStreamingStreamBuilder<TracerRequestType,
-                                          TracerResponseType> {
+class GrpcAsyncSegmentReporterClient : public AsyncClient {
  public:
-  explicit GrpcAsyncSegmentReporterStreamBuilder(const std::string& token)
-      : token_(token) {}
+  GrpcAsyncSegmentReporterClient(const std::string& address,
+                                 const std::string& token,
+                                 CredentialsSharedPtr cred);
+  ~GrpcAsyncSegmentReporterClient() override {
+    if (!client_reset_) {
+      resetClient();
+    }
+  }
 
-  // ClientStreamingStreamBuilder
-  AsyncStreamSharedPtr<TracerRequestType, TracerResponseType> create(
-      AsyncClient<TracerRequestType, TracerResponseType>& client,
-      std::condition_variable& cv) override;
+  // AsyncClient
+  void sendMessage(TracerRequestType message) override;
+  void resetClient() override {
+    // After this is called, no more events will be processed.
+    client_reset_ = true;
+    message_buffer_.clear();
+    event_loop_.exit();
+    resetStream();
+  }
 
- private:
-  std::string token_;
+ protected:
+  // Start or re-create the stream that used to send messages.
+  virtual void startStream();
+  void resetStream();
+  void markEventLoopIdle() { event_loop_idle_.store(true); }
+  void sendMessageOnce();
+
+  // This may be operated by multiple threads.
+  std::atomic<uint64_t> messages_total_{0};
+  std::atomic<uint64_t> messages_dropped_{0};
+  std::atomic<uint64_t> messages_sent_{0};
+
+  EventLoopThread event_loop_;
+  grpc::ClientContext client_ctx_;
+  std::atomic<bool> client_reset_{false};
+
+  ValueBuffer<TracerRequestType> message_buffer_;
+
+  AsyncEventTagPtr basic_event_tag_;
+  AsyncEventTagPtr write_event_tag_;
+
+  // The Write() of the stream could only be called once at a time
+  // until the previous Write() is finished (callback is called).
+  // Considering the complexity and the thread safety, we make sure
+  // that all operations on the stream are done one by one.
+  // This flag is used to indicate whether the event loop is idle
+  // before we perform the next operation on the stream.
+  //
+  // Initially the value is false because the event loop will be
+  // occupied by the first operation (startStream).
+  std::atomic<bool> event_loop_idle_{false};
+
+  grpc::TemplatedGenericStub<TracerRequestType, TracerResponseType> stub_;
+  AsyncStreamSharedPtr active_stream_;
 };
 
 }  // namespace cpp2sky

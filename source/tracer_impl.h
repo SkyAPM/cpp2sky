@@ -34,29 +34,21 @@ using CdsResponse = skywalking::v3::Commands;
 
 class TracerImpl : public Tracer {
  public:
-  TracerImpl(TracerConfig& config,
-             std::shared_ptr<grpc::ChannelCredentials> cred);
-  TracerImpl(
-      TracerConfig& config,
-      AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client);
+  TracerImpl(const TracerConfig& config, CredentialsSharedPtr cred);
+  TracerImpl(const TracerConfig& config, AsyncClientPtr async_client);
   ~TracerImpl();
 
   TracingContextSharedPtr newContext() override;
   TracingContextSharedPtr newContext(SpanContextSharedPtr span) override;
 
-  bool report(TracingContextSharedPtr obj) override;
+  bool report(TracingContextSharedPtr ctx) override;
 
  private:
-  void init(TracerConfig& config,
-            std::shared_ptr<grpc::ChannelCredentials> cred);
-  void run();
+  void init(const TracerConfig& config, CredentialsSharedPtr cred);
 
-  TracerConfig config_;
-  AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client_;
-  grpc::CompletionQueue cq_;
-  std::thread evloop_thread_;
+  AsyncClientPtr async_client_;
   TracingContextFactory segment_factory_;
-  std::list<MatcherPtr> op_name_matchers_;
+  MatcherPtr ignore_matcher_;
 };
 
 }  // namespace cpp2sky

@@ -10,7 +10,6 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_grpc_grpc//:grpc++",
         "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
     ],
 )
@@ -20,12 +19,6 @@ cc_library(
     hdrs = [
         "random_generator.h",
     ],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
-    name = "stream_builder_interface",
-    hdrs = ["stream_builder.h"],
     visibility = ["//visibility:public"],
 )
 

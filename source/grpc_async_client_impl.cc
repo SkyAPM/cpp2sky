@@ -14,146 +14,161 @@
 
 #include "grpc_async_client_impl.h"
 
+#include <sys/types.h>
+
 #include <chrono>
+#include <cstdint>
 #include <thread>
 
 #include "absl/strings/string_view.h"
 #include "cpp2sky/exception.h"
+#include "cpp2sky/internal/async_client.h"
+#include "grpcpp/alarm.h"
 #include "spdlog/spdlog.h"
 
 namespace cpp2sky {
 
 namespace {
-static constexpr absl::string_view authenticationKey = "authentication";
-}
+
+static constexpr uint32_t MaxPendingMessagesSize = 1024;
+
+static std::string AuthenticationKey = "authentication";
+
+static std::string TraceCollectMethod = "/TraceSegmentReportService/collect";
+
+}  // namespace
 
 using namespace spdlog;
 
+void EventLoopThread::gogo() {
+  while (true) {
+    void* got_tag{nullptr};
+    bool ok{false};
+
+    // true if got an event from the queue or false
+    // if the queue is fully drained and is shutdown.
+    const bool status = cq_.Next(&got_tag, &ok);
+    if (!status) {
+      assert(got_tag == nullptr);
+      assert(!ok);
+      info("[Reporter] Completion queue is drained and is shutdown.");
+      break;
+    }
+
+    assert(got_tag != nullptr);
+
+    // The lifetime of the tag is managed by the caller.
+    auto* tag = static_cast<AsyncEventTag*>(got_tag);
+    tag->callback(ok);
+  }
+}
+
 GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
-    const std::string& address, grpc::CompletionQueue& cq,
-    ClientStreamingStreamBuilderPtr<TracerRequestType, TracerResponseType>
-        factory,
-    std::shared_ptr<grpc::ChannelCredentials> cred)
-    : factory_(std::move(factory)),
-      cq_(cq),
-      stub_(grpc::CreateChannel(address, cred)) {
+    const std::string& address, const std::string& token,
+    CredentialsSharedPtr cred)
+    : stub_(grpc::CreateChannel(address, cred)) {
+  if (!token.empty()) {
+    client_ctx_.AddMetadata(AuthenticationKey, token);
+  }
+
+  basic_event_tag_.reset(new AsyncEventTag{[this](bool ok) {
+    if (client_reset_) {
+      return;
+    }
+
+    if (ok) {
+      trace("[Reporter] Stream event success.", fmt::ptr(this));
+
+      // Mark event loop as idle because the previous Write() or
+      // other operations are successful.
+      markEventLoopIdle();
+
+      sendMessageOnce();
+      return;
+    } else {
+      trace("[Reporter] Stream event failure.", fmt::ptr(this));
+
+      // Do not mark event loop as idle because the previous Write()
+      // or other operations are failed. The event loop should keep
+      // running to process the re-creation of the stream.
+      assert(event_loop_idle_.load() == false);
+      // Reset stream and try to create a new one.
+      startStream();
+    }
+  }});
+
+  write_event_tag_.reset(new AsyncEventTag{[this](bool ok) {
+    if (ok) {
+      trace("[Reporter] Stream {} message sending success.", fmt::ptr(this));
+      messages_sent_++;
+    } else {
+      trace("[Reporter] Stream {} message sending failure.", fmt::ptr(this));
+      messages_dropped_++;
+    }
+    // Delegate the event to basic_event_tag_ to trigger the next task or
+    // reset the stream.
+    basic_event_tag_->callback(ok);
+  }});
+
   startStream();
 }
 
-GrpcAsyncSegmentReporterClient::~GrpcAsyncSegmentReporterClient() {
-  // It will wait until there is no drained messages with 5 second timeout.
-  if (stream_) {
-    std::unique_lock<std::mutex> lck(mux_);
-    while (!pending_messages_.empty()) {
-      cv_.wait_for(lck, std::chrono::seconds(5));
-      pending_messages_.clear();
+void GrpcAsyncSegmentReporterClient::sendMessageOnce() {
+  bool expect_idle = true;
+  if (event_loop_idle_.compare_exchange_strong(expect_idle, false)) {
+    assert(active_stream_ != nullptr);
+
+    auto opt_message = message_buffer_.pop_front();
+    if (!opt_message.has_value()) {
+      // No message to send, mark event loop as idle.
+      markEventLoopIdle();
+      return;
     }
+
+    active_stream_->sendMessage(std::move(opt_message).value());
   }
-
-  resetStream();
-}
-
-void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
-  pending_messages_.push(message);
-
-  if (!stream_) {
-    info(
-        "[Reporter] No active stream, inserted message into pending message "
-        "queue. "
-        "pending message size: {}",
-        pending_messages_.size());
-    return;
-  }
-
-  stream_->sendMessage(message);
 }
 
 void GrpcAsyncSegmentReporterClient::startStream() {
-  resetStream();
+  resetStream();  // Reset stream before creating a new one.
 
-  stream_ = factory_->create(*this, cv_);
-  info("[Reporter] Stream {} had created.", fmt::ptr(stream_.get()));
+  active_stream_.reset(new SegmentReporterStream(
+      stub_.PrepareCall(&client_ctx_, TraceCollectMethod, &event_loop_.cq_),
+      basic_event_tag_.get(), write_event_tag_.get()));
+
+  info("[Reporter] Stream {} has created.", fmt::ptr(active_stream_.get()));
 }
 
 void GrpcAsyncSegmentReporterClient::resetStream() {
-  if (stream_) {
-    info("[Reporter] Stream {} has destroyed.", fmt::ptr(stream_.get()));
-    stream_.reset();
+  info("[Reporter] Stream {} has destroyed.", fmt::ptr(active_stream_.get()));
+  active_stream_.reset();
+}
+
+void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
+  messages_total_++;
+
+  const size_t pending = message_buffer_.size();
+  if (pending > MaxPendingMessagesSize) {
+    info("[Reporter] pending message overflow and drop message");
+    messages_dropped_++;
+    return;
   }
+  message_buffer_.push_back(std::move(message));
+
+  sendMessageOnce();
 }
 
-GrpcAsyncSegmentReporterStream::GrpcAsyncSegmentReporterStream(
-    AsyncClient<TracerRequestType, TracerResponseType>& client,
-    std::condition_variable& cv, const std::string& token)
-    : client_(client), cv_(cv) {
-  if (!token.empty()) {
-    ctx_.AddMetadata(authenticationKey.data(), token);
-  }
-
-  // Ensure pending RPC will complete if connection to the server is not
-  // established first because of like server is not ready. This will queue
-  // pending RPCs and when connection has established, Connected tag will be
-  // sent to CompletionQueue.
-  ctx_.set_wait_for_ready(true);
-
-  request_writer_ = client_.stub().PrepareCall(
-      &ctx_, "/TraceSegmentReportService/collect", &client_.completionQueue());
-  request_writer_->StartCall(reinterpret_cast<void*>(&ready_));
+SegmentReporterStream::SegmentReporterStream(
+    TraceReaderWriterPtr request_writer, AsyncEventTag* basic_event_tag,
+    AsyncEventTag* write_event_tag)
+    : request_writer_(std::move(request_writer)),
+      basic_event_tag_(basic_event_tag),
+      write_event_tag_(write_event_tag) {
+  request_writer_->StartCall(reinterpret_cast<void*>(basic_event_tag_));
 }
 
-void GrpcAsyncSegmentReporterStream::sendMessage(TracerRequestType message) {
-  clearPendingMessage();
-}
-
-bool GrpcAsyncSegmentReporterStream::clearPendingMessage() {
-  if (state_ != StreamState::Idle || client_.pendingMessages().empty()) {
-    return false;
-  }
-  auto message = client_.pendingMessages().front();
-  if (!message.has_value()) {
-    return false;
-  }
-
-  request_writer_->Write(message.value(),
-                         reinterpret_cast<void*>(&write_done_));
-  return true;
-}
-
-void GrpcAsyncSegmentReporterStream::onReady() {
-  info("[Reporter] Stream ready");
-
-  state_ = StreamState::Idle;
-  onIdle();
-}
-
-void GrpcAsyncSegmentReporterStream::onIdle() {
-  info("[Reporter] Stream idleing");
-
-  // Release pending messages which are inserted when stream is not ready
-  // to write.
-  if (!clearPendingMessage()) {
-    cv_.notify_all();
-  }
-}
-
-void GrpcAsyncSegmentReporterStream::onWriteDone() {
-  info("[Reporter] Write finished");
-
-  // Dequeue message after sending message finished.
-  // With this, messages which failed to sent never lost even if connection
-  // was closed. because pending messages with messages which failed to send
-  // will drained and resend another stream.
-  client_.pendingMessages().pop();
-  state_ = StreamState::Idle;
-
-  onIdle();
-}
-
-AsyncStreamSharedPtr<TracerRequestType, TracerResponseType>
-GrpcAsyncSegmentReporterStreamBuilder::create(
-    AsyncClient<TracerRequestType, TracerResponseType>& client,
-    std::condition_variable& cv) {
-  return std::make_shared<GrpcAsyncSegmentReporterStream>(client, cv, token_);
+void SegmentReporterStream::sendMessage(TracerRequestType message) {
+  request_writer_->Write(message, reinterpret_cast<void*>(write_event_tag_));
 }
 
 }  // namespace cpp2sky

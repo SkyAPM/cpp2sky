@@ -20,32 +20,26 @@
 #include "cpp2sky/exception.h"
 #include "language-agent/ConfigurationDiscoveryService.pb.h"
 #include "matchers/suffix_matcher.h"
+#include "source/grpc_async_client_impl.h"
 #include "spdlog/spdlog.h"
 
 namespace cpp2sky {
 
-TracerImpl::TracerImpl(TracerConfig& config,
-                       std::shared_ptr<grpc::ChannelCredentials> cred)
-    : config_(config),
-      evloop_thread_([this] { this->run(); }),
-      segment_factory_(config) {
+using namespace spdlog;
+
+TracerImpl::TracerImpl(const TracerConfig& config, CredentialsSharedPtr cred)
+    : segment_factory_(config) {
   init(config, cred);
 }
 
-TracerImpl::TracerImpl(
-    TracerConfig& config,
-    AsyncClientPtr<TracerRequestType, TracerResponseType> reporter_client)
-    : config_(config),
-      reporter_client_(std::move(reporter_client)),
-      evloop_thread_([this] { this->run(); }),
-      segment_factory_(config) {
+TracerImpl::TracerImpl(const TracerConfig& config, AsyncClientPtr async_client)
+    : async_client_(std::move(async_client)), segment_factory_(config) {
   init(config, nullptr);
 }
 
 TracerImpl::~TracerImpl() {
-  reporter_client_.reset();
-  cq_.Shutdown();
-  evloop_thread_.join();
+  // Stop the reporter client.
+  async_client_->resetClient();
 }
 
 TracingContextSharedPtr TracerImpl::newContext() {
@@ -56,63 +50,40 @@ TracingContextSharedPtr TracerImpl::newContext(SpanContextSharedPtr span) {
   return segment_factory_.create(span);
 }
 
-bool TracerImpl::report(TracingContextSharedPtr obj) {
-  if (!obj || !obj->readyToSend()) {
+bool TracerImpl::report(TracingContextSharedPtr ctx) {
+  if (!ctx || !ctx->readyToSend()) {
     return false;
   }
 
-  for (const auto& op_name_matcher : op_name_matchers_) {
-    if (!obj->spans().empty() &&
-        op_name_matcher->match(obj->spans().front()->operationName())) {
+  if (!ctx->spans().empty()) {
+    if (ignore_matcher_->match(ctx->spans().front()->operationName())) {
       return false;
     }
   }
 
-  reporter_client_->sendMessage(obj->createSegmentObject());
+  async_client_->sendMessage(ctx->createSegmentObject());
   return true;
 }
 
-void TracerImpl::run() {
-  void* got_tag;
-  bool ok = false;
-  while (true) {
-    grpc::CompletionQueue::NextStatus status = cq_.AsyncNext(
-        &got_tag, &ok, gpr_time_from_nanos(0, GPR_CLOCK_REALTIME));
-    switch (status) {
-      case grpc::CompletionQueue::TIMEOUT:
-        continue;
-      case grpc::CompletionQueue::SHUTDOWN:
-        return;
-      case grpc::CompletionQueue::GOT_EVENT:
-        break;
-    }
-    static_cast<StreamCallbackTag*>(got_tag)->callback(!ok);
-  }
-}
-
-void TracerImpl::init(TracerConfig& config,
-                      std::shared_ptr<grpc::ChannelCredentials> cred) {
+void TracerImpl::init(const TracerConfig& config, CredentialsSharedPtr cred) {
   spdlog::set_level(spdlog::level::warn);
 
-  if (reporter_client_ == nullptr) {
+  if (async_client_ == nullptr) {
     if (config.protocol() == Protocol::GRPC) {
-      reporter_client_ = absl::make_unique<GrpcAsyncSegmentReporterClient>(
-          config.address(), cq_,
-          absl::make_unique<GrpcAsyncSegmentReporterStreamBuilder>(
-              config.token()),
-          cred);
+      async_client_.reset(new GrpcAsyncSegmentReporterClient(
+          config.address(), config.token(), cred));
     } else {
       throw TracerException("REST is not supported.");
     }
   }
 
-  op_name_matchers_.emplace_back(absl::make_unique<SuffixMatcher>(
+  ignore_matcher_.reset(new SuffixMatcher(
       std::vector<std::string>(config.ignore_operation_name_suffix().begin(),
                                config.ignore_operation_name_suffix().end())));
 }
 
-TracerPtr createInsecureGrpcTracer(TracerConfig& cfg) {
-  return absl::make_unique<TracerImpl>(cfg, grpc::InsecureChannelCredentials());
+TracerPtr createInsecureGrpcTracer(const TracerConfig& cfg) {
+  return TracerPtr{new TracerImpl(cfg, grpc::InsecureChannelCredentials())};
 }
 
 }  // namespace cpp2sky
