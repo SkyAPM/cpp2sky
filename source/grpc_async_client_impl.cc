@@ -23,7 +23,6 @@
 #include "absl/strings/string_view.h"
 #include "cpp2sky/exception.h"
 #include "cpp2sky/internal/async_client.h"
-#include "grpcpp/alarm.h"
 #include "spdlog/spdlog.h"
 
 namespace cpp2sky {
@@ -132,15 +131,15 @@ void GrpcAsyncSegmentReporterClient::sendMessageOnce() {
 void GrpcAsyncSegmentReporterClient::startStream() {
   resetStream();  // Reset stream before creating a new one.
 
-  active_stream_.reset(new SegmentReporterStream(
+  active_stream_ = std::make_shared<SegmentReporterStream>(
       stub_.PrepareCall(&client_ctx_, TraceCollectMethod, &event_loop_.cq_),
-      basic_event_tag_.get(), write_event_tag_.get()));
+      basic_event_tag_.get(), write_event_tag_.get());
 
   info("[Reporter] Stream {} has created.", fmt::ptr(active_stream_.get()));
 }
 
 void GrpcAsyncSegmentReporterClient::resetStream() {
-  info("[Reporter] Stream {} has destroyed.", fmt::ptr(active_stream_.get()));
+  info("[Reporter] Stream {} has deleted.", fmt::ptr(active_stream_.get()));
   active_stream_.reset();
 }
 
