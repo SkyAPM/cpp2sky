@@ -32,7 +32,8 @@ TracerImpl::TracerImpl(const TracerConfig& config, CredentialsSharedPtr cred)
   init(config, cred);
 }
 
-TracerImpl::TracerImpl(const TracerConfig& config, AsyncClientPtr async_client)
+TracerImpl::TracerImpl(const TracerConfig& config,
+                       TraceAsyncClientPtr async_client)
     : async_client_(std::move(async_client)), segment_factory_(config) {
   init(config, nullptr);
 }
@@ -69,12 +70,11 @@ void TracerImpl::init(const TracerConfig& config, CredentialsSharedPtr cred) {
   spdlog::set_level(spdlog::level::warn);
 
   if (async_client_ == nullptr) {
-    if (config.protocol() == Protocol::GRPC) {
-      async_client_.reset(new GrpcAsyncSegmentReporterClient(
-          config.address(), config.token(), cred));
-    } else {
-      throw TracerException("REST is not supported.");
+    if (config.protocol() != Protocol::GRPC) {
+      throw TracerException("Only GRPC is supported.");
     }
+    async_client_ = TraceAsyncClientImpl::createClient(
+        config.address(), config.token(), nullptr, std::move(cred));
   }
 
   ignore_matcher_.reset(new SuffixMatcher(

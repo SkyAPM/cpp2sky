@@ -17,8 +17,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <condition_variable>
-
 #include "cpp2sky/internal/async_client.h"
 #include "cpp2sky/internal/random_generator.h"
 
@@ -33,14 +31,14 @@ class MockRandomGenerator : public RandomGenerator {
   MOCK_METHOD(std::string, uuid, ());
 };
 
-class MockAsyncStream : public AsyncStream {
+class MockTraceAsyncStream : public TraceAsyncStream {
  public:
-  MOCK_METHOD(void, sendMessage, (TracerRequestType));
+  MOCK_METHOD(void, sendMessage, (TraceRequestType));
 };
 
-class MockAsyncClient : public AsyncClient {
+class MockTraceAsyncClient : public TraceAsyncClient {
  public:
-  MOCK_METHOD(void, sendMessage, (TracerRequestType));
+  MOCK_METHOD(void, sendMessage, (TraceRequestType));
   MOCK_METHOD(void, resetClient, ());
 };
 

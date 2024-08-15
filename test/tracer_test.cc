@@ -27,8 +27,8 @@ TEST(TracerTest, MatchedOpShouldIgnored) {
   TracerConfig config;
   *config.add_ignore_operation_name_suffix() = "/ignored";
 
-  TracerImpl tracer(config,
-                    AsyncClientPtr{new testing::NiceMock<MockAsyncClient>()});
+  TracerImpl tracer(config, TraceAsyncClientPtr{
+                                new testing::NiceMock<MockTraceAsyncClient>()});
   auto context = tracer.newContext();
   auto span = context->createEntrySpan();
 
@@ -41,8 +41,8 @@ TEST(TracerTest, MatchedOpShouldIgnored) {
 TEST(TracerTest, NotClosedSpanExists) {
   TracerConfig config;
 
-  TracerImpl tracer(config,
-                    AsyncClientPtr{new testing::NiceMock<MockAsyncClient>()});
+  TracerImpl tracer(config, TraceAsyncClientPtr{
+                                new testing::NiceMock<MockTraceAsyncClient>()});
   auto context = tracer.newContext();
   auto span = context->createEntrySpan();
 
@@ -54,8 +54,8 @@ TEST(TracerTest, NotClosedSpanExists) {
 TEST(TracerTest, Success) {
   TracerConfig config;
 
-  auto mock_reporter = std::unique_ptr<MockAsyncClient>{
-      new testing::NiceMock<MockAsyncClient>()};
+  auto mock_reporter = std::unique_ptr<MockTraceAsyncClient>{
+      new testing::NiceMock<MockTraceAsyncClient>()};
   EXPECT_CALL(*mock_reporter, sendMessage(_));
 
   TracerImpl tracer(config, std::move(mock_reporter));

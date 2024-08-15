@@ -10,6 +10,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "@com_github_grpc_grpc//:grpc++",
         "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_grpc",
     ],
 )

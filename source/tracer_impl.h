@@ -34,8 +34,8 @@ using CdsResponse = skywalking::v3::Commands;
 
 class TracerImpl : public Tracer {
  public:
-  TracerImpl(const TracerConfig& config, CredentialsSharedPtr cred);
-  TracerImpl(const TracerConfig& config, AsyncClientPtr async_client);
+  TracerImpl(const TracerConfig& config, CredentialsSharedPtr credentials);
+  TracerImpl(const TracerConfig& config, TraceAsyncClientPtr async_client);
   ~TracerImpl();
 
   TracingContextSharedPtr newContext() override;
@@ -46,7 +46,7 @@ class TracerImpl : public Tracer {
  private:
   void init(const TracerConfig& config, CredentialsSharedPtr cred);
 
-  AsyncClientPtr async_client_;
+  TraceAsyncClientPtr async_client_;
   TracingContextFactory segment_factory_;
   MatcherPtr ignore_matcher_;
 };

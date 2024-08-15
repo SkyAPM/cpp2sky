@@ -41,10 +41,13 @@ struct TestStats {
   uint64_t pending_{};
 };
 
-class TestGrpcAsyncSegmentReporterClient
-    : public GrpcAsyncSegmentReporterClient {
+class TestTraceAsyncClient : public TraceAsyncClientImpl {
  public:
-  using GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient;
+  TestTraceAsyncClient(const std::string& address, const std::string& token,
+                       TraceAsyncStreamFactoryPtr stream_factory,
+                       CredentialsSharedPtr credentials)
+      : TraceAsyncClientImpl(address, token, std::move(stream_factory),
+                             std::move(credentials)) {}
 
   TestStats getTestStats() const {
     TestStats stats(messages_total_.load(), messages_dropped_.load(),
@@ -52,28 +55,47 @@ class TestGrpcAsyncSegmentReporterClient
     return stats;
   }
 
-  void notifyWriteEvent(bool success) { write_event_tag_->callback(success); }
-  void notifyStartEvent(bool success) { basic_event_tag_->callback(success); }
+  void notifyWriteEvent(bool success) { write_event_tag_.callback(success); }
+  void notifyStartEvent(bool success) { basic_event_tag_.callback(success); }
 
   uint64_t bufferSize() const { return message_buffer_.size(); }
-
-  void startStream() override {
-    resetStream();
-    active_stream_ = mock_stream_;
-  }
-
-  std::shared_ptr<MockAsyncStream> mock_stream_ =
-      std::make_shared<MockAsyncStream>();
 };
 
-class GrpcAsyncSegmentReporterClientTest : public testing::Test {
+class TestTraceAsyncStreamFactory : public TraceAsyncStreamFactory {
  public:
-  GrpcAsyncSegmentReporterClientTest() {
-    client_.reset(new TestGrpcAsyncSegmentReporterClient(
-        address_, token_, grpc::InsecureChannelCredentials()));
+  TestTraceAsyncStreamFactory(std::shared_ptr<MockTraceAsyncStream> mock_stream)
+      : mock_stream_(mock_stream) {}
+
+  class TestTraceAsyncStream : public TraceAsyncStream {
+   public:
+    TestTraceAsyncStream(std::shared_ptr<MockTraceAsyncStream> mock_stream)
+        : mock_stream_(mock_stream) {}
+    void sendMessage(TraceRequestType message) override {
+      mock_stream_->sendMessage(std::move(message));
+    }
+    std::shared_ptr<MockTraceAsyncStream> mock_stream_;
+  };
+
+  TraceAsyncStreamPtr createStream(GrpcClientContextPtr, GrpcStub&,
+                                   GrpcCompletionQueue&, AsyncEventTag&,
+                                   AsyncEventTag&) override {
+    return TraceAsyncStreamPtr{new TestTraceAsyncStream(mock_stream_)};
   }
 
-  ~GrpcAsyncSegmentReporterClientTest() {
+  std::shared_ptr<MockTraceAsyncStream> mock_stream_;
+};
+
+class TraceAsyncClientImplTest : public testing::Test {
+ public:
+  TraceAsyncClientImplTest() {
+    client_.reset(new TestTraceAsyncClient(
+        address_, token_,
+        TraceAsyncStreamFactoryPtr{
+            new TestTraceAsyncStreamFactory(mock_stream_)},
+        grpc::InsecureChannelCredentials()));
+  }
+
+  ~TraceAsyncClientImplTest() {
     client_->resetClient();
     client_.reset();
   }
@@ -82,12 +104,15 @@ class GrpcAsyncSegmentReporterClientTest : public testing::Test {
   std::string address_{"localhost:50051"};
   std::string token_{"token"};
 
-  std::unique_ptr<TestGrpcAsyncSegmentReporterClient> client_;
+  std::shared_ptr<MockTraceAsyncStream> mock_stream_ =
+      std::make_shared<MockTraceAsyncStream>();
+
+  std::unique_ptr<TestTraceAsyncClient> client_;
 };
 
-TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
+TEST_F(TraceAsyncClientImplTest, SendMessageTest) {
   skywalking::v3::SegmentObject fake_message;
-  EXPECT_CALL(*client_->mock_stream_, sendMessage(_)).Times(0);
+  EXPECT_CALL(*mock_stream_, sendMessage(_)).Times(0);
   client_->sendMessage(fake_message);
 
   auto stats = client_->getTestStats();
@@ -109,7 +134,7 @@ TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
   EXPECT_EQ(stats.pending_, 1);
   EXPECT_EQ(client_->bufferSize(), 1);
 
-  EXPECT_CALL(*client_->mock_stream_, sendMessage(_));
+  EXPECT_CALL(*mock_stream_, sendMessage(_));
   client_->notifyStartEvent(true);
   sleep(1);  // wait for the event loop to process the event.
 
@@ -137,7 +162,7 @@ TEST_F(GrpcAsyncSegmentReporterClientTest, SendMessageTest) {
   // Send another message. This time the stream is ready and
   // previous message is sent successfully. So the new message
   // should be sent immediately.
-  EXPECT_CALL(*client_->mock_stream_, sendMessage(_));
+  EXPECT_CALL(*mock_stream_, sendMessage(_));
   client_->sendMessage(fake_message);
   sleep(1);  // wait for the event loop to process the event.
 

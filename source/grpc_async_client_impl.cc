@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "grpc_async_client_impl.h"
+#include "source/grpc_async_client_impl.h"
 
 #include <sys/types.h>
 
@@ -62,15 +62,50 @@ void EventLoopThread::gogo() {
   }
 }
 
-GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
-    const std::string& address, const std::string& token,
-    CredentialsSharedPtr cred)
-    : stub_(grpc::CreateChannel(address, cred)) {
-  if (!token.empty()) {
-    client_ctx_.AddMetadata(AuthenticationKey, token);
+TraceAsyncStreamImpl::TraceAsyncStreamImpl(GrpcClientContextPtr client_ctx,
+                                           TraceGrpcStub& stub,
+                                           GrpcCompletionQueue& cq,
+                                           AsyncEventTag& basic_event_tag,
+                                           AsyncEventTag& write_event_tag)
+    : client_ctx_(std::move(client_ctx)),
+      basic_event_tag_(basic_event_tag),
+      write_event_tag_(write_event_tag) {
+  if (client_ctx_ == nullptr) {
+    client_ctx_.reset(new grpc::ClientContext());
   }
 
-  basic_event_tag_.reset(new AsyncEventTag{[this](bool ok) {
+  request_writer_ =
+      stub.PrepareCall(client_ctx_.get(), TraceCollectMethod, &cq);
+  request_writer_->StartCall(reinterpret_cast<void*>(&basic_event_tag_));
+}
+
+void TraceAsyncStreamImpl::sendMessage(TraceRequestType message) {
+  request_writer_->Write(message, reinterpret_cast<void*>(&write_event_tag_));
+}
+
+TraceAsyncStreamPtr TraceAsyncStreamFactoryImpl::createStream(
+    GrpcClientContextPtr client_ctx, TraceGrpcStub& stub,
+    GrpcCompletionQueue& cq, AsyncEventTag& basic_event_tag,
+    AsyncEventTag& write_event_tag) {
+  return TraceAsyncStreamPtr{new TraceAsyncStreamImpl(
+      std::move(client_ctx), stub, cq, basic_event_tag, write_event_tag)};
+}
+
+std::unique_ptr<TraceAsyncClientImpl> TraceAsyncClientImpl::createClient(
+    const std::string& address, const std::string& token,
+    TraceAsyncStreamFactoryPtr factory, CredentialsSharedPtr cred) {
+  return std::unique_ptr<TraceAsyncClientImpl>{new TraceAsyncClientImpl(
+      address, token, std::move(factory), std::move(cred))};
+}
+
+TraceAsyncClientImpl::TraceAsyncClientImpl(const std::string& address,
+                                           const std::string& token,
+                                           TraceAsyncStreamFactoryPtr factory,
+                                           CredentialsSharedPtr cred)
+    : token_(token),
+      stream_factory_(std::move(factory)),
+      stub_(grpc::CreateChannel(address, cred)) {
+  basic_event_tag_.callback = [this](bool ok) {
     if (client_reset_) {
       return;
     }
@@ -94,9 +129,9 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
       // Reset stream and try to create a new one.
       startStream();
     }
-  }});
+  };
 
-  write_event_tag_.reset(new AsyncEventTag{[this](bool ok) {
+  write_event_tag_.callback = [this](bool ok) {
     if (ok) {
       trace("[Reporter] Stream {} message sending success.", fmt::ptr(this));
       messages_sent_++;
@@ -106,13 +141,18 @@ GrpcAsyncSegmentReporterClient::GrpcAsyncSegmentReporterClient(
     }
     // Delegate the event to basic_event_tag_ to trigger the next task or
     // reset the stream.
-    basic_event_tag_->callback(ok);
-  }});
+    basic_event_tag_.callback(ok);
+  };
+
+  // If the factory is not provided, use the default one.
+  if (stream_factory_ == nullptr) {
+    stream_factory_.reset(new TraceAsyncStreamFactoryImpl());
+  }
 
   startStream();
 }
 
-void GrpcAsyncSegmentReporterClient::sendMessageOnce() {
+void TraceAsyncClientImpl::sendMessageOnce() {
   bool expect_idle = true;
   if (event_loop_idle_.compare_exchange_strong(expect_idle, false)) {
     assert(active_stream_ != nullptr);
@@ -128,22 +168,31 @@ void GrpcAsyncSegmentReporterClient::sendMessageOnce() {
   }
 }
 
-void GrpcAsyncSegmentReporterClient::startStream() {
-  resetStream();  // Reset stream before creating a new one.
+void TraceAsyncClientImpl::startStream() {
+  if (active_stream_ != nullptr) {
+    resetStream();  // Reset stream before creating a new one.
+  }
 
-  active_stream_ = std::make_shared<SegmentReporterStream>(
-      stub_.PrepareCall(&client_ctx_, TraceCollectMethod, &event_loop_.cq_),
-      basic_event_tag_.get(), write_event_tag_.get());
+  // Create the unique client context for the new stream.
+  // Each stream should have its own context.
+  auto client_ctx = GrpcClientContextPtr{new grpc::ClientContext()};
+  if (!token_.empty()) {
+    client_ctx->AddMetadata(AuthenticationKey, token_);
+  }
+
+  active_stream_ = stream_factory_->createStream(
+      std::move(client_ctx), stub_, event_loop_.cq_, basic_event_tag_,
+      write_event_tag_);
 
   info("[Reporter] Stream {} has created.", fmt::ptr(active_stream_.get()));
 }
 
-void GrpcAsyncSegmentReporterClient::resetStream() {
+void TraceAsyncClientImpl::resetStream() {
   info("[Reporter] Stream {} has deleted.", fmt::ptr(active_stream_.get()));
   active_stream_.reset();
 }
 
-void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
+void TraceAsyncClientImpl::sendMessage(TraceRequestType message) {
   messages_total_++;
 
   const size_t pending = message_buffer_.size();
@@ -155,19 +204,6 @@ void GrpcAsyncSegmentReporterClient::sendMessage(TracerRequestType message) {
   message_buffer_.push_back(std::move(message));
 
   sendMessageOnce();
-}
-
-SegmentReporterStream::SegmentReporterStream(
-    TraceReaderWriterPtr request_writer, AsyncEventTag* basic_event_tag,
-    AsyncEventTag* write_event_tag)
-    : request_writer_(std::move(request_writer)),
-      basic_event_tag_(basic_event_tag),
-      write_event_tag_(write_event_tag) {
-  request_writer_->StartCall(reinterpret_cast<void*>(basic_event_tag_));
-}
-
-void SegmentReporterStream::sendMessage(TracerRequestType message) {
-  request_writer_->Write(message, reinterpret_cast<void*>(write_event_tag_));
 }
 
 }  // namespace cpp2sky

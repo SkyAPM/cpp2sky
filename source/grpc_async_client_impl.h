@@ -14,14 +14,11 @@
 
 #pragma once
 
-#include <grpcpp/generic/generic_stub.h>
-#include <grpcpp/grpcpp.h>
-
-#include <condition_variable>
 #include <cstdint>
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <string>
 #include <thread>
 
 #include "cpp2sky/config.pb.h"
@@ -30,6 +27,14 @@
 #include "source/utils/buffer.h"
 
 namespace cpp2sky {
+
+using CredentialsSharedPtr = std::shared_ptr<grpc::ChannelCredentials>;
+
+using TraceGrpcStub =
+    grpc::TemplatedGenericStub<TraceRequestType, TraceResponseType>;
+using TraceReaderWriter =
+    grpc::ClientAsyncReaderWriter<TraceRequestType, TraceResponseType>;
+using TraceReaderWriterPtr = std::unique_ptr<TraceReaderWriter>;
 
 class EventLoopThread {
  public:
@@ -53,40 +58,60 @@ class EventLoopThread {
   void gogo();
 };
 
-using CredentialsSharedPtr = std::shared_ptr<grpc::ChannelCredentials>;
-using TracerReaderWriter =
-    grpc::ClientAsyncReaderWriter<TracerRequestType, TracerResponseType>;
-using TraceReaderWriterPtr = std::unique_ptr<TracerReaderWriter>;
-
-class SegmentReporterStream : public AsyncStream {
+class TraceAsyncStreamImpl : public TraceAsyncStream {
  public:
-  SegmentReporterStream(TraceReaderWriterPtr request_writer,
-                        AsyncEventTag* basic_event_tag,
-                        AsyncEventTag* write_event_tag);
+  TraceAsyncStreamImpl(GrpcClientContextPtr client_ctx, TraceGrpcStub& stub,
+                       GrpcCompletionQueue& cq, AsyncEventTag& basic_event_tag,
+                       AsyncEventTag& write_event_tag);
 
   // AsyncStream
-  void sendMessage(TracerRequestType message) override;
+  void sendMessage(TraceRequestType message) override;
 
  private:
+  GrpcClientContextPtr client_ctx_;
   TraceReaderWriterPtr request_writer_;
 
-  AsyncEventTag* basic_event_tag_;
-  AsyncEventTag* write_event_tag_;
+  AsyncEventTag& basic_event_tag_;
+  AsyncEventTag& write_event_tag_;
 };
 
-class GrpcAsyncSegmentReporterClient : public AsyncClient {
+class TraceAsyncStreamFactoryImpl : public TraceAsyncStreamFactory {
  public:
-  GrpcAsyncSegmentReporterClient(const std::string& address,
-                                 const std::string& token,
-                                 CredentialsSharedPtr cred);
-  ~GrpcAsyncSegmentReporterClient() override {
+  TraceAsyncStreamFactoryImpl() = default;
+
+  TraceAsyncStreamPtr createStream(GrpcClientContextPtr client_ctx,
+                                   GrpcStub& stub, GrpcCompletionQueue& cq,
+                                   AsyncEventTag& basic_event_tag,
+                                   AsyncEventTag& write_event_tag) override;
+};
+
+class TraceAsyncClientImpl : public TraceAsyncClient {
+ public:
+  /**
+   * Create a new GrpcAsyncSegmentReporterClient.
+   *
+   * @param address The address of the server.
+   * @param token The optional token used to authenticate the client.
+   * If non-empty token is provided, the client will send the token
+   * to the server in the metadata.
+   * @param cred The credentials for creating the channel.
+   * @param factory The factory function to create the stream from the
+   * request writer and event tags. In most cases, the default factory
+   * should be used.
+   */
+  static std::unique_ptr<TraceAsyncClientImpl> createClient(
+      const std::string& address, const std::string& token,
+      TraceAsyncStreamFactoryPtr factory = nullptr,
+      CredentialsSharedPtr cred = grpc::InsecureChannelCredentials());
+
+  ~TraceAsyncClientImpl() override {
     if (!client_reset_) {
       resetClient();
     }
   }
 
   // AsyncClient
-  void sendMessage(TracerRequestType message) override;
+  void sendMessage(TraceRequestType message) override;
   void resetClient() override {
     // After this is called, no more events will be processed.
     client_reset_ = true;
@@ -96,11 +121,20 @@ class GrpcAsyncSegmentReporterClient : public AsyncClient {
   }
 
  protected:
+  TraceAsyncClientImpl(
+      const std::string& address, const std::string& token,
+      TraceAsyncStreamFactoryPtr factory = nullptr,
+      CredentialsSharedPtr cred = grpc::InsecureChannelCredentials());
+
   // Start or re-create the stream that used to send messages.
-  virtual void startStream();
+  void startStream();
   void resetStream();
   void markEventLoopIdle() { event_loop_idle_.store(true); }
   void sendMessageOnce();
+
+  const std::string token_;
+  TraceAsyncStreamFactoryPtr stream_factory_;
+  TraceGrpcStub stub_;
 
   // This may be operated by multiple threads.
   std::atomic<uint64_t> messages_total_{0};
@@ -108,13 +142,12 @@ class GrpcAsyncSegmentReporterClient : public AsyncClient {
   std::atomic<uint64_t> messages_sent_{0};
 
   EventLoopThread event_loop_;
-  grpc::ClientContext client_ctx_;
   std::atomic<bool> client_reset_{false};
 
-  ValueBuffer<TracerRequestType> message_buffer_;
+  ValueBuffer<TraceRequestType> message_buffer_;
 
-  AsyncEventTagPtr basic_event_tag_;
-  AsyncEventTagPtr write_event_tag_;
+  AsyncEventTag basic_event_tag_;
+  AsyncEventTag write_event_tag_;
 
   // The Write() of the stream could only be called once at a time
   // until the previous Write() is finished (callback is called).
@@ -127,8 +160,7 @@ class GrpcAsyncSegmentReporterClient : public AsyncClient {
   // occupied by the first operation (startStream).
   std::atomic<bool> event_loop_idle_{false};
 
-  grpc::TemplatedGenericStub<TracerRequestType, TracerResponseType> stub_;
-  AsyncStreamSharedPtr active_stream_;
+  TraceAsyncStreamPtr active_stream_;
 };
 
 }  // namespace cpp2sky
