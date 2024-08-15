@@ -85,13 +85,13 @@ class AsyncStreamFactory {
  public:
   virtual ~AsyncStreamFactory() = default;
 
-  using AsyncStreamPtr = AsyncStreamPtr<RequestType, ResponseType>;
+  using StreamPtr = AsyncStreamPtr<RequestType, ResponseType>;
   using GrpcStub = grpc::TemplatedGenericStub<RequestType, ResponseType>;
 
-  virtual AsyncStreamPtr createStream(GrpcClientContextPtr client_ctx,
-                                      GrpcStub& stub, GrpcCompletionQueue& cq,
-                                      AsyncEventTag& basic_event_tag,
-                                      AsyncEventTag& write_event_tag) = 0;
+  virtual StreamPtr createStream(GrpcClientContextPtr client_ctx,
+                                 GrpcStub& stub, GrpcCompletionQueue& cq,
+                                 AsyncEventTag& basic_event_tag,
+                                 AsyncEventTag& write_event_tag) = 0;
 };
 
 template <class RequestType, class ResponseType>
