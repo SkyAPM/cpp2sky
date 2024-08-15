@@ -12,11 +12,24 @@ services:
     build:
       context: ../../..
       dockerfile: ./test/e2e/docker/Dockerfile.consumer
-    expose:
-      - 8080
+    ports:
+      - 8080:8080
     command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_consumer"
     depends_on:
       - collector
+      - bridge
+      - provider
+
+  bridge:
+    build:
+      context: ../../..
+      dockerfile: ./test/e2e/docker/Dockerfile.bridge
+    ports:
+      - 8082:8082
+    command: python3 test/e2e/bridge.py
+    depends_on:
+      - collector
+      - provider
 
   provider:
     build:
@@ -27,4 +40,3 @@ services:
     command: sh -c "GRPC_VERBOSITY=debug /tmp/bazel-bin/test/e2e/e2e_provider"
     depends_on:
       - collector
-      - consumer

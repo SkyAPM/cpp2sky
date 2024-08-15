@@ -4,9 +4,9 @@ from skywalking import agent, config
 from skywalking.decorators import runnable
 
 if __name__ == '__main__':
-    config.init(collector='collector:19876', service='interm')
+    config.init(collector='collector:19876', service='bridge')
     config.logging_level = 'DEBUG'
-    
+
     config.flask_collect_http_params = True
     agent.start()
 
@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     @app.route("/users", methods=["POST", "GET"])
     def application():
-        res = requests.get("http://consumer:8080/pong")
+        res = requests.get("http://provider:8081/pong2")
         return Response(status=res.status_code)
 
     PORT = 8082
