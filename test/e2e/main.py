@@ -26,6 +26,9 @@ def validate(expected_file_name):
       res = requests.get('http://0.0.0.0:12800/receiveData')
       actual_data = yaml.dump(yaml.load(res.content, Loader=Loader))
 
+      print('actual data: ')
+      print(actual_data)
+
       differ = Differ()
       diff_list = list(differ.compare(
         actual_data.splitlines(keepends=True),
@@ -42,7 +45,7 @@ if __name__ == "__main__":
   parser.add_argument('--expected_file', help='File name which includes expected reported value')
   parser.add_argument('--max_retry_times', help='Max retry times', type=int)
   parser.add_argument('--target_path', help='Specify target path')
-  
+
   args = parser.parse_args()
 
   retry_times = 0

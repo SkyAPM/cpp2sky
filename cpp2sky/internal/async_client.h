@@ -28,9 +28,9 @@ namespace cpp2sky {
  * Template base class for gRPC async client.
  */
 template <class RequestType, class ResponseType>
-class AsyncClientBase {
+class AsyncClient {
  public:
-  virtual ~AsyncClientBase() = default;
+  virtual ~AsyncClient() = default;
 
   /**
    * Send the specified protobuf message.
@@ -45,17 +45,16 @@ class AsyncClientBase {
 };
 
 template <class RequestType, class ResponseType>
-using AsyncClientBasePtr =
-    std::unique_ptr<AsyncClientBase<RequestType, ResponseType>>;
+using AsyncClientPtr = std::unique_ptr<AsyncClient<RequestType, ResponseType>>;
 
 /**
  * Template base class for gRPC async stream. The stream is used to represent
  * a single gRPC stream/request.
  */
 template <class RequestType, class ResponseType>
-class AsyncStreamBase {
+class AsyncStream {
  public:
-  virtual ~AsyncStreamBase() = default;
+  virtual ~AsyncStream() = default;
 
   /**
    * Send the specified protobuf message.
@@ -64,8 +63,7 @@ class AsyncStreamBase {
 };
 
 template <class RequestType, class ResponseType>
-using AsyncStreamBasePtr =
-    std::unique_ptr<AsyncStreamBase<RequestType, ResponseType>>;
+using AsyncStreamPtr = std::unique_ptr<AsyncStream<RequestType, ResponseType>>;
 
 /**
  * Tag for async operation. The callback should be called when the operation is
@@ -83,11 +81,11 @@ using GrpcCompletionQueue = grpc::CompletionQueue;
  * Factory for creating async stream.
  */
 template <class RequestType, class ResponseType>
-class AsyncStreamFactoryBase {
+class AsyncStreamFactory {
  public:
-  virtual ~AsyncStreamFactoryBase() = default;
+  virtual ~AsyncStreamFactory() = default;
 
-  using AsyncStreamPtr = AsyncStreamBasePtr<RequestType, ResponseType>;
+  using AsyncStreamPtr = AsyncStreamPtr<RequestType, ResponseType>;
   using GrpcStub = grpc::TemplatedGenericStub<RequestType, ResponseType>;
 
   virtual AsyncStreamPtr createStream(GrpcClientContextPtr client_ctx,
@@ -97,22 +95,21 @@ class AsyncStreamFactoryBase {
 };
 
 template <class RequestType, class ResponseType>
-using AsyncStreamFactoryBasePtr =
-    std::unique_ptr<AsyncStreamFactoryBase<RequestType, ResponseType>>;
+using AsyncStreamFactoryPtr =
+    std::unique_ptr<AsyncStreamFactory<RequestType, ResponseType>>;
 
 using TraceRequestType = skywalking::v3::SegmentObject;
 using TraceResponseType = skywalking::v3::Commands;
 
-using TraceAsyncStream = AsyncStreamBase<TraceRequestType, TraceResponseType>;
-using TraceAsyncStreamPtr =
-    AsyncStreamBasePtr<TraceRequestType, TraceResponseType>;
+using TraceAsyncStream = AsyncStream<TraceRequestType, TraceResponseType>;
+using TraceAsyncStreamPtr = AsyncStreamPtr<TraceRequestType, TraceResponseType>;
 
 using TraceAsyncStreamFactory =
-    AsyncStreamFactoryBase<TraceRequestType, TraceResponseType>;
+    AsyncStreamFactory<TraceRequestType, TraceResponseType>;
 using TraceAsyncStreamFactoryPtr =
-    AsyncStreamFactoryBasePtr<TraceRequestType, TraceResponseType>;
+    AsyncStreamFactoryPtr<TraceRequestType, TraceResponseType>;
 
-using TraceAsyncClient = AsyncClientBase<TraceRequestType, TraceResponseType>;
+using TraceAsyncClient = AsyncClient<TraceRequestType, TraceResponseType>;
 using TraceAsyncClientPtr = std::unique_ptr<TraceAsyncClient>;
 
 }  // namespace cpp2sky
