@@ -73,6 +73,7 @@ jobs:
           docker compose -f test/e2e/docker/docker-compose.yml up -d
       - name: Run e2e
         run: |
+          sleep 10
           pip3 install --upgrade pip
           pip3 install setuptools
           pip3 install -r test/e2e/requirements.txt

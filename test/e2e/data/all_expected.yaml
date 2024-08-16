@@ -67,9 +67,9 @@ segmentItems:
       tags:
       - key: http.method
         value: GET
-      - key: url
+      - key: http.url
         value: http://provider:8081/pong2
-      - key: status.code
+      - key: http.status_code
         value: '200'
     - componentId: 7001
       endTime: gt 0
@@ -81,7 +81,7 @@ segmentItems:
       - networkAddress: bridge:8082
         parentEndpoint: /ping2
         parentService: consumer
-        parentServiceInstance: not null
+        parentServiceInstance: node_0
         parentSpanId: 1
         parentTraceSegmentId: not null
         refType: CrossProcess
@@ -94,9 +94,9 @@ segmentItems:
       tags:
       - key: http.method
         value: GET
-      - key: url
+      - key: http.url
         value: http://bridge:8082/users
-      - key: status.code
+      - key: http.status_code
         value: '200'
   serviceName: bridge
 - segmentSize: 2

@@ -4,10 +4,7 @@ from skywalking import agent, config
 from skywalking.decorators import runnable
 
 if __name__ == '__main__':
-    config.init(collector='collector:19876', service='bridge')
-    config.logging_level = 'DEBUG'
-
-    config.flask_collect_http_params = True
+    config.init()
     agent.start()
 
     from flask import Flask, Response
