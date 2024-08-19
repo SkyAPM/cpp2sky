@@ -12,6 +12,7 @@ build:clang --action_env=BAZEL_COMPILER=clang
 build:clang --action_env=CC=clang --action_env=CXX=clang++
 build:clang --linkopt=-fuse-ld=lld
 
+# random change
 # Coverage options
 coverage --config=coverage
 coverage --build_tests_only
