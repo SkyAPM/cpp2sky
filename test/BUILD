@@ -8,7 +8,6 @@ cc_library(
     deps = [
         "//cpp2sky/internal:async_client_interface",
         "//cpp2sky/internal:random_generator_interface",
-        "//cpp2sky/internal:stream_builder_interface",
         "@com_google_googletest//:gtest_main",
         "@skywalking_data_collect_protocol//language-agent:tracing_protocol_cc_proto",
     ],

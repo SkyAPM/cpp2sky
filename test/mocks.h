@@ -17,11 +17,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <condition_variable>
-
 #include "cpp2sky/internal/async_client.h"
 #include "cpp2sky/internal/random_generator.h"
-#include "cpp2sky/internal/stream_builder.h"
 
 using testing::_;
 using testing::Return;
@@ -34,46 +31,15 @@ class MockRandomGenerator : public RandomGenerator {
   MOCK_METHOD(std::string, uuid, ());
 };
 
-template <class RequestType, class ResponseType>
-class MockAsyncStream : public AsyncStream<RequestType, ResponseType> {
+class MockTraceAsyncStream : public TraceAsyncStream {
  public:
-  MOCK_METHOD(void, sendMessage, (RequestType));
-  MOCK_METHOD(void, onIdle, ());
-  MOCK_METHOD(void, onWriteDone, ());
-  MOCK_METHOD(void, onReady, ());
+  MOCK_METHOD(void, sendMessage, (TraceRequestType));
 };
 
-template <class RequestType, class ResponseType>
-class MockAsyncClient : public AsyncClient<RequestType, ResponseType> {
+class MockTraceAsyncClient : public TraceAsyncClient {
  public:
-  using GenericStub = grpc::TemplatedGenericStub<RequestType, ResponseType>;
-
-  MOCK_METHOD(void, sendMessage, (RequestType));
-  MOCK_METHOD(GenericStub&, stub, ());
-  MOCK_METHOD(CircularBuffer<RequestType>&, pendingMessages, ());
-  MOCK_METHOD(void, startStream, ());
-  MOCK_METHOD(grpc::CompletionQueue&, completionQueue, ());
-};
-
-template <class RequestType, class ResponseType>
-class MockClientStreamingStreamBuilder final
-    : public ClientStreamingStreamBuilder<RequestType, ResponseType> {
- public:
-  using AsyncClientType = AsyncClient<RequestType, ResponseType>;
-  using AsyncStreamSharedPtrType =
-      AsyncStreamSharedPtr<RequestType, ResponseType>;
-
-  MockClientStreamingStreamBuilder(
-      std::shared_ptr<MockAsyncStream<RequestType, ResponseType>> stream)
-      : stream_(stream) {
-    ON_CALL(*this, create(_, _)).WillByDefault(Return(stream_));
-  }
-
-  MOCK_METHOD(AsyncStreamSharedPtrType, create,
-              (AsyncClientType&, std::condition_variable&));
-
- private:
-  std::shared_ptr<MockAsyncStream<RequestType, ResponseType>> stream_;
+  MOCK_METHOD(void, sendMessage, (TraceRequestType));
+  MOCK_METHOD(void, resetClient, ());
 };
 
 }  // namespace cpp2sky

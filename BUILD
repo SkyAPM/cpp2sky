@@ -9,5 +9,6 @@ refresh_compile_commands(
         "//cpp2sky/...": "",
         "//source/...": "",
         "//test/...": "",
+        "//example/...": "",
     },
 )

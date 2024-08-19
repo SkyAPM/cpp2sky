@@ -24,12 +24,6 @@ cc_library(
 )
 
 cc_library(
-    name = "stream_builder_interface",
-    hdrs = ["stream_builder.h"],
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
     name = "matcher_interface",
     hdrs = ["matcher.h"],
     visibility = ["//visibility:public"],

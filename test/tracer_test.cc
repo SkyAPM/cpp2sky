@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "cpp2sky/config.pb.h"
+#include "cpp2sky/internal/async_client.h"
 #include "mocks.h"
 #include "source/tracer_impl.h"
 
@@ -26,9 +27,8 @@ TEST(TracerTest, MatchedOpShouldIgnored) {
   TracerConfig config;
   *config.add_ignore_operation_name_suffix() = "/ignored";
 
-  TracerImpl tracer(
-      config, absl::make_unique<
-                  MockAsyncClient<TracerRequestType, TracerResponseType>>());
+  TracerImpl tracer(config, TraceAsyncClientPtr{
+                                new testing::NiceMock<MockTraceAsyncClient>()});
   auto context = tracer.newContext();
   auto span = context->createEntrySpan();
 
@@ -41,9 +41,8 @@ TEST(TracerTest, MatchedOpShouldIgnored) {
 TEST(TracerTest, NotClosedSpanExists) {
   TracerConfig config;
 
-  TracerImpl tracer(
-      config, absl::make_unique<
-                  MockAsyncClient<TracerRequestType, TracerResponseType>>());
+  TracerImpl tracer(config, TraceAsyncClientPtr{
+                                new testing::NiceMock<MockTraceAsyncClient>()});
   auto context = tracer.newContext();
   auto span = context->createEntrySpan();
 
@@ -55,8 +54,8 @@ TEST(TracerTest, NotClosedSpanExists) {
 TEST(TracerTest, Success) {
   TracerConfig config;
 
-  auto mock_reporter = absl::make_unique<
-      MockAsyncClient<TracerRequestType, TracerResponseType>>();
+  auto mock_reporter = std::unique_ptr<MockTraceAsyncClient>{
+      new testing::NiceMock<MockTraceAsyncClient>()};
   EXPECT_CALL(*mock_reporter, sendMessage(_));
 
   TracerImpl tracer(config, std::move(mock_reporter));
