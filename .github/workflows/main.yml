@@ -56,13 +56,6 @@ jobs:
       - name: Run coverage test
         run: |
           ./coverage.sh
-      - name: upload coverage data to codecov
-        uses: codecov/codecov-action@v2
-        with:
-          fail_ci_if_error: true
-          files: ./coverage_report/coverage.dat
-          name: codecov-cpp2sky
-          verbose: true
 
   e2e-test:
     runs-on: ubuntu-20.04
