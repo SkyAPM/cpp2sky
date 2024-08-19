@@ -1,4 +1,3 @@
-
 // Copyright 2020 SkyAPM
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,11 +36,50 @@ int main() {
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(config);
 
-  svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
-    auto parent = req.get_header_value(kPropagationHeader.data());
-    auto tracing_context = tracer->newContext(createSpanContext(parent));
+  // C++
+  svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
+    auto tracing_context = tracer->newContext();
 
-    { StartEntrySpan entry_span(tracing_context, "/pong"); }
+    {
+      StartEntrySpan entry_span(tracing_context, "/ping");
+
+      {
+        std::string target_address = "provider:8081";
+
+        StartExitSpan exit_span(tracing_context, entry_span.get(), "/pong");
+        exit_span.get()->setPeer(target_address);
+
+        httplib::Client cli("provider", 8081);
+        httplib::Headers headers = {
+            {kPropagationHeader.data(),
+             *tracing_context->createSW8HeaderValue(target_address)}};
+        auto res = cli.Get("/pong", headers);
+      }
+    }
+
+    tracer->report(std::move(tracing_context));
+  });
+
+  // Python
+  svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
+    auto tracing_context = tracer->newContext();
+
+    {
+      StartEntrySpan entry_span(tracing_context, "/ping2");
+
+      {
+        std::string target_address = "bridge:8082";
+
+        StartExitSpan exit_span(tracing_context, entry_span.get(), "/users");
+        exit_span.get()->setPeer(target_address);
+
+        httplib::Client cli("bridge", 8082);
+        httplib::Headers headers = {
+            {kPropagationHeader.data(),
+             *tracing_context->createSW8HeaderValue(target_address)}};
+        auto res = cli.Get("/users", headers);
+      }
+    }
 
     tracer->report(std::move(tracing_context));
   });

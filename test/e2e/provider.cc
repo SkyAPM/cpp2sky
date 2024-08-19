@@ -1,3 +1,4 @@
+
 // Copyright 2020 SkyAPM
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,50 +37,20 @@ int main() {
   httplib::Server svr;
   auto tracer = createInsecureGrpcTracer(config);
 
-  // C++
-  svr.Get("/ping", [&](const httplib::Request& req, httplib::Response& res) {
-    auto tracing_context = tracer->newContext();
+  svr.Get("/pong", [&](const httplib::Request& req, httplib::Response& res) {
+    auto parent = req.get_header_value(kPropagationHeader.data());
+    auto tracing_context = tracer->newContext(createSpanContext(parent));
 
-    {
-      StartEntrySpan entry_span(tracing_context, "/ping");
-
-      {
-        std::string target_address = "consumer:8080";
-
-        StartExitSpan exit_span(tracing_context, entry_span.get(), "/pong");
-        exit_span.get()->setPeer(target_address);
-
-        httplib::Client cli("consumer", 8080);
-        httplib::Headers headers = {
-            {kPropagationHeader.data(),
-             *tracing_context->createSW8HeaderValue(target_address)}};
-        auto res = cli.Get("/pong", headers);
-      }
-    }
+    { StartEntrySpan entry_span(tracing_context, "/pong"); }
 
     tracer->report(std::move(tracing_context));
   });
 
-  // Python
-  svr.Get("/ping2", [&](const httplib::Request& req, httplib::Response& res) {
-    auto tracing_context = tracer->newContext();
+  svr.Get("/pong2", [&](const httplib::Request& req, httplib::Response& res) {
+    auto parent = req.get_header_value(kPropagationHeader.data());
+    auto tracing_context = tracer->newContext(createSpanContext(parent));
 
-    {
-      StartEntrySpan entry_span(tracing_context, "/ping2");
-
-      {
-        std::string target_address = "interm:8082";
-
-        StartExitSpan exit_span(tracing_context, entry_span.get(), "/users");
-        exit_span.get()->setPeer(target_address);
-
-        httplib::Client cli("interm", 8082);
-        httplib::Headers headers = {
-            {kPropagationHeader.data(),
-             *tracing_context->createSW8HeaderValue(target_address)}};
-        auto res = cli.Get("/users", headers);
-      }
-    }
+    { StartEntrySpan entry_span(tracing_context, "/pong2"); }
 
     tracer->report(std::move(tracing_context));
   });
