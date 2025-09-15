@@ -10,5 +10,5 @@ cc_library(
     defines = ["SPDLOG_FMT_EXTERNAL"],
     includes = ["include"],
     visibility = ["//visibility:public"],
-    deps = ["@com_github_fmtlib_fmt//:fmtlib"],
+    deps = ["@com_github_fmtlib_fmt//:fmt"],
 )

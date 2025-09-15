@@ -1,0 +1,27 @@
+module(
+    name = "cpp2sky",
+    version = "0.6.1-dev",
+)
+
+bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_absl")
+bazel_dep(name = "fmt", version = "8.1.1", repo_name = "com_github_fmtlib_fmt")
+bazel_dep(name = "grpc", version = "1.74.1", repo_name = "com_github_grpc_grpc")
+bazel_dep(name = "cpp-httplib", version = "0.22.0", repo_name = "com_github_httplib")
+bazel_dep(name = "protobuf", version = "32.0", repo_name = "com_google_protobuf")
+bazel_dep(name = "rules_cc", version = "0.2.2")
+bazel_dep(name = "skywalking-data-collect-protocol", repo_name = "skywalking_data_collect_protocol")
+git_override(
+    module_name = "skywalking-data-collect-protocol",
+    commit = "fb3fb005650e2489164978b7804117c7ade1529a",
+    remote = "https://github.com/apache/skywalking-data-collect-protocol.git",
+)
+
+bazel_dep(name = "spdlog", version = "1.10.0", repo_name = "com_github_gabime_spdlog")
+
+bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True, repo_name = "com_google_googletest")
+bazel_dep(name = "hedron_compile_commands", dev_dependency = True)
+git_override(
+    module_name = "hedron_compile_commands",
+    commit = "abb61a688167623088f8768cc9264798df6a9d10",
+    remote = "https://github.com/hedronvision/bazel-compile-commands-extractor.git",
+)

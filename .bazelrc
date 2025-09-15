@@ -1,8 +1,13 @@
+common --enable_bzlmod
+
 build --enable_platform_specific_config
 build --features=-supports_dynamic_linker
 build --copt="-Wall"
-build --copt="-Werror"
+build --cxxopt="-std=c++17"
+build --host_cxxopt="-std=c++17"
 build:windows --copt=/wd4716
+build:windows --cxxopt="/std:c++17"
+build:windows --host_cxxopt="/std:c++17"
 
 # Pass PATH variable from the environment
 build --action_env=PATH

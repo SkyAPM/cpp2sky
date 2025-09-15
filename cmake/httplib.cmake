@@ -17,7 +17,7 @@ elseif(HTTPLIB_FETCHCONTENT)
       include(add_FetchContent_MakeAvailable.cmake)
   endif()  
 
-  set(HTTPLIB_GIT_TAG  v0.7.15)
+  set(HTTPLIB_GIT_TAG  v0.22.0)
   set(HTTPLIB_GIT_URL  https://github.com/yhirose/cpp-httplib.git)
 
   FetchContent_Declare(

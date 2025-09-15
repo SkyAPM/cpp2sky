@@ -41,8 +41,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt -y install cmake
-          sudo git clone -b v9.1.0 https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
-          sudo git clone -b v1.46.6 https://github.com/grpc/grpc.git --recursive
+          sudo git clone https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
+          cd ./3rdparty/skywalking-data-collect-protocol && sudo git checkout fb3fb005650e2489164978b7804117c7ade1529a && cd ../..
+          sudo git clone -b v1.74.1 https://github.com/grpc/grpc.git --recursive
           sudo cmake -S ./grpc -B ./grpc/build
           sudo cmake --build ./grpc/build --parallel 8 --target install
           sudo cmake -S . -B ./build

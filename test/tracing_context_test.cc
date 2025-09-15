@@ -20,7 +20,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "external/skywalking_data_collect_protocol/language-agent/Tracing.pb.h"
+#include "language-agent/Tracing.pb.h"
 #include "mocks.h"
 #include "source/propagation_impl.h"
 #include "source/tracing_context_impl.h"

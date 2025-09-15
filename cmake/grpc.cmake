@@ -72,8 +72,8 @@ elseif(GRPC_FETCHCONTENT)
   include(FetchContent)
   FetchContent_Declare(
     grpc
-    URL https://github.com/grpc/grpc/archive/a3ae8e00a2c5553c806e83fae83e33f0198913f0.tar.gz
-    URL_HASH  SHA256=1ccc2056b68b81ada8df61310e03dfa0541c34821fd711654d0590a7321db9c8
+    URL https://github.com/grpc/grpc/archive/refs/tags/v1.74.1.tar.gz
+    URL_HASH  SHA256=7bf97c11cf3808d650a3a025bbf9c5f922c844a590826285067765dfd055d228
     )
   FetchContent_MakeAvailable(grpc)
  
