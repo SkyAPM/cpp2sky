@@ -1,5 +1,13 @@
 common --enable_bzlmod
 
+# CI-specific configuration
+build:ci --loading_phase_threads=1
+build:ci --jobs=2
+build:ci --verbose_failures
+build:ci --experimental_repository_cache_hardlinks
+build:ci --repository_cache=~/.cache/bazel/_bazel_runner/cache/repos/v1
+build:ci --disk_cache=~/.cache/bazel/_bazel_runner/cache/cas
+
 build --enable_platform_specific_config
 build --features=-supports_dynamic_linker
 build --copt="-Wall"
