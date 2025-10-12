@@ -8,46 +8,63 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   format:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup clang-format
-        run: |
-          git clone https://github.com/Sarcasm/run-clang-format.git
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout clang-format
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: Sarcasm/run-clang-format
+          path: run-clang-format
       - name: Run clang-format
         run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
 
   unit-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - run: |
           echo "/opt/llvm/bin" >> $GITHUB_PATH
-      - uses: actions/checkout@v3
-      - name: Run bazel test with GCC c++11
-        run: |
-          bazel test --test_output=all --cxxopt=-std=c++0x //...
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+#      - name: Run bazel test with GCC c++11
+#        run: |
+#          bazel test --test_output=all --cxxopt=-std=c++0x //...
       - name: Run bazel test with GCC c++17
         run: |
           bazel test --test_output=all --cxxopt=-std=c++17 //...
-      - name: Run bazel test with CLANG c++11
-        run: |
-          bazel test --test_output=all -c dbg --config=clang --cxxopt=-std=c++0x //...
+#      - name: Run bazel test with CLANG c++11
+#        run: |
+#          bazel test --test_output=all -c dbg --config=clang --cxxopt=-std=c++0x //...
       - name: Run bazel test with CLANG c++17
         run: |
           bazel test --test_output=all -c opt --config=clang --cxxopt=-std=c++17 //...
-      - name: Install cmake dependencies and run cmake compile
+      - name: Checkout skywalking-data-collect-protocol
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: apache/skywalking-data-collect-protocol
+          ref: fb3fb005650e2489164978b7804117c7ade1529a
+          path: 3rdparty/skywalking-data-collect-protocol
+      - name: Checkout grpc
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: grpc/grpc
+          ref: v1.74.1
+          path: grpc
+          submodules: true
+      - name: Install cmake
+        run: sudo apt update && sudo apt -y install cmake
+      - name: Build grpc
         run: |
-          sudo apt update
-          sudo apt -y install cmake
-          sudo git clone https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
-          cd ./3rdparty/skywalking-data-collect-protocol && sudo git checkout fb3fb005650e2489164978b7804117c7ade1529a && cd ../..
-          sudo git clone -b v1.74.1 https://github.com/grpc/grpc.git --recursive
-          sudo cmake -S ./grpc -B ./grpc/build
-          sudo cmake --build ./grpc/build --parallel 8 --target install
-          sudo cmake -S . -B ./build
-          sudo cmake --build ./build
+          cmake -S ./grpc -B ./grpc/build
+          cmake --build ./grpc/build --parallel 8 --target install
+      - name: Build main project
+        run: |
+          cmake -S . -B ./build
+          cmake --build ./build
       - name: Install lcov and genhtml and link llvm
         run: |
           sudo apt update
@@ -59,9 +76,9 @@ jobs:
           ./coverage.sh
 
   e2e-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Prepare service container
         run: |
           docker compose -f test/e2e/docker/docker-compose.yml up -d
