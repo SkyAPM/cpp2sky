@@ -82,12 +82,12 @@ jobs:
           
       - name: Build grpc
         run: |
-          sudo cmake -S ./grpc -B ./grpc/build -DCMAKE_CXX_STANDARD=17
+          sudo cmake -S ./grpc -B ./grpc/build
           sudo cmake --build ./grpc/build --parallel 8 --target install
           
       - name: Build main project
         run: |
-          sudo cmake -S . -B ./build -DCMAKE_CXX_STANDARD=17
+          sudo cmake -S . -B ./build
           sudo cmake --build ./build
 
       - name: Install lcov and genhtml and link llvm
