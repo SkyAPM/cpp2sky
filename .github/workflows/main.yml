@@ -65,7 +65,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: apache/skywalking-data-collect-protocol
-          ref: fb3fb005650e2489164978b7804117c7ade1529a
+          ref: a9ee9b1b2b9b3e74a152ebb8b61aac50934ac9ed
           path: 3rdparty/skywalking-data-collect-protocol
 
       - name: Checkout grpc

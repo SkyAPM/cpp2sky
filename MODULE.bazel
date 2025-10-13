@@ -12,7 +12,7 @@ bazel_dep(name = "rules_cc", version = "0.2.2")
 bazel_dep(name = "skywalking-data-collect-protocol", repo_name = "skywalking_data_collect_protocol")
 git_override(
     module_name = "skywalking-data-collect-protocol",
-    commit = "fb3fb005650e2489164978b7804117c7ade1529a",
+    commit = "a9ee9b1b2b9b3e74a152ebb8b61aac50934ac9ed",
     remote = "https://github.com/apache/skywalking-data-collect-protocol.git",
 )
 
