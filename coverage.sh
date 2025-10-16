@@ -4,7 +4,7 @@ set -e
 
 [[ -z "${SRCDIR}" ]] && SRCDIR="${PWD}"
 
-OUTPUT_DIR="./coverage_report/"
+OUTPUT_DIR="./coverage_report"
 DATA_DIR="${SRCDIR}/bazel-testlogs/"
 PROJECT=$(basename "${SRCDIR}")
 
