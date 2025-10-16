@@ -30,7 +30,7 @@ jobs:
       - name: Run clang-format
         run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
 
-  bazel-test:
+  unit-test:
     runs-on: ubuntu-22.04
     steps:
       - run: echo "/opt/llvm/bin" >> $GITHUB_PATH

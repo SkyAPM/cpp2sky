@@ -31,6 +31,7 @@ coverage --build_tests_only
 build:coverage --config=clang
 build:coverage --action_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1
 build:coverage --action_env=GCOV=llvm-profdata
+build:coverage --action_env=LLVM_COV=llvm-cov
 build:coverage --combined_report=lcov
 build:coverage --experimental_use_llvm_covmap
 build:coverage --experimental_generate_llvm_lcov
