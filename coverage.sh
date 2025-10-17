@@ -4,7 +4,7 @@ set -e
 
 [[ -z "${SRCDIR}" ]] && SRCDIR="${PWD}"
 
-OUTPUT_DIR="./coverage_report"
+OUTPUT_DIR="${SRCDIR}/coverage_report"
 DATA_DIR="${SRCDIR}/bazel-testlogs/"
 PROJECT=$(basename "${SRCDIR}")
 
@@ -32,7 +32,7 @@ rm -rf ${OUTPUT_DIR}
 mkdir -p ${OUTPUT_DIR}
 
 COVERAGE_DATA="${OUTPUT_DIR}/coverage.dat"
-cp bazel-out/_coverage/_coverage_report.dat "${COVERAGE_DATA}"
+cp "${SRCDIR}/bazel-out/_coverage/_coverage_report.dat" "${COVERAGE_DATA}"
 
 echo "Generating report..."
 
