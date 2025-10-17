@@ -64,8 +64,8 @@ jobs:
 
       - name: Install lcov and genhtml and link llvm
         run: |
-          sudo apt update
-          sudo apt -y install lcov
+          sudo apt-get update
+          sudo apt-get install -y lcov lld
           sudo ln -s /usr/bin/llvm-profdata-16 /usr/bin/llvm-profdata
           sudo ln -s /usr/bin/llvm-cov-16 /usr/bin/llvm-cov
 
@@ -125,7 +125,8 @@ jobs:
 
       - name: Install cmake dependencies and run cmake compile
         run: |
-          sudo apt update && sudo apt -y install cmake build-essential
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
           sudo cmake -S ./grpc -B ./grpc/build
           sudo cmake --build ./grpc/build --parallel 8 --target install
           sudo cmake -S . -B ./build
@@ -137,7 +138,8 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Prepare service container
-        run: docker compose -f test/e2e/docker/docker-compose.yml up -d
+        run: |
+          docker compose -f test/e2e/docker/docker-compose.yml up -d
 
       - name: Run e2e
         run: |
