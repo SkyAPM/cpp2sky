@@ -36,7 +36,7 @@ COVERAGE_DATA="${BAZEL_OUTPUT_PATH}/_coverage/_coverage_report.dat"
 
 echo "Generating report..."
 
-genhtml --title ${PROJECT} --ignore-errors "source,unsupported" --output-directory "${OUTPUT_DIR}" "${COVERAGE_DATA}"
+genhtml --title ${PROJECT} --ignore-errors "source" --output-directory "${OUTPUT_DIR}" "${COVERAGE_DATA}"
 tar -zcf ${PROJECT}_coverage.tar.gz ${OUTPUT_DIR}
 mv ${PROJECT}_coverage.tar.gz ${OUTPUT_DIR}
 
