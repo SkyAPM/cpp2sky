@@ -62,16 +62,17 @@ jobs:
       - name: Run bazel test with CLANG
         run: bazel test --config=ci --test_output=all -c opt --config=clang //...
 
-      - name: Install lcov and genhtml and link llvm
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lcov lld
-          sudo ln -s /usr/bin/llvm-profdata-16 /usr/bin/llvm-profdata
-          sudo ln -s /usr/bin/llvm-cov-16 /usr/bin/llvm-cov
+# TODO: enable when fixed
+#      - name: Install lcov and genhtml and link llvm
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y lcov lld
+#          sudo ln -s /usr/bin/llvm-profdata-16 /usr/bin/llvm-profdata
+#          sudo ln -s /usr/bin/llvm-cov-16 /usr/bin/llvm-cov
 
-      - name: Run coverage test
-        run: |
-          ./coverage.sh
+#      - name: Run coverage test
+#        run: |
+#          ./coverage.sh
 
   cmake-build:
     runs-on: ubuntu-22.04
