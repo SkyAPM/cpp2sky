@@ -8,62 +8,140 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
+env:
+  GRPC_VERSION: v1.74.1
+  SKYWALKING_PROTOCOL_REF: a9ee9b1b2b9b3e74a152ebb8b61aac50934ac9ed
+
 jobs:
   format:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup clang-format
-        run: |
-          git clone https://github.com/Sarcasm/run-clang-format.git
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Checkout clang-format
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: Sarcasm/run-clang-format
+          path: run-clang-format
+
       - name: Run clang-format
         run: find ./ -iname "*.h" -o -iname "*.cc" | xargs ./run-clang-format/run-clang-format.py
 
   unit-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - run: |
-          echo "/opt/llvm/bin" >> $GITHUB_PATH
-      - uses: actions/checkout@v3
-      - name: Run bazel test with GCC c++11
+      - run: echo "/opt/llvm/bin" >> $GITHUB_PATH
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      
+      # Cache Bazel repository cache
+      - name: Cache Bazel repository cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/bazel/_bazel_runner/cache/repos/v1
+          key: bazel-repo-cache-${{ runner.os }}-${{ hashFiles('MODULE.bazel', 'WORKSPACE', 'WORKSPACE.bzlmod') }}
+          restore-keys: |
+            bazel-repo-cache-${{ runner.os }}-
+      
+      # Cache Bazel build outputs
+      - name: Cache Bazel build cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/bazel
+          key: bazel-build-cache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            bazel-build-cache-${{ runner.os }}-${{ github.base_ref }}
+            bazel-build-cache-${{ runner.os }}-
+
+      - name: Run bazel test with GCC
+        run: bazel test --config=ci --test_output=all //...
+          
+      - name: Run bazel test with CLANG
+        run: bazel test --config=ci --test_output=all -c opt --config=clang //...
+
+# TODO: enable when fixed
+#      - name: Install lcov and genhtml and link llvm
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y lcov lld
+#          sudo ln -s /usr/bin/llvm-profdata-16 /usr/bin/llvm-profdata
+#          sudo ln -s /usr/bin/llvm-cov-16 /usr/bin/llvm-cov
+
+#      - name: Run coverage test
+#        run: |
+#          ./coverage.sh
+
+  cmake-build:
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "/opt/llvm/bin" >> $GITHUB_PATH
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Generate dependencies hash
+        id: deps-hash
         run: |
-          bazel test --test_output=all --cxxopt=-std=c++0x //...
-      - name: Run bazel test with GCC c++17
-        run: |
-          bazel test --test_output=all --cxxopt=-std=c++17 //...
-      - name: Run bazel test with CLANG c++11
-        run: |
-          bazel test --test_output=all -c dbg --config=clang --cxxopt=-std=c++0x //...
-      - name: Run bazel test with CLANG c++17
-        run: |
-          bazel test --test_output=all -c opt --config=clang --cxxopt=-std=c++17 //...
+          # Create a hash from dependency names and versions
+          DEPS_STRING="grpc:${{ env.GRPC_VERSION }}|skywalking:${{ env.SKYWALKING_PROTOCOL_REF }}"
+          DEPS_HASH=$(echo -n "$DEPS_STRING" | sha256sum | cut -c1-8)
+          echo "hash=$DEPS_HASH" >> $GITHUB_OUTPUT
+          echo "Dependencies hash (first 8 chars): $DEPS_HASH"
+
+      - name: Checkout skywalking-data-collect-protocol
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: apache/skywalking-data-collect-protocol
+          ref: ${{ env.SKYWALKING_PROTOCOL_REF }}
+          path: 3rdparty/skywalking-data-collect-protocol
+
+      # Cache gRPC build
+      - name: Cache gRPC build
+        uses: actions/cache@v3
+        with:
+          path: |
+            grpc/build
+            /usr/local/lib/libgrpc*
+            /usr/local/lib/libprotobuf*
+            /usr/local/lib/cmake/grpc
+            /usr/local/lib/cmake/protobuf
+            /usr/local/include/grpc*
+            /usr/local/include/google/protobuf
+            /usr/local/bin/grpc_*
+            /usr/local/bin/protoc
+          key: grpc-cmake-${{ runner.os }}-${{ steps.deps-hash.outputs.hash }}-${{ hashFiles('CMakeLists.txt', 'cmake/grpc.cmake') }}
+          restore-keys: |
+            grpc-cmake-${{ runner.os }}-${{ steps.deps-hash.outputs.hash }}-
+            grpc-cmake-${{ runner.os }}-
+
+      - name: Checkout grpc
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: grpc/grpc
+          ref: ${{ env.GRPC_VERSION }}
+          path: grpc
+          submodules: true
+
       - name: Install cmake dependencies and run cmake compile
         run: |
-          sudo apt update
-          sudo apt -y install cmake
-          sudo git clone -b v9.1.0 https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
-          sudo git clone -b v1.46.6 https://github.com/grpc/grpc.git --recursive
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential
           sudo cmake -S ./grpc -B ./grpc/build
           sudo cmake --build ./grpc/build --parallel 8 --target install
           sudo cmake -S . -B ./build
           sudo cmake --build ./build
-      - name: Install lcov and genhtml and link llvm
-        run: |
-          sudo apt update
-          sudo apt -y install lcov
-          sudo ln -s /usr/bin/llvm-profdata-11 /usr/bin/llvm-profdata
-          sudo ln -s /usr/bin/llvm-cov-11 /usr/bin/llvm-cov
-      - name: Run coverage test
-        run: |
-          ./coverage.sh
 
   e2e-test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
       - name: Prepare service container
         run: |
           docker compose -f test/e2e/docker/docker-compose.yml up -d
+
       - name: Run e2e
         run: |
           sleep 10

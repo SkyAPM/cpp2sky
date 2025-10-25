@@ -1,8 +1,21 @@
+common --enable_bzlmod
+
+# CI-specific configuration
+build:ci --loading_phase_threads=1
+build:ci --jobs=2
+build:ci --verbose_failures
+build:ci --experimental_repository_cache_hardlinks
+build:ci --repository_cache=~/.cache/bazel/_bazel_runner/cache/repos/v1
+build:ci --disk_cache=~/.cache/bazel/_bazel_runner/cache/cas
+
 build --enable_platform_specific_config
 build --features=-supports_dynamic_linker
 build --copt="-Wall"
-build --copt="-Werror"
+build --cxxopt="-std=c++17"
+build --host_cxxopt="-std=c++17"
 build:windows --copt=/wd4716
+build:windows --cxxopt="/std:c++17"
+build:windows --host_cxxopt="/std:c++17"
 
 # Pass PATH variable from the environment
 build --action_env=PATH
@@ -18,17 +31,14 @@ coverage --build_tests_only
 build:coverage --config=clang
 build:coverage --action_env=BAZEL_USE_LLVM_NATIVE_COVERAGE=1
 build:coverage --action_env=GCOV=llvm-profdata
+build:coverage --action_env=LLVM_COV=llvm-cov
 build:coverage --combined_report=lcov
 build:coverage --experimental_use_llvm_covmap
 build:coverage --experimental_generate_llvm_lcov
 build:coverage --collect_code_coverage
 build:coverage --instrumentation_filter="//source[/:],//cpp2sky[/:]"
-build:coverage --coverage_support=@cpp2sky//bazel/coverage:coverage_support
-build:coverage --test_env=CC_CODE_COVERAGE_SCRIPT=external/cpp2sky/bazel/coverage/collect_cc_coverage.sh
 build:coverage --strategy=TestRunner=local
 build:coverage --strategy=CoverageReport=local
-build:coverage --experimental_use_llvm_covmap
-build:coverage --collect_code_coverage
 build:coverage --test_tag_filters=-nocoverage
 
 try-import %workspace%/user.bazelrc

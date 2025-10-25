@@ -5,7 +5,7 @@ if(POLICY CMP0091)
 endif()
 
 project(cpp2sky
-    VERSION 0.5.1
+    VERSION 0.6.1
     DESCRIPTION "Distributed tracing and monitor SDK in CPP for Apache SkyWalking APM"
     HOMEPAGE_URL "https://github.com/SkyAPM/cpp2sky"
 )
@@ -19,7 +19,7 @@ option(GENERATE_CPP2SKY_PKGCONFIG  "Generate and install pkg-config files for UN
 
 
 if(OVERRIDE_CXX_STANDARD_FLAGS)
-    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 

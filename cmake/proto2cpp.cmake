@@ -72,15 +72,17 @@ else()
 endif()
 
 # compile skywalking-data-collect-protocol/*.proto
+# First compile common proto files (dependencies)
+set(NEED_GRPC_SERVICE OFF)
+set(PROTOC_FILES common/Common.proto common/Command.proto)
+set(PROTOC_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skywalking-data-collect-protocol")
+PROTOBUF_GENERATE_CPP(SDC_PROTO_SRCS SDC_PROTO_HDRS ${PROTOC_BASE_DIR} ${NEED_GRPC_SERVICE} ${PROTOC_FILES})
+
+# Then compile service proto files (depend on common)
 set(NEED_GRPC_SERVICE ON)
 set(PROTOC_FILES language-agent/Tracing.proto language-agent/ConfigurationDiscoveryService.proto)
 set(PROTOC_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skywalking-data-collect-protocol")
 PROTOBUF_GENERATE_CPP(SERVICE_PROTO_SRCS SERVICE_PROTO_HDRS ${PROTOC_BASE_DIR} ${NEED_GRPC_SERVICE} ${PROTOC_FILES})
-
-set(NEED_GRPC_SERVICE OFF)
-set(PROTOC_FILES common/Common.proto)
-set(PROTOC_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/skywalking-data-collect-protocol")
-PROTOBUF_GENERATE_CPP(SDC_PROTO_SRCS SDC_PROTO_HDRS ${PROTOC_BASE_DIR} ${NEED_GRPC_SERVICE} ${PROTOC_FILES})
 
 
 # compile config.proto
@@ -98,6 +100,7 @@ add_library(proto_lib STATIC
     ${SERVICE_PROTO_HDRS}
 )
 target_include_directories(proto_lib PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/skywalking-protocol)
+target_link_libraries(proto_lib PUBLIC ${_PROTOBUF_LIBPROTOBUF})
 
 install(TARGETS proto_lib 
     RUNTIME  DESTINATION  ${CMAKE_INSTALL_BINDIR}

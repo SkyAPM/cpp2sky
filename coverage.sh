@@ -4,7 +4,7 @@ set -e
 
 [[ -z "${SRCDIR}" ]] && SRCDIR="${PWD}"
 
-OUTPUT_DIR="./coverage_report/"
+OUTPUT_DIR="${SRCDIR}/coverage_report"
 DATA_DIR="${SRCDIR}/bazel-testlogs/"
 PROJECT=$(basename "${SRCDIR}")
 
@@ -26,17 +26,17 @@ echo "    DATA_DIR=${DATA_DIR}"
 echo "    TARGETS=${COVERAGE_TARGETS}"
 
 echo "Generating coverage data..."
-bazel coverage ${COVERAGE_TARGETS} --test_output=errors
+bazel coverage --config=ci ${COVERAGE_TARGETS} --test_output=errors
 
 rm -rf ${OUTPUT_DIR}
 mkdir -p ${OUTPUT_DIR}
 
-COVERAGE_DATA="${OUTPUT_DIR}/coverage.dat"
-cp bazel-out/_coverage/_coverage_report.dat "${COVERAGE_DATA}"
+BAZEL_OUTPUT_PATH=$(bazel info output_path 2>/dev/null)
+COVERAGE_DATA="${BAZEL_OUTPUT_PATH}/_coverage/_coverage_report.dat"
 
 echo "Generating report..."
 
-genhtml --title ${PROJECT} --ignore-errors "source" ${COVERAGE_DATA} -o "${OUTPUT_DIR}"
+genhtml --title ${PROJECT} --ignore-errors "source" --output-directory "${OUTPUT_DIR}" "${COVERAGE_DATA}"
 tar -zcf ${PROJECT}_coverage.tar.gz ${OUTPUT_DIR}
 mv ${PROJECT}_coverage.tar.gz ${OUTPUT_DIR}
 
