@@ -16,9 +16,9 @@ def skywalking_data_collect_protocol():
         name = "skywalking_data_collect_protocol",
         sha256 = "50f760006df9d3dec4426a190b9d5c1dfe2c723728d19a63393e6a0f63e7d824",
         urls = [
-            "https://github.com/apache/skywalking-data-collect-protocol/archive/a9ee9b1b2b9b3e74a152ebb8b61aac50934ac9ed.tar.gz",
+            "https://github.com/apache/skywalking-data-collect-protocol/archive/refs/tags/v10.3.0.tar.gz",
         ],
-        strip_prefix = "skywalking-data-collect-protocol-a9ee9b1b2b9b3e74a152ebb8b61aac50934ac9ed",
+        strip_prefix = "skywalking-data-collect-protocol-10.3.0",
     )
 
 def com_github_grpc_grpc():

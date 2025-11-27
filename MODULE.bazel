@@ -9,13 +9,7 @@ bazel_dep(name = "grpc", version = "1.74.1", repo_name = "com_github_grpc_grpc")
 bazel_dep(name = "cpp-httplib", version = "0.22.0", repo_name = "com_github_httplib")
 bazel_dep(name = "protobuf", version = "32.0", repo_name = "com_google_protobuf")
 bazel_dep(name = "rules_cc", version = "0.2.2")
-bazel_dep(name = "skywalking-data-collect-protocol", repo_name = "skywalking_data_collect_protocol")
-git_override(
-    module_name = "skywalking-data-collect-protocol",
-    commit = "a9ee9b1b2b9b3e74a152ebb8b61aac50934ac9ed",
-    remote = "https://github.com/apache/skywalking-data-collect-protocol.git",
-)
-
+bazel_dep(name = "skywalking-data-collect-protocol", version = "10.3.0", repo_name = "skywalking_data_collect_protocol")
 bazel_dep(name = "spdlog", version = "1.10.0", repo_name = "com_github_gabime_spdlog")
 
 bazel_dep(name = "googletest", version = "1.17.0", dev_dependency = True, repo_name = "com_google_googletest")
