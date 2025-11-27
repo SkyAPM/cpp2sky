@@ -24,6 +24,27 @@ if(MSVC)
 endif()
  
 find_package(Threads REQUIRED)
+# Auto-detect gRPC submodule if the top-level didn't set the option
+if(NOT DEFINED GRPC_AS_SUBMODULE)
+  if(EXISTS "${CMAKE_SOURCE_DIR}/3rdparty/grpc")
+    set(GRPC_AS_SUBMODULE ON CACHE BOOL "Use gRPC as submodule (auto-detected)")
+    if(NOT DEFINED GRPC_FETCHCONTENT)
+      # Prefer submodule when present: disable FetchContent unless user explicitly requested it
+      set(GRPC_FETCHCONTENT OFF CACHE BOOL "Disable FetchContent since submodule is present")
+    endif()
+  else()
+    set(GRPC_AS_SUBMODULE OFF CACHE BOOL "Use gRPC as a git submodule under 3rdparty/grpc")
+    if(NOT DEFINED GRPC_FETCHCONTENT)
+      # Fallback: enable FetchContent when submodule absent
+      set(GRPC_FETCHCONTENT ON CACHE BOOL "Use FetchContent (fallback)")
+    endif()
+  endif()
+endif()
+
+# Sanity check for conflicting options (user-provided flags only)
+if(GRPC_AS_SUBMODULE AND GRPC_FETCHCONTENT)
+  message(FATAL_ERROR "Conflicting options: GRPC_AS_SUBMODULE and GRPC_FETCHCONTENT are both ON. Choose one.")
+endif()
  
 if(GRPC_AS_SUBMODULE)
   # One way to build a projects that uses gRPC is to just include the
@@ -45,9 +66,18 @@ if(GRPC_AS_SUBMODULE)
   # in a git submodule called "third_party/grpc", but this example lives in
   # the same repository as gRPC sources, so we just look a few directories up)
   if(NOT GRPC_ROOT_DIR)
-    set(GRPC_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/grpc)
+    set(GRPC_ROOT_DIR "${CMAKE_SOURCE_DIR}/3rdparty/grpc")
   endif()
-  add_subdirectory(${GRPC_ROOT_DIR} 3rdparty/grpc)
+  # When building gRPC as a subdirectory, disable protobuf's install() export
+  # and tests by default to avoid protobuf trying to create an install export
+  # that references Abseil targets which are not part of the export set.
+  if(NOT DEFINED protobuf_INSTALL)
+    set(protobuf_INSTALL OFF CACHE BOOL "Disable protobuf install when built as submodule")
+  endif()
+  if(NOT DEFINED protobuf_BUILD_TESTS)
+    set(protobuf_BUILD_TESTS OFF CACHE BOOL "Disable protobuf tests when built as submodule")
+  endif()
+  add_subdirectory("${GRPC_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/grpc")
   message(STATUS "Using gRPC via add_subdirectory.")
   # After using add_subdirectory, we can now use the grpc targets directly from
   # this build.
@@ -68,17 +98,44 @@ elseif(GRPC_FETCHCONTENT)
   # Another way is to use CMake's FetchContent module to clone gRPC at
   # configure time. This makes gRPC's source code available to your project,
   # similar to a git submodule.
-  message(STATUS "Using gRPC via add_subdirectory (FetchContent).")
+  message(STATUS "Using gRPC via FetchContent (git clone).")
   include(FetchContent)
+
+  set(GRPC_GIT_URL https://github.com/grpc/grpc.git)
+  set(GRPC_GIT_TAG v1.74.1)
+
   FetchContent_Declare(
     grpc
-    URL https://github.com/grpc/grpc/archive/refs/tags/v1.74.1.tar.gz
-    URL_HASH  SHA256=7bf97c11cf3808d650a3a025bbf9c5f922c844a590826285067765dfd055d228
+    GIT_REPOSITORY ${GRPC_GIT_URL}
+    GIT_TAG        ${GRPC_GIT_TAG}
+  )
+
+  # Populate the content so we can initialize nested submodules if present,
+  # then add_subdirectory from the populated source dir.
+  FetchContent_GetProperties(grpc)
+  if(NOT grpc_POPULATED)
+    FetchContent_Populate(grpc)
+    find_package(Git REQUIRED)
+    execute_process(
+      COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+      WORKING_DIRECTORY ${grpc_SOURCE_DIR}
+      RESULT_VARIABLE _grpc_submod_result
+      OUTPUT_QUIET
+      ERROR_QUIET
     )
-  FetchContent_MakeAvailable(grpc)
- 
-  # Since FetchContent uses add_subdirectory under the hood, we can use
-  # the grpc targets directly from this build.
+    # Same safeguard when populating gRPC via FetchContent: prevent protobuf
+    # from registering install exports that reference Abseil-only targets.
+    if(NOT DEFINED protobuf_INSTALL)
+      set(protobuf_INSTALL OFF CACHE BOOL "Disable protobuf install when built via FetchContent")
+    endif()
+    if(NOT DEFINED protobuf_BUILD_TESTS)
+      set(protobuf_BUILD_TESTS OFF CACHE BOOL "Disable protobuf tests when built via FetchContent")
+    endif()
+    add_subdirectory(${grpc_SOURCE_DIR} ${grpc_BINARY_DIR})
+  endif()
+
+  # Since we used add_subdirectory, we can use the grpc targets directly from
+  # this build.
   set(_PROTOBUF_LIBPROTOBUF libprotobuf)
   set(_REFLECTION grpc++_reflection)
   set(_PROTOBUF_PROTOC $<TARGET_FILE:protoc>)

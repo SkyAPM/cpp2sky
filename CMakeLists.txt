@@ -10,13 +10,14 @@ project(cpp2sky
     HOMEPAGE_URL "https://github.com/SkyAPM/cpp2sky"
 )
 
-option(OVERRIDE_CXX_STANDARD_FLAGS "Force building with -std=c++11 even if the CXXFLAGS are configured differently" ON)
-option(SPDLOG_FETCHCONTENT         "Using spdlog FetchContent to build" ON)
-option(FMTLIB_FETCHCONTENT         "Using fmt FetchContent to build" ON)
-option(HTTPLIB_FETCHCONTENT        "Using httplib FetchContent to build" ON)
 option(CPP2SKY_INSTALL             "Generate the install target." OFF)
+option(FMTLIB_FETCHCONTENT         "Using fmt FetchContent to build" OFF)
 option(GENERATE_CPP2SKY_PKGCONFIG  "Generate and install pkg-config files for UNIX" OFF)
-
+option(GRPC_FETCHCONTENT           "Using gRPC FetchContent to build" OFF)
+option(HTTPLIB_FETCHCONTENT        "Using httplib FetchContent to build" OFF)
+option(OVERRIDE_CXX_STANDARD_FLAGS "Force building with -std=c++11 even if the CXXFLAGS are configured differently" ON)
+option(SKYWALKING_FETCHCONTENT     "Using skywalking-data-collect-protocol FetchContent to build" OFF)
+option(SPDLOG_FETCHCONTENT         "Using spdlog FetchContent to build" OFF)
 
 if(OVERRIDE_CXX_STANDARD_FLAGS)
     set(CMAKE_CXX_STANDARD 17)
@@ -46,6 +47,7 @@ include(fmtlib)
 include(spdlog)
 include(httplib)
 include(grpc)
+include(skywalking)
 include(proto2cpp)
 
 target_link_libraries(${PROJECT_NAME}

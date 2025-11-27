@@ -5,10 +5,31 @@ if(MSVC)
 endif()
  
 find_package(Threads REQUIRED)
+## Auto-detect httplib submodule if top-level didn't set the option
+if(NOT DEFINED HTTPLIB_AS_SUBMODULE)
+  # using submodule in case of git clone timeout
+  if(EXISTS "${CMAKE_SOURCE_DIR}/3rdparty/httplib/CMakeLists.txt")
+    set(HTTPLIB_AS_SUBMODULE ON CACHE BOOL "Use httplib as submodule (auto-detected)")
+    if(NOT DEFINED HTTPLIB_FETCHCONTENT)
+      # Prefer submodule when present: disable FetchContent unless user explicitly requested it
+      set(HTTPLIB_FETCHCONTENT OFF CACHE BOOL "Disable FetchContent since submodule is present")
+    endif()
+  else()
+    set(HTTPLIB_AS_SUBMODULE OFF CACHE BOOL "Use httplib as a git submodule under 3rdparty/httplib")
+    if(NOT DEFINED HTTPLIB_FETCHCONTENT)
+      # Fallback: enable FetchContent when submodule absent
+      set(HTTPLIB_FETCHCONTENT ON CACHE BOOL "Use FetchContent (fallback)")
+    endif()
+  endif()
+endif()
+
+# Sanity check for conflicting options (user-provided flags only)
+if(HTTPLIB_AS_SUBMODULE AND HTTPLIB_FETCHCONTENT)
+  message(FATAL_ERROR "Conflicting options: HTTPLIB_AS_SUBMODULE and HTTPLIB_FETCHCONTENT are both ON. Choose one.")
+endif()
 
 if(HTTPLIB_AS_SUBMODULE)
-  # using submodule in case of git clone timeout 
-  add_subdirectory(3rdparty/httplib ${CMAKE_CURRENT_BINARY_DIR}/httplib)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/3rdparty/httplib" "${CMAKE_CURRENT_BINARY_DIR}/httplib")
   message(STATUS "Using httplib via add_subdirectory.")
 elseif(HTTPLIB_FETCHCONTENT)
   # using FetchContent to install spdlog

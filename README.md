@@ -33,14 +33,135 @@ cc_binary(
 
 #### Cmake
 
-You can compile this project, according to the following steps:
+You can compile this project in one of three supported ways (submodule-first is recommended):
+
+- Recommended — Submodule-first (most reproducible):
+
+```bash
+git clone --recurse-submodules git@github.com:SkyAPM/cpp2sky.git
+git submodule update --init --recursive
 ```
-step 01: git clone git@github.com:SkyAPM/cpp2sky.git
-step 02: git clone -b v9.1.0 https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
-step 03: git clone -b v1.46.6 https://github.com/grpc/grpc.git --recursive
-step 04: cmake -S ./grpc -B ./grpc/build && cmake --build ./grpc/build --parallel 8 --target install
-step 05: cmake -S . -B ./build && cmake --build ./build
+
+This repository pins several third-party dependencies under `3rdparty/` (example: `spdlog`, `fmt`, `httplib`, `skywalking-data-collect-protocol`). The top-level CMake will auto-detect these submodules and use them via `add_subdirectory()`.
+
+ - FetchContent fallback (automatic clone at configure time):
+
+If a submodule is not present, CMake can automatically download the dependency at configure time using FetchContent. This is controlled by CMake options of the form `-D<LIB>_FETCHCONTENT=ON`.
+
+Important: this project now defaults `*_FETCHCONTENT` to `OFF` to favour a submodule-first workflow (reproducible builds). Each dependency module will auto-detect a local `3rdparty/<lib>` submodule and, unless you explicitly set the corresponding `-D` option, enable the submodule and only enable FetchContent as a fallback when the submodule is absent.
+
+FetchContent is declared uniformly using `GIT_REPOSITORY` + `GIT_TAG` where possible so the build can be pinned to a tag or an exact commit SHA. We strongly encourage this pattern because it makes bumps and temporary testing against a branch/commit straightforward.
+
+Recommended FetchContent pattern (preferred)
+
+```cmake
+# variables make bumps easy and visible in the cmake file
+set(FMTLIB_GIT_URL https://github.com/fmtlib/fmt.git)
+set(FMTLIB_GIT_TAG  8.1.1)           # or a commit SHA like `d6a5b8f...`
+
+FetchContent_Declare(
+  fmtlib
+  GIT_REPOSITORY ${FMTLIB_GIT_URL}
+  GIT_TAG        ${FMTLIB_GIT_TAG}
+)
+FetchContent_MakeAvailable(fmtlib)
 ```
+
+Why this is useful
+- `GIT_TAG` accepts tags, branches or a full commit SHA — use a SHA to pin an exact commit that isn't tagged.
+- Using named variables (`*_GIT_URL`, `*_GIT_TAG`) makes automated bump scripts and review diffs clearer.
+
+Notes on projects with nested submodules
+- Some repositories (notably gRPC) include their own git submodules. For those projects we recommend either:
+  - Use the release archive (`URL` + `URL_HASH`) which avoids nested submodule handling, or
+  - Use `GIT_REPOSITORY` + `GIT_TAG` but initialize nested submodules after `FetchContent_Populate`:
+
+```cmake
+FetchContent_GetProperties(grpc)
+if(NOT grpc_POPULATED)
+  FetchContent_Populate(grpc)
+  execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                  WORKING_DIRECTORY ${grpc_SOURCE_DIR})
+  add_subdirectory(${grpc_SOURCE_DIR} ${grpc_BINARY_DIR})
+endif()
+```
+
+In this repository we prefer the archive approach for gRPC in CI for simplicity, but the git+tag approach is supported and useful for local testing or when you need to pin to a commit SHA.
+
+If you need to force FetchContent for any dependency (for example, to debug or when you prefer not to initialize submodules), you can pass `-D<LIB>_FETCHCONTENT=ON` on the `cmake` command line. If you pass conflicting options (both `-D<LIB>_AS_SUBMODULE=ON` and `-D<LIB>_FETCHCONTENT=ON`) CMake will stop with a helpful error and you must choose one.
+
+For SkyWalking you can enable FetchContent with:
+
+```bash
+cmake -DSKYWALKING_FETCHCONTENT=ON -S . -B build
+cmake --build build
+```
+
+- Explicit path (developer workflow):
+
+If you already have a local checkout of `skywalking-data-collect-protocol`, point CMake to it:
+
+```bash
+cmake -DSKYWALKING_PROTOCOL_PATH=/path/to/skywalking-data-collect-protocol -S . -B build
+cmake --build build
+```
+
+Notes about dependencies with special handling
+
+Most third-party dependencies follow the same pattern: prefer the pinned submodule under `3rdparty/` (submodule-first) and fall back to `FetchContent` at configure time when the submodule is not present. See the top-level `CMakeLists.txt` and the modules in `cmake/` for details.
+
+There are two cases worth calling out because their consumption/build steps differ slightly:
+
+- gRPC
+
+  gRPC is not header-only and typically needs configuration and a build step (or its targets must be available via `find_package`). This repository includes a pinned copy of gRPC at `3rdparty/grpc` (tag `v1.74.1`) so builds are reproducible. CI is configured to build gRPC from that submodule.
+
+  To build gRPC locally from the submodule and install it for the rest of the project:
+
+  ```bash
+  # initialize submodules (if you haven't already)
+  git submodule update --init --recursive
+
+  # install build deps
+  sudo apt-get update
+  sudo apt-get install -y cmake build-essential
+
+  # configure & install gRPC from the submodule
+  cmake -S 3rdparty/grpc -B 3rdparty/grpc/build
+  cmake --build 3rdparty/grpc/build --parallel 8 --target install
+
+  # configure & build cpp2sky
+  cmake -S . -B build
+  cmake --build build --parallel $(nproc)
+  ```
+
+  If you prefer not to use the submodule you can still clone and build gRPC separately and make its CMake targets available to the project, but using the pinned submodule is recommended for reproducibility.
+
+- skywalking-data-collect-protocol (protobufs)
+
+  The SkyWalking protocol repository contains the protobuf definitions used to generate code for the project. The `cmake/skywalking.cmake` module sets `SKYWALKING_PROTOCOL_PATH` when the `3rdparty/skywalking-data-collect-protocol` submodule is present so the proto generation step can locate the `.proto` files.
+
+  You can override that behavior by supplying an explicit path:
+
+  ```bash
+  cmake -DSKYWALKING_PROTOCOL_PATH=/path/to/skywalking-data-collect-protocol -S . -B build
+  cmake --build build
+  ```
+
+  Alternatively, enable FetchContent for SkyWalking with `-DSKYWALKING_FETCHCONTENT=ON` to let CMake fetch the proto repo at configure time.
+
+How to bump a submodule (example for skywalking-data-collect-protocol):
+```bash
+cd 3rdparty/skywalking-data-collect-protocol
+git fetch --tags
+git checkout tags/v10.4.0    # or a specific commit
+cd ../..
+git add 3rdparty/skywalking-data-collect-protocol
+git commit -m "Pin skywalking-data-collect-protocol to v10.4.0"
+git push
+```
+
+If you prefer CI to always fetch the latest submodules, ensure the workflow initializes submodules (this repo's CI uses `actions/checkout` with `submodules: 'recursive'`).
 
 You can also use find_package to get target libary in your project. Like this:
 ```

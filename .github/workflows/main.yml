@@ -80,6 +80,9 @@ jobs:
       - run: echo "/opt/llvm/bin" >> $GITHUB_PATH
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          submodules: 'recursive'
+          fetch-depth: 0
 
       - name: Generate dependencies hash
         id: deps-hash
@@ -90,19 +93,12 @@ jobs:
           echo "hash=$DEPS_HASH" >> $GITHUB_OUTPUT
           echo "Dependencies hash (first 8 chars): $DEPS_HASH"
 
-      - name: Checkout skywalking-data-collect-protocol
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: apache/skywalking-data-collect-protocol
-          ref: ${{ env.SKYWALKING_PROTOCOL_REF }}
-          path: 3rdparty/skywalking-data-collect-protocol
-
       # Cache gRPC build
       - name: Cache gRPC build
         uses: actions/cache@v3
         with:
           path: |
-            grpc/build
+            3rdparty/grpc/build
             /usr/local/lib/libgrpc*
             /usr/local/lib/libprotobuf*
             /usr/local/lib/cmake/grpc
@@ -115,21 +111,12 @@ jobs:
           restore-keys: |
             grpc-cmake-${{ runner.os }}-${{ steps.deps-hash.outputs.hash }}-
             grpc-cmake-${{ runner.os }}-
-
-      - name: Checkout grpc
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: grpc/grpc
-          ref: ${{ env.GRPC_VERSION }}
-          path: grpc
-          submodules: true
-
       - name: Install cmake dependencies and run cmake compile
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake build-essential
-          sudo cmake -S ./grpc -B ./grpc/build
-          sudo cmake --build ./grpc/build --parallel 8 --target install
+          sudo cmake -S ./3rdparty/grpc -B ./3rdparty/grpc/build
+          sudo cmake --build ./3rdparty/grpc/build --parallel 8 --target install
           sudo cmake -S . -B ./build
           sudo cmake --build ./build
 
