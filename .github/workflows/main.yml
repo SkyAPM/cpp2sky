@@ -13,7 +13,7 @@ permissions:
 
 env:
   GRPC_VERSION: v1.74.1
-  SKYWALKING_PROTOCOL_REF: a9ee9b1b2b9b3e74a152ebb8b61aac50934ac9ed
+  SKYWALKING_PROTOCOL_REF: v10.3.0
 
 jobs:
   format:
