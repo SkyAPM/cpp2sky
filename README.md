@@ -2,7 +2,7 @@
 
 ![cpp2sky test](https://github.com/SkyAPM/cpp2sky/workflows/cpp2sky%20test/badge.svg)
 
-Distributed tracing and monitor SDK in CPP for Apache SkyWalking APM. This SDK is compatible with C++ 17, C++ 14, and C++ 11.
+Distributed tracing and monitor SDK in CPP for Apache SkyWalking APM. This SDK requires C++17 or later.
 
 ## Build
 
@@ -36,8 +36,8 @@ cc_binary(
 You can compile this project, according to the following steps:
 ```
 step 01: git clone git@github.com:SkyAPM/cpp2sky.git
-step 02: git clone -b v9.1.0 https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
-step 03: git clone -b v1.46.6 https://github.com/grpc/grpc.git --recursive
+step 02: git clone -b v10.3.0 https://github.com/apache/skywalking-data-collect-protocol.git ./3rdparty/skywalking-data-collect-protocol
+step 03: git clone -b v1.74.1 https://github.com/grpc/grpc.git --recursive
 step 04: cmake -S ./grpc -B ./grpc/build && cmake --build ./grpc/build --parallel 8 --target install
 step 05: cmake -S . -B ./build && cmake --build ./build
 ```
@@ -54,8 +54,8 @@ pkg_check_modules(CPP2SKY_PKG REQUIRED cpp2sky)
 ```
 
 Note:
-- If you want to build this project over c11, you must update grpc version(current version:v1.46.6).
-- Only test cmake using Centos and Ubuntu.
+- This project requires C++17 or later (enforced by gRPC v1.74.1 dependency).
+- CMake builds are tested on Ubuntu and CentOS.
 
 #### Develop
 
